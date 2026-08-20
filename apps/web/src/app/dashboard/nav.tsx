@@ -15,6 +15,11 @@ const items = [
     label: "Novo orçamento",
   },
   {
+    href: "/dashboard/orcamentos",
+    icon: "▤",
+    label: "Orçamentos",
+  },
+  {
     href: "/dashboard/clientes",
     icon: "◎",
     label: "Clientes",
@@ -35,17 +40,43 @@ export function DashboardNav() {
       aria-label="Navegação principal"
     >
       {items.map((item) => {
-        const active =
-          item.href === "/dashboard"
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
+        let active = false;
+
+        if (item.href === "/dashboard") {
+          active =
+            pathname === "/dashboard";
+        } else if (
+          item.href ===
+          "/dashboard/orcamentos"
+        ) {
+          active =
+            pathname === item.href ||
+            (
+              pathname.startsWith(
+                "/dashboard/orcamentos/",
+              ) &&
+              !pathname.startsWith(
+                "/dashboard/orcamentos/novo",
+              )
+            );
+        } else {
+          active =
+            pathname === item.href ||
+            pathname.startsWith(
+              item.href + "/",
+            );
+        }
 
         return (
           <Link
             key={item.href}
             href={item.href}
             className={
-              `orbiq-nav-item${active ? " is-active" : ""}`
+              `orbiq-nav-item${
+                active
+                  ? " is-active"
+                  : ""
+              }`
             }
           >
             <span
@@ -61,25 +92,6 @@ export function DashboardNav() {
           </Link>
         );
       })}
-
-      <div className="orbiq-nav-separator" />
-
-      <div
-        className="orbiq-nav-item is-disabled"
-        aria-disabled="true"
-      >
-        <span className="orbiq-nav-icon">
-          ▤
-        </span>
-
-        <span>
-          Histórico
-        </span>
-
-        <small>
-          Próximo
-        </small>
-      </div>
     </nav>
   );
 }
