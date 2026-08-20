@@ -31,6 +31,11 @@ const items = [
     label: "Compras",
   },
   {
+    href: "/dashboard/mao-de-obra",
+    icon: "◫",
+    label: "Mão de obra",
+  },
+  {
     href: "/dashboard/fornecedores",
     icon: "◇",
     label: "Fornecedores",

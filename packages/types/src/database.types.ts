@@ -91,6 +91,50 @@ export type Database = {
           },
         ]
       }
+      labor_services: {
+        Row: {
+          active: boolean
+          amount: number
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          notes: string | null
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "labor_services_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -412,6 +456,7 @@ export type Database = {
           description: string
           id: string
           labor_amount: number | null
+          labor_service_id: string | null
           needs_part: boolean
           organization_id: string
           quote_id: string
@@ -423,6 +468,7 @@ export type Database = {
           description: string
           id?: string
           labor_amount?: number | null
+          labor_service_id?: string | null
           needs_part?: boolean
           organization_id: string
           quote_id: string
@@ -434,12 +480,20 @@ export type Database = {
           description?: string
           id?: string
           labor_amount?: number | null
+          labor_service_id?: string | null
           needs_part?: boolean
           organization_id?: string
           quote_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "quote_services_labor_service_id_fkey"
+            columns: ["labor_service_id"]
+            isOneToOne: false
+            referencedRelation: "labor_services"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quote_services_organization_id_fkey"
             columns: ["organization_id"]
@@ -964,6 +1018,17 @@ export type Database = {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: boolean
       }
+      save_labor_service: {
+        Args: {
+          target_amount: number
+          target_category: string
+          target_description: string
+          target_notes: string
+          target_org_id: string
+          target_service_id: string
+        }
+        Returns: string
+      }
       save_supplier: {
         Args: {
           target_category_ids: string[]
@@ -984,6 +1049,14 @@ export type Database = {
           target_request_id: string
         }
         Returns: number
+      }
+      set_labor_service_active: {
+        Args: {
+          target_active: boolean
+          target_org_id: string
+          target_service_id: string
+        }
+        Returns: undefined
       }
       set_supplier_active: {
         Args: {
