@@ -180,6 +180,203 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_items: {
+        Row: {
+          category: string
+          chosen_amount: number | null
+          created_at: string
+          description: string
+          id: string
+          notes: string | null
+          organization_id: string
+          purchase_status: string
+          quantity: number
+          quote_id: string
+          side: string | null
+          specification: string | null
+          supplier_id: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          chosen_amount?: number | null
+          created_at?: string
+          description: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          purchase_status?: string
+          quantity?: number
+          quote_id: string
+          side?: string | null
+          specification?: string | null
+          supplier_id?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          chosen_amount?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          purchase_status?: string
+          quantity?: number
+          quote_id?: string
+          side?: string | null
+          specification?: string | null
+          supplier_id?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_services: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          labor_amount: number | null
+          needs_part: boolean
+          organization_id: string
+          quote_id: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          labor_amount?: number | null
+          needs_part?: boolean
+          organization_id: string
+          quote_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          labor_amount?: number | null
+          needs_part?: boolean
+          organization_id?: string
+          quote_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_services_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_services_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          final_amount: number | null
+          id: string
+          mileage: number | null
+          notes: string | null
+          organization_id: string
+          priority: string
+          protocol: string
+          status: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          final_amount?: number | null
+          id?: string
+          mileage?: number | null
+          notes?: string | null
+          organization_id: string
+          priority?: string
+          protocol: string
+          status?: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          final_amount?: number | null
+          id?: string
+          mileage?: number | null
+          notes?: string | null
+          organization_id?: string
+          priority?: string
+          protocol?: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_categories: {
         Row: {
           created_at: string
@@ -365,6 +562,22 @@ export type Database = {
           organization_slug: string
         }
         Returns: string
+      }
+      create_quote: {
+        Args: {
+          items?: Json
+          services?: Json
+          target_customer_id: string
+          target_mileage?: number
+          target_notes?: string
+          target_org_id: string
+          target_priority: string
+          target_vehicle_id: string
+        }
+        Returns: {
+          protocol: string
+          quote_id: string
+        }[]
       }
       has_org_role: {
         Args: { allowed_roles: string[]; target_org_id: string }
