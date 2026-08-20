@@ -180,6 +180,155 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_order_items: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          order_id: string
+          organization_id: string
+          quantity: number
+          quote_item_id: string
+          received_at: string | null
+          received_quantity: number
+          side: string | null
+          specification: string | null
+          status: string
+          total_amount: number
+          unit: string
+          unit_amount: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          order_id: string
+          organization_id: string
+          quantity: number
+          quote_item_id: string
+          received_at?: string | null
+          received_quantity?: number
+          side?: string | null
+          specification?: string | null
+          status?: string
+          total_amount: number
+          unit: string
+          unit_amount: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          order_id?: string
+          organization_id?: string
+          quantity?: number
+          quote_item_id?: string
+          received_at?: string | null
+          received_quantity?: number
+          side?: string | null
+          specification?: string | null
+          status?: string
+          total_amount?: number
+          unit?: string
+          unit_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_quote_item_id_fkey"
+            columns: ["quote_item_id"]
+            isOneToOne: false
+            referencedRelation: "quote_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          notes: string | null
+          ordered_at: string | null
+          organization_id: string
+          quote_id: string
+          received_at: string | null
+          status: string
+          supplier_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          ordered_at?: string | null
+          organization_id: string
+          quote_id: string
+          received_at?: string | null
+          status?: string
+          supplier_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          ordered_at?: string | null
+          organization_id?: string
+          quote_id?: string
+          received_at?: string | null
+          status?: string
+          supplier_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_items: {
         Row: {
           category: string
@@ -791,6 +940,10 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { target_org_id: string }; Returns: boolean }
+      mark_purchase_order_ordered: {
+        Args: { target_order_id: string; target_org_id: string }
+        Returns: string
+      }
       prepare_quote_supplier_requests: {
         Args: {
           target_org_id: string
@@ -798,6 +951,18 @@ export type Database = {
           target_requests: Json
         }
         Returns: number
+      }
+      receive_purchase_order_all: {
+        Args: { target_order_id: string; target_org_id: string }
+        Returns: number
+      }
+      receive_purchase_order_item: {
+        Args: { target_order_item_id: string; target_org_id: string }
+        Returns: string
+      }
+      refresh_quote_material_status: {
+        Args: { target_org_id: string; target_quote_id: string }
+        Returns: boolean
       }
       save_supplier: {
         Args: {
@@ -827,6 +992,10 @@ export type Database = {
           target_supplier_id: string
         }
         Returns: undefined
+      }
+      sync_quote_purchase_orders: {
+        Args: { target_org_id: string; target_quote_id: string }
+        Returns: number
       }
     }
     Enums: {

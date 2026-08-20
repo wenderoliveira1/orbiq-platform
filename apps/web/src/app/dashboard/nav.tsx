@@ -26,6 +26,11 @@ const items = [
     label: "Cotações",
   },
   {
+    href: "/dashboard/compras",
+    icon: "□",
+    label: "Compras",
+  },
+  {
     href: "/dashboard/fornecedores",
     icon: "◇",
     label: "Fornecedores",
@@ -63,6 +68,7 @@ export function DashboardNav() {
             item.href ===
             "/dashboard"
           ) {
+
             active =
               pathname ===
               "/dashboard";
@@ -71,6 +77,7 @@ export function DashboardNav() {
             item.href ===
             "/dashboard/orcamentos"
           ) {
+
             active =
               pathname ===
                 item.href ||
@@ -84,6 +91,7 @@ export function DashboardNav() {
               );
           }
           else {
+
             active =
               pathname ===
                 item.href ||
