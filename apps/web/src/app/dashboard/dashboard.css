@@ -850,3 +850,347 @@ a {
     color: #111827;
   }
 }
+
+/* ORBIQ PHASE 1.1B START */
+
+.q-builder,
+.q-section {
+  display: grid;
+  gap: 16px;
+}
+
+.q-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.q-title > b {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--orbiq-text);
+  color: var(--orbiq-surface);
+  font-size: 11px;
+}
+
+.q-title h2 {
+  margin: 3px 0 0;
+  font-size: 17px;
+}
+
+.q-label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--orbiq-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.q-priorities {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.q-priorities label,
+.q-grid label {
+  border: 1px solid var(--orbiq-border);
+  border-radius: 11px;
+  background: var(--orbiq-surface);
+  cursor: pointer;
+}
+
+.q-priorities label {
+  min-height: 45px;
+  padding: 0 11px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--orbiq-muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.q-priorities label.on,
+.q-grid label.on {
+  border-color: rgba(227, 6, 19, 0.5);
+  background: rgba(227, 6, 19, 0.035);
+  color: var(--orbiq-text);
+}
+
+.q-priorities input,
+.q-grid input {
+  accent-color: var(--orbiq-accent);
+}
+
+.q-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.q-tabs button {
+  min-height: 34px;
+  padding: 0 10px;
+  flex: 0 0 auto;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 9px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-muted);
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.q-tabs button.on {
+  background: var(--orbiq-text);
+  border-color: var(--orbiq-text);
+  color: var(--orbiq-surface);
+}
+
+.q-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.q-grid label {
+  min-height: 58px;
+  padding: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 10px;
+}
+
+.q-grid label > span {
+  display: grid;
+  gap: 3px;
+}
+
+.q-grid small {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+}
+
+.q-body {
+  display: grid;
+  gap: 12px;
+}
+
+.q-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+}
+
+.q-add input,
+.q-item-add input,
+.q-item-add select,
+.q-items input,
+.q-items select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 10px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-text);
+  outline: none;
+  font: inherit;
+}
+
+.q-add input:focus,
+.q-item-add input:focus,
+.q-item-add select:focus,
+.q-items input:focus,
+.q-items select:focus {
+  border-color: rgba(227, 6, 19, 0.45);
+  box-shadow: 0 0 0 3px rgba(227, 6, 19, 0.06);
+}
+
+.q-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.q-chips button {
+  min-height: 29px;
+  padding: 0 9px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 999px;
+  background: var(--orbiq-surface-soft);
+  color: var(--orbiq-text);
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.q-item-add {
+  display: grid;
+  grid-template-columns:
+    1.1fr
+    1.5fr
+    75px
+    80px
+    1fr
+    1.1fr
+    42px;
+  gap: 6px;
+}
+
+.q-items {
+  display: grid;
+  gap: 6px;
+}
+
+.q-items > div {
+  padding: 8px;
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1.5fr)
+    75px
+    80px
+    minmax(120px, 1fr)
+    34px;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 11px;
+  background: var(--orbiq-surface-soft);
+}
+
+.q-items > div > div {
+  display: grid;
+  gap: 2px;
+}
+
+.q-items strong {
+  font-size: 10px;
+}
+
+.q-items span {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+}
+
+.q-remove {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 9px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-danger);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.q-footer {
+  position: sticky;
+  bottom: 10px;
+  z-index: 5;
+  padding: 11px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 15px;
+  background: var(--orbiq-surface);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+}
+
+.q-footer > div {
+  display: grid;
+  gap: 2px;
+}
+
+.q-footer strong {
+  font-size: 10px;
+}
+
+.q-footer span {
+  color: var(--orbiq-muted);
+  font-size: 9px;
+}
+
+.q-footer button:disabled,
+.q-body button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.orbiq-created-banner {
+  padding: 13px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid #bbf7d0;
+  border-radius: 15px;
+  background: var(--orbiq-success-bg);
+}
+
+.orbiq-created-banner > div {
+  display: grid;
+  gap: 3px;
+}
+
+.orbiq-created-banner strong {
+  font-size: 14px;
+  color: var(--orbiq-success);
+}
+
+.orbiq-created-banner > div > span:last-child {
+  color: var(--orbiq-muted);
+  font-size: 9px;
+}
+
+@media (max-width: 1050px) {
+
+  .q-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .q-item-add {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .q-items > div {
+    grid-template-columns:
+      1fr
+      75px
+      80px;
+  }
+
+  .q-items > div > div {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+
+  .q-priorities,
+  .q-grid,
+  .q-item-add,
+  .q-items > div,
+  .q-add {
+    grid-template-columns: 1fr;
+  }
+
+  .q-footer,
+  .orbiq-created-banner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .q-footer button {
+    width: 100%;
+  }
+}
+
+/* ORBIQ PHASE 1.1B END */

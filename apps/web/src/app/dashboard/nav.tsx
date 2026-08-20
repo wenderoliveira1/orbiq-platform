@@ -6,18 +6,23 @@ import { usePathname } from "next/navigation";
 const items = [
   {
     href: "/dashboard",
-    label: "Visão geral",
     icon: "⌂",
+    label: "Visão geral",
+  },
+  {
+    href: "/dashboard/orcamentos/novo",
+    icon: "+",
+    label: "Novo orçamento",
   },
   {
     href: "/dashboard/clientes",
-    label: "Clientes",
     icon: "◎",
+    label: "Clientes",
   },
   {
     href: "/dashboard/veiculos",
-    label: "Veículos",
     icon: "▣",
+    label: "Veículos",
   },
 ];
 
@@ -25,7 +30,10 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="orbiq-nav" aria-label="Navegação principal">
+    <nav
+      className="orbiq-nav"
+      aria-label="Navegação principal"
+    >
       {items.map((item) => {
         const active =
           item.href === "/dashboard"
@@ -36,13 +44,20 @@ export function DashboardNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={`orbiq-nav-item${active ? " is-active" : ""}`}
+            className={
+              `orbiq-nav-item${active ? " is-active" : ""}`
+            }
           >
-            <span className="orbiq-nav-icon" aria-hidden="true">
+            <span
+              className="orbiq-nav-icon"
+              aria-hidden="true"
+            >
               {item.icon}
             </span>
 
-            <span>{item.label}</span>
+            <span>
+              {item.label}
+            </span>
           </Link>
         );
       })}
@@ -53,13 +68,17 @@ export function DashboardNav() {
         className="orbiq-nav-item is-disabled"
         aria-disabled="true"
       >
-        <span className="orbiq-nav-icon" aria-hidden="true">
-          ＋
+        <span className="orbiq-nav-icon">
+          ▤
         </span>
 
-        <span>Novo orçamento</span>
+        <span>
+          Histórico
+        </span>
 
-        <small>Fase 1.1</small>
+        <small>
+          Próximo
+        </small>
       </div>
     </nav>
   );
