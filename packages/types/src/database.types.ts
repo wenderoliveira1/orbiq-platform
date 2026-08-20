@@ -948,6 +948,143 @@ export type Database = {
           },
         ]
       }
+      work_order_services: {
+        Row: {
+          category: string | null
+          completed_at: string | null
+          created_at: string
+          description: string
+          id: string
+          labor_amount: number
+          labor_service_id: string | null
+          needs_part: boolean
+          notes: string | null
+          organization_id: string
+          quote_service_id: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          work_order_id: string
+        }
+        Insert: {
+          category?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          labor_amount?: number
+          labor_service_id?: string | null
+          needs_part?: boolean
+          notes?: string | null
+          organization_id: string
+          quote_service_id?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          work_order_id: string
+        }
+        Update: {
+          category?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          labor_amount?: number
+          labor_service_id?: string | null
+          needs_part?: boolean
+          notes?: string | null
+          organization_id?: string
+          quote_service_id?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_services_labor_service_id_fkey"
+            columns: ["labor_service_id"]
+            isOneToOne: false
+            referencedRelation: "labor_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_services_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_services_quote_service_id_fkey"
+            columns: ["quote_service_id"]
+            isOneToOne: false
+            referencedRelation: "quote_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_services_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_orders: {
+        Row: {
+          code: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          organization_id: string
+          quote_id: string
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          code?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          quote_id: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          quote_id?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_orders_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -960,6 +1097,10 @@ export type Database = {
           target_request_id: string
         }
         Returns: number
+      }
+      complete_work_order_service: {
+        Args: { target_org_id: string; target_work_order_service_id: string }
+        Returns: string
       }
       create_organization: {
         Args: {
@@ -1066,9 +1207,25 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_work_order_service_labor: {
+        Args: {
+          target_labor_service_id: string
+          target_org_id: string
+          target_work_order_service_id: string
+        }
+        Returns: number
+      }
+      start_work_order_service: {
+        Args: { target_org_id: string; target_work_order_service_id: string }
+        Returns: string
+      }
       sync_quote_purchase_orders: {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: number
+      }
+      sync_quote_work_order: {
+        Args: { target_org_id: string; target_quote_id: string }
+        Returns: string
       }
     }
     Enums: {

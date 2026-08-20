@@ -31,6 +31,11 @@ const items = [
     label: "Compras",
   },
   {
+    href: "/dashboard/execucao",
+    icon: "▶",
+    label: "Execução",
+  },
+  {
     href: "/dashboard/mao-de-obra",
     icon: "◫",
     label: "Mão de obra",
@@ -127,15 +132,11 @@ export function DashboardNav() {
                 className="orbiq-nav-icon"
                 aria-hidden="true"
               >
-                {
-                  item.icon
-                }
+                {item.icon}
               </span>
 
               <span>
-                {
-                  item.label
-                }
+                {item.label}
               </span>
             </Link>
           );
