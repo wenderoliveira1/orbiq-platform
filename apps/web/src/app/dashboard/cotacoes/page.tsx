@@ -54,10 +54,13 @@ export default async function QuoteCenterPage() {
         .order(
           "created_at",
           {
-            ascending: false,
+            ascending:
+              false,
           },
         )
-        .limit(100),
+        .limit(
+          100,
+        ),
 
       supabase
         .from("customers")
@@ -82,7 +85,7 @@ export default async function QuoteCenterPage() {
       supabase
         .from("quote_items")
         .select(
-          "id, quote_id, purchase_status",
+          "id, quote_id, supplier_id, purchase_status",
         )
         .eq(
           "organization_id",
@@ -90,7 +93,9 @@ export default async function QuoteCenterPage() {
         ),
 
       supabase
-        .from("quote_supplier_requests")
+        .from(
+          "quote_supplier_requests",
+        )
         .select(
           "id, quote_id, status",
         )
@@ -101,38 +106,25 @@ export default async function QuoteCenterPage() {
     ]);
 
 
-  if (quotesResult.error) {
-    throw new Error(
-      `Falha carregando orçamentos: ${quotesResult.error.message}`,
-    );
-  }
+  for (
+    const result
+    of [
+      quotesResult,
+      customersResult,
+      vehiclesResult,
+      itemsResult,
+      requestsResult,
+    ]
+  ) {
 
+    if (
+      result.error
+    ) {
 
-  if (customersResult.error) {
-    throw new Error(
-      `Falha carregando clientes: ${customersResult.error.message}`,
-    );
-  }
-
-
-  if (vehiclesResult.error) {
-    throw new Error(
-      `Falha carregando veículos: ${vehiclesResult.error.message}`,
-    );
-  }
-
-
-  if (itemsResult.error) {
-    throw new Error(
-      `Falha carregando peças: ${itemsResult.error.message}`,
-    );
-  }
-
-
-  if (requestsResult.error) {
-    throw new Error(
-      `Falha carregando cotações: ${requestsResult.error.message}`,
-    );
+      throw new Error(
+        result.error.message,
+      );
+    }
   }
 
 
@@ -166,8 +158,17 @@ export default async function QuoteCenterPage() {
     );
 
 
-  const itemCounts =
-    new Map<string, number>();
+  const itemStats =
+    new Map<
+      string,
+      {
+        total:
+          number;
+
+        selected:
+          number;
+      }
+    >();
 
 
   for (
@@ -175,25 +176,52 @@ export default async function QuoteCenterPage() {
     of itemsResult.data ??
     []
   ) {
-    itemCounts.set(
+
+    const current =
+      itemStats.get(
+        item.quote_id,
+      ) ??
+      {
+        total:
+          0,
+
+        selected:
+          0,
+      };
+
+
+    current.total +=
+      1;
+
+
+    if (
+      item.supplier_id
+    ) {
+
+      current.selected +=
+        1;
+    }
+
+
+    itemStats.set(
       item.quote_id,
-      (
-        itemCounts.get(
-          item.quote_id,
-        ) ??
-        0
-      ) +
-      1,
+      current,
     );
   }
 
 
-  const requestCounts =
+  const requestStats =
     new Map<
       string,
       {
-        total: number;
-        opened: number;
+        total:
+          number;
+
+        opened:
+          number;
+
+        responded:
+          number;
       }
     >();
 
@@ -203,21 +231,29 @@ export default async function QuoteCenterPage() {
     of requestsResult.data ??
     []
   ) {
+
     if (
       request.status ===
       "cancelled"
     ) {
+
       continue;
     }
 
 
     const current =
-      requestCounts.get(
+      requestStats.get(
         request.quote_id,
       ) ??
       {
-        total: 0,
-        opened: 0,
+        total:
+          0,
+
+        opened:
+          0,
+
+        responded:
+          0,
       };
 
 
@@ -226,21 +262,37 @@ export default async function QuoteCenterPage() {
 
 
     if (
-      request.status ===
-        "opened" ||
-      request.status ===
-        "responded" ||
-      request.status ===
-        "won" ||
-      request.status ===
-        "lost"
+      [
+        "opened",
+        "responded",
+        "won",
+        "lost",
+      ].includes(
+        request.status,
+      )
     ) {
+
       current.opened +=
         1;
     }
 
 
-    requestCounts.set(
+    if (
+      [
+        "responded",
+        "won",
+        "lost",
+      ].includes(
+        request.status,
+      )
+    ) {
+
+      current.responded +=
+        1;
+    }
+
+
+    requestStats.set(
       request.quote_id,
       current,
     );
@@ -265,7 +317,7 @@ export default async function QuoteCenterPage() {
           </h1>
 
           <p>
-            O Orbiq cruza automaticamente as peças do orçamento com os fornecedores que atendem cada categoria.
+            Envie solicitações, registre respostas, compare fornecedores e aprove as compras.
           </p>
         </div>
       </section>
@@ -279,7 +331,7 @@ export default async function QuoteCenterPage() {
             </span>
 
             <h2>
-              Escolha o atendimento
+              Fluxo de cotações
             </h2>
           </div>
         </div>
@@ -291,10 +343,6 @@ export default async function QuoteCenterPage() {
             <strong>
               Nenhum orçamento.
             </strong>
-
-            <span>
-              Crie um orçamento para iniciar uma cotação.
-            </span>
 
             <Link
               href="/dashboard/orcamentos/novo"
@@ -319,20 +367,32 @@ export default async function QuoteCenterPage() {
                   );
 
 
-                const items =
-                  itemCounts.get(
-                    quote.id,
-                  ) ??
-                  0;
-
-
-                const requests =
-                  requestCounts.get(
+                const item =
+                  itemStats.get(
                     quote.id,
                   ) ??
                   {
-                    total: 0,
-                    opened: 0,
+                    total:
+                      0,
+
+                    selected:
+                      0,
+                  };
+
+
+                const request =
+                  requestStats.get(
+                    quote.id,
+                  ) ??
+                  {
+                    total:
+                      0,
+
+                    opened:
+                      0,
+
+                    responded:
+                      0,
                   };
 
 
@@ -341,7 +401,7 @@ export default async function QuoteCenterPage() {
                     key={
                       quote.id
                     }
-                    className="quote-center-row"
+                    className="quote-center-row quote-center-row-v2"
                   >
                     <div>
                       <strong>
@@ -377,7 +437,7 @@ export default async function QuoteCenterPage() {
                     <div className="quote-center-counts">
                       <span>
                         <b>
-                          {items}
+                          {item.total}
                         </b>
 
                         peças
@@ -385,11 +445,20 @@ export default async function QuoteCenterPage() {
 
                       <span>
                         <b>
-                          {requests.opened}/
-                          {requests.total}
+                          {request.responded}/
+                          {request.total}
                         </b>
 
-                        enviados
+                        respostas
+                      </span>
+
+                      <span>
+                        <b>
+                          {item.selected}/
+                          {item.total}
+                        </b>
+
+                        escolhidas
                       </span>
                     </div>
 
@@ -405,21 +474,34 @@ export default async function QuoteCenterPage() {
                     </span>
 
 
-                    {items >
-                    0 ? (
-                      <Link
-                        href={
-                          `/dashboard/cotacoes/${quote.id}`
-                        }
-                        className="orbiq-primary-button"
-                      >
-                        Cotar
-                      </Link>
-                    ) : (
-                      <span className="quote-no-items">
-                        Sem peças
-                      </span>
-                    )}
+                    <div className="quote-center-actions">
+                      {item.total >
+                      0 ? (
+                        <>
+                          <Link
+                            href={
+                              `/dashboard/cotacoes/${quote.id}`
+                            }
+                            className="orbiq-secondary-button"
+                          >
+                            Envio
+                          </Link>
+
+                          <Link
+                            href={
+                              `/dashboard/cotacoes/${quote.id}/respostas`
+                            }
+                            className="orbiq-primary-button"
+                          >
+                            Respostas
+                          </Link>
+                        </>
+                      ) : (
+                        <span className="quote-no-items">
+                          Sem peças
+                        </span>
+                      )}
+                    </div>
                   </article>
                 );
               },

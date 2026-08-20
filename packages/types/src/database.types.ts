@@ -307,6 +307,76 @@ export type Database = {
           },
         ]
       }
+      quote_supplier_item_responses: {
+        Row: {
+          availability: string | null
+          awarded: boolean
+          brand_option: string | null
+          created_at: string
+          delivery: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          quote_item_id: string
+          request_id: string
+          total_price: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          availability?: string | null
+          awarded?: boolean
+          brand_option?: string | null
+          created_at?: string
+          delivery?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          quote_item_id: string
+          request_id: string
+          total_price: number
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          availability?: string | null
+          awarded?: boolean
+          brand_option?: string | null
+          created_at?: string
+          delivery?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          quote_item_id?: string
+          request_id?: string
+          total_price?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_supplier_item_responses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_supplier_item_responses_quote_item_id_fkey"
+            columns: ["quote_item_id"]
+            isOneToOne: false
+            referencedRelation: "quote_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_supplier_item_responses_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "quote_supplier_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_supplier_request_items: {
         Row: {
           created_at: string
@@ -680,6 +750,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_supplier_quote_item: {
+        Args: {
+          target_org_id: string
+          target_quote_item_id: string
+          target_request_id: string
+        }
+        Returns: number
+      }
       create_organization: {
         Args: {
           organization_cnpj?: string
@@ -704,6 +782,10 @@ export type Database = {
           quote_id: string
         }[]
       }
+      finalize_quote_supplier_awards: {
+        Args: { target_org_id: string; target_quote_id: string }
+        Returns: number
+      }
       has_org_role: {
         Args: { allowed_roles: string[]; target_org_id: string }
         Returns: boolean
@@ -727,6 +809,16 @@ export type Database = {
           target_whatsapp: string
         }
         Returns: string
+      }
+      save_supplier_response: {
+        Args: {
+          target_delivery: string
+          target_items: Json
+          target_notes: string
+          target_org_id: string
+          target_request_id: string
+        }
+        Returns: number
       }
       set_supplier_active: {
         Args: {
