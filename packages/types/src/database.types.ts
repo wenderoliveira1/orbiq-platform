@@ -379,22 +379,28 @@ export type Database = {
       }
       supplier_categories: {
         Row: {
+          active: boolean | null
           created_at: string
           id: string
           name: string
           organization_id: string
+          updated_at: string | null
         }
         Insert: {
+          active?: boolean | null
           created_at?: string
           id?: string
           name: string
           organization_id: string
+          updated_at?: string | null
         }
         Update: {
+          active?: boolean | null
           created_at?: string
           id?: string
           name?: string
           organization_id?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -584,6 +590,25 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { target_org_id: string }; Returns: boolean }
+      save_supplier: {
+        Args: {
+          target_category_ids: string[]
+          target_name: string
+          target_notes: string
+          target_org_id: string
+          target_supplier_id: string
+          target_whatsapp: string
+        }
+        Returns: string
+      }
+      set_supplier_active: {
+        Args: {
+          target_active: boolean
+          target_org_id: string
+          target_supplier_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

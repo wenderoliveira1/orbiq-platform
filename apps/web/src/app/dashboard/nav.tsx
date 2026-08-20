@@ -20,6 +20,11 @@ const items = [
     label: "Orçamentos",
   },
   {
+    href: "/dashboard/fornecedores",
+    icon: "◇",
+    label: "Fornecedores",
+  },
+  {
     href: "/dashboard/clientes",
     icon: "◎",
     label: "Clientes",
@@ -32,66 +37,108 @@ const items = [
 ];
 
 export function DashboardNav() {
-  const pathname = usePathname();
+  const pathname =
+    usePathname();
 
   return (
     <nav
       className="orbiq-nav"
       aria-label="Navegação principal"
     >
-      {items.map((item) => {
-        let active = false;
+      {items.map(
+        (item) => {
+          let active =
+            false;
 
-        if (item.href === "/dashboard") {
-          active =
-            pathname === "/dashboard";
-        } else if (
-          item.href ===
-          "/dashboard/orcamentos"
-        ) {
-          active =
-            pathname === item.href ||
-            (
+          if (
+            item.href ===
+            "/dashboard"
+          ) {
+            active =
+              pathname ===
+              "/dashboard";
+          }
+          else if (
+            item.href ===
+            "/dashboard/orcamentos"
+          ) {
+            active =
+              pathname ===
+                item.href ||
+              (
+                pathname.startsWith(
+                  "/dashboard/orcamentos/",
+                ) &&
+                !pathname.startsWith(
+                  "/dashboard/orcamentos/novo",
+                )
+              );
+          }
+          else {
+            active =
+              pathname ===
+                item.href ||
               pathname.startsWith(
-                "/dashboard/orcamentos/",
-              ) &&
-              !pathname.startsWith(
-                "/dashboard/orcamentos/novo",
-              )
-            );
-        } else {
-          active =
-            pathname === item.href ||
-            pathname.startsWith(
-              item.href + "/",
-            );
-        }
+                item.href +
+                  "/",
+              );
+          }
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={
-              `orbiq-nav-item${
-                active
-                  ? " is-active"
-                  : ""
-              }`
-            }
-          >
-            <span
-              className="orbiq-nav-icon"
-              aria-hidden="true"
+          return (
+            <Link
+              key={
+                item.href
+              }
+              href={
+                item.href
+              }
+              className={
+                `orbiq-nav-item${
+                  active
+                    ? " is-active"
+                    : ""
+                }`
+              }
             >
-              {item.icon}
-            </span>
+              <span
+                className="orbiq-nav-icon"
+                aria-hidden="true"
+              >
+                {
+                  item.icon
+                }
+              </span>
 
-            <span>
-              {item.label}
-            </span>
-          </Link>
-        );
-      })}
+              <span>
+                {
+                  item.label
+                }
+              </span>
+            </Link>
+          );
+        },
+      )}
+
+
+      <div className="orbiq-nav-separator" />
+
+
+      <div
+        className="orbiq-nav-item is-disabled"
+        aria-disabled="true"
+      >
+        <span className="orbiq-nav-icon">
+          ↗
+        </span>
+
+        <span>
+          Cotações
+        </span>
+
+        <small>
+          1.2B
+        </small>
+      </div>
     </nav>
   );
 }
