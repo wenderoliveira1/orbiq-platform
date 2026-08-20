@@ -307,6 +307,125 @@ export type Database = {
           },
         ]
       }
+      quote_supplier_request_items: {
+        Row: {
+          created_at: string
+          id: string
+          organization_id: string
+          quote_item_id: string
+          request_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          organization_id: string
+          quote_item_id: string
+          request_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          organization_id?: string
+          quote_item_id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_supplier_request_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_supplier_request_items_quote_item_id_fkey"
+            columns: ["quote_item_id"]
+            isOneToOne: false
+            referencedRelation: "quote_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_supplier_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "quote_supplier_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_supplier_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          opened_at: string | null
+          organization_id: string
+          quote_id: string
+          responded_at: string | null
+          response_amount: number | null
+          response_delivery: string | null
+          response_notes: string | null
+          status: string
+          supplier_id: string
+          updated_at: string
+          winner: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          opened_at?: string | null
+          organization_id: string
+          quote_id: string
+          responded_at?: string | null
+          response_amount?: number | null
+          response_delivery?: string | null
+          response_notes?: string | null
+          status?: string
+          supplier_id: string
+          updated_at?: string
+          winner?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          opened_at?: string | null
+          organization_id?: string
+          quote_id?: string
+          responded_at?: string | null
+          response_amount?: number | null
+          response_delivery?: string | null
+          response_notes?: string | null
+          status?: string
+          supplier_id?: string
+          updated_at?: string
+          winner?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_supplier_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_supplier_requests_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_supplier_requests_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
           created_at: string
@@ -590,6 +709,14 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { target_org_id: string }; Returns: boolean }
+      prepare_quote_supplier_requests: {
+        Args: {
+          target_org_id: string
+          target_quote_id: string
+          target_requests: Json
+        }
+        Returns: number
+      }
       save_supplier: {
         Args: {
           target_category_ids: string[]

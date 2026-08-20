@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+
 const items = [
   {
     href: "/dashboard",
@@ -18,6 +19,11 @@ const items = [
     href: "/dashboard/orcamentos",
     icon: "▤",
     label: "Orçamentos",
+  },
+  {
+    href: "/dashboard/cotacoes",
+    icon: "↗",
+    label: "Cotações",
   },
   {
     href: "/dashboard/fornecedores",
@@ -36,9 +42,11 @@ const items = [
   },
 ];
 
+
 export function DashboardNav() {
   const pathname =
     usePathname();
+
 
   return (
     <nav
@@ -49,6 +57,7 @@ export function DashboardNav() {
         (item) => {
           let active =
             false;
+
 
           if (
             item.href ===
@@ -84,6 +93,7 @@ export function DashboardNav() {
               );
           }
 
+
           return (
             <Link
               key={
@@ -118,27 +128,6 @@ export function DashboardNav() {
           );
         },
       )}
-
-
-      <div className="orbiq-nav-separator" />
-
-
-      <div
-        className="orbiq-nav-item is-disabled"
-        aria-disabled="true"
-      >
-        <span className="orbiq-nav-icon">
-          ↗
-        </span>
-
-        <span>
-          Cotações
-        </span>
-
-        <small>
-          1.2B
-        </small>
-      </div>
     </nav>
   );
 }
