@@ -1295,19 +1295,19 @@ export default async function SupplierResponsesPage({
           <section className="purchase-approval-panel">
             <div>
               <span className="orbiq-eyebrow">
-                3 · APROVAÇÃO DE COMPRA
+                3 · FORNECEDORES ESCOLHIDOS
               </span>
 
               <h2>
                 {allItemsChosen
-                  ? "Tudo pronto para aprovação"
+                  ? "Fornecedores definidos"
                   : "Ainda existem peças sem fornecedor"}
               </h2>
 
               <p>
                 {allItemsChosen
-                  ? "Ao confirmar, o orçamento passará para Aguardando peças."
-                  : "Escolha um fornecedor para cada peça antes de finalizar."}
+                  ? "Confirme os fornecedores escolhidos para retornar ao Comercial e apresentar o orçamento ao cliente."
+                  : "Registre as respostas e clique em Escolher para cada peça antes de continuar."}
               </p>
             </div>
 
@@ -1345,7 +1345,7 @@ export default async function SupplierResponsesPage({
                   !allItemsChosen
                 }
               >
-                Aprovar compras escolhidas
+                Confirmar fornecedores escolhidos
               </button>
             </form>
           </section>

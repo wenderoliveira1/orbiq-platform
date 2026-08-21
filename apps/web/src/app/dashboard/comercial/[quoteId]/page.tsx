@@ -1,0 +1,856 @@
+import Link from "next/link";
+
+import {
+  notFound,
+} from "next/navigation";
+
+import {
+  getCurrentContext,
+} from "../../_lib/current-organization";
+
+import {
+  statusLabel,
+} from "../../orcamentos/quote-meta";
+
+import {
+  approveCommercialAction,
+  rejectCommercialAction,
+  reopenCommercialAction,
+} from "./actions";
+
+import {
+  CommercialForm,
+} from "./commercial-form";
+
+
+type PageProps = {
+
+  params:
+    Promise<{
+      quoteId:
+        string;
+    }>;
+
+  searchParams:
+    Promise<{
+      ok?: string;
+      error?: string;
+    }>;
+};
+
+
+function money(
+  value:
+    number,
+): string {
+
+  return new Intl.NumberFormat(
+    "pt-BR",
+    {
+      style:
+        "currency",
+
+      currency:
+        "BRL",
+    },
+  ).format(
+    value,
+  );
+}
+
+
+function commercialLabel(
+  value:
+    string,
+): string {
+
+  const labels:
+    Record<string, string> = {
+
+    draft:
+      "Não montado",
+
+    ready:
+      "Aguardando cliente",
+
+    approved:
+      "Aprovado pelo cliente",
+
+    rejected:
+      "Reprovado pelo cliente",
+  };
+
+
+  return (
+    labels[
+      value
+    ] ??
+    value
+  );
+}
+
+
+export default async function CommercialDetailPage({
+  params,
+  searchParams,
+}: PageProps) {
+
+  const {
+    quoteId,
+  } =
+    await params;
+
+
+  const query =
+    await searchParams;
+
+
+  const {
+    supabase,
+    organization,
+  } =
+    await getCurrentContext();
+
+
+  const {
+    data: quote,
+    error: quoteError,
+  } =
+    await supabase
+      .from("quotes")
+      .select(
+        "id, protocol, customer_id, vehicle_id, status, priority, mileage, commercial_status, parts_cost_amount, parts_sale_amount, labor_sale_amount, subtotal_amount, discount_type, discount_value, discount_amount, final_amount, commercial_approved_at, commercial_rejected_at, commercial_rejection_reason, created_at",
+      )
+      .eq(
+        "organization_id",
+        organization.id,
+      )
+      .eq(
+        "id",
+        quoteId,
+      )
+      .maybeSingle();
+
+
+  if (
+    quoteError
+  ) {
+
+    throw new Error(
+      quoteError.message,
+    );
+  }
+
+
+  if (!quote) {
+
+    notFound();
+  }
+
+
+  const [
+    customerResult,
+    vehicleResult,
+    servicesResult,
+    itemsResult,
+  ] =
+    await Promise.all([
+
+      supabase
+        .from("customers")
+        .select(
+          "id, name, phone, email",
+        )
+        .eq(
+          "organization_id",
+          organization.id,
+        )
+        .eq(
+          "id",
+          quote.customer_id,
+        )
+        .maybeSingle(),
+
+      supabase
+        .from("vehicles")
+        .select(
+          "id, plate, brand, model, version, model_year",
+        )
+        .eq(
+          "organization_id",
+          organization.id,
+        )
+        .eq(
+          "id",
+          quote.vehicle_id,
+        )
+        .maybeSingle(),
+
+      supabase
+        .from("quote_services")
+        .select(
+          "id, category, description, labor_amount, needs_part",
+        )
+        .eq(
+          "organization_id",
+          organization.id,
+        )
+        .eq(
+          "quote_id",
+          quote.id,
+        )
+        .order(
+          "created_at",
+          {
+            ascending:
+              true,
+          },
+        ),
+
+      supabase
+        .from("quote_items")
+        .select(
+          "id, description, category, quantity, unit, side, specification, supplier_id, chosen_amount, sale_unit_amount, sale_total_amount",
+        )
+        .eq(
+          "organization_id",
+          organization.id,
+        )
+        .eq(
+          "quote_id",
+          quote.id,
+        )
+        .order(
+          "created_at",
+          {
+            ascending:
+              true,
+          },
+        ),
+    ]);
+
+
+  for (
+    const result
+    of [
+      customerResult,
+      vehicleResult,
+      servicesResult,
+      itemsResult,
+    ]
+  ) {
+
+    if (
+      result.error
+    ) {
+
+      throw new Error(
+        result.error.message,
+      );
+    }
+  }
+
+
+  const customer =
+    customerResult.data;
+
+
+  const vehicle =
+    vehicleResult.data;
+
+
+  const services =
+    servicesResult.data ??
+    [];
+
+
+  const items =
+    itemsResult.data ??
+    [];
+
+
+  const {
+    data: supplierRequests,
+    error: supplierRequestsError,
+  } =
+    await supabase
+      .from(
+        "quote_supplier_requests",
+      )
+      .select(
+        "id, status",
+      )
+      .eq(
+        "organization_id",
+        organization.id,
+      )
+      .eq(
+        "quote_id",
+        quote.id,
+      )
+      .neq(
+        "status",
+        "cancelled",
+      );
+
+
+  if (
+    supplierRequestsError
+  ) {
+
+    throw new Error(
+      `Falha ao verificar as cotações dos fornecedores: ${supplierRequestsError.message}`,
+    );
+  }
+
+
+  const hasPreparedSupplierRequests =
+    (
+      supplierRequests ??
+      []
+    ).length >
+    0;
+
+
+  const laborTotal =
+    services.reduce(
+      (
+        total,
+        service,
+      ) =>
+        total +
+        (
+          service.labor_amount ??
+          0
+        ),
+      0,
+    );
+
+
+  const supplierPending =
+    items.some(
+      (item) =>
+        item.supplier_id ===
+          null ||
+        item.chosen_amount ===
+          null,
+    );
+
+
+  const locked =
+    quote.commercial_status ===
+    "approved";
+
+
+  return (
+    <div className="orbiq-page">
+
+      <section className="commercial-detail-heading">
+
+        <div>
+
+          <Link
+            href="/dashboard/comercial"
+            className="quote-back-link"
+          >
+            ← Comercial
+          </Link>
+
+          <span className="orbiq-eyebrow">
+            ORÇAMENTO COMERCIAL
+          </span>
+
+          <h1>
+            {quote.protocol}
+          </h1>
+
+          <p>
+            {customer?.name ??
+              "Cliente"}{" · "}
+
+            {vehicle?.plate ??
+              "Sem placa"}{" · "}
+
+            {[
+              vehicle?.brand,
+              vehicle?.model,
+              vehicle?.version,
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          </p>
+
+        </div>
+
+
+        <div className="commercial-detail-heading-actions">
+
+          <span
+            className={
+              `commercial-status commercial-${quote.commercial_status}`
+            }
+          >
+            {commercialLabel(
+              quote.commercial_status,
+            )}
+          </span>
+
+
+          <Link
+            href={
+              `/dashboard/orcamentos/${quote.id}`
+            }
+            className="orbiq-secondary-button"
+          >
+            Ver orçamento técnico
+          </Link>
+
+        </div>
+
+      </section>
+
+
+      {query.ok ? (
+
+        <div className="orbiq-alert success">
+          {query.ok}
+        </div>
+
+      ) : null}
+
+
+      {query.error ? (
+
+        <div className="orbiq-alert error">
+          {query.error}
+        </div>
+
+      ) : null}
+
+
+      <section className="commercial-context-grid">
+
+        <article className="orbiq-panel">
+
+          <span className="orbiq-eyebrow">
+            CLIENTE
+          </span>
+
+          <h2>
+            {customer?.name ??
+              "—"}
+          </h2>
+
+          <div className="quote-detail-info">
+
+            <span>
+              Telefone
+            </span>
+
+            <strong>
+              {customer?.phone ??
+                "—"}
+            </strong>
+
+
+            <span>
+              E-mail
+            </span>
+
+            <strong>
+              {customer?.email ??
+                "—"}
+            </strong>
+
+          </div>
+
+        </article>
+
+
+        <article className="orbiq-panel">
+
+          <span className="orbiq-eyebrow">
+            VEÍCULO
+          </span>
+
+          <div className="commercial-vehicle-title">
+
+            <span className="orbiq-plate">
+              {vehicle?.plate ??
+                "—"}
+            </span>
+
+            <h2>
+              {[
+                vehicle?.brand,
+                vehicle?.model,
+                vehicle?.version,
+              ]
+                .filter(Boolean)
+                .join(" ") ||
+                "Veículo"}
+            </h2>
+
+          </div>
+
+          <div className="quote-detail-info">
+
+            <span>
+              Ano
+            </span>
+
+            <strong>
+              {vehicle?.model_year ??
+                "—"}
+            </strong>
+
+
+            <span>
+              Status
+            </span>
+
+            <strong>
+              {statusLabel(
+                quote.status,
+              )}
+            </strong>
+
+          </div>
+
+        </article>
+
+      </section>
+
+
+      {supplierPending &&
+      items.length >
+      0 ? (
+
+        <section className="commercial-warning">
+
+          <div>
+
+            <strong>
+              {hasPreparedSupplierRequests
+                ? "Existe peça sem fornecedor definido"
+                : "Cotação de fornecedores ainda não preparada"}
+            </strong>
+
+            <span>
+              {hasPreparedSupplierRequests
+                ? "A cotação já foi preparada. Registre as respostas recebidas e escolha um fornecedor vencedor para cada peça."
+                : "Antes de apresentar este orçamento ao cliente, prepare os fornecedores que receberão a solicitação das peças."}
+            </span>
+
+          </div>
+
+
+          <Link
+            href={
+              hasPreparedSupplierRequests
+                ? `/dashboard/cotacoes/${quote.id}/respostas`
+                : `/dashboard/cotacoes/${quote.id}`
+            }
+            className="orbiq-secondary-button"
+          >
+            {hasPreparedSupplierRequests
+              ? "Registrar / comparar respostas"
+              : "Preparar fornecedores"}
+          </Link>
+
+        </section>
+
+      ) : null}
+
+
+      <section className="orbiq-panel">
+
+        <div className="orbiq-panel-heading">
+
+          <div>
+
+            <span className="orbiq-eyebrow">
+              MÃO DE OBRA
+            </span>
+
+            <h2>
+              Serviços
+            </h2>
+
+          </div>
+
+          <strong className="commercial-labor-total">
+            {money(
+              laborTotal,
+            )}
+          </strong>
+
+        </div>
+
+
+        <div className="commercial-services-list">
+
+          {services.map(
+            (service) => (
+
+              <article
+                key={
+                  service.id
+                }
+              >
+
+                <div>
+
+                  <strong>
+                    {service.description}
+                  </strong>
+
+                  <span>
+                    {service.category}
+                  </span>
+
+                </div>
+
+
+                <strong>
+                  {money(
+                    service.labor_amount ??
+                    0,
+                  )}
+                </strong>
+
+              </article>
+
+            ),
+          )}
+
+        </div>
+
+      </section>
+
+
+      <CommercialForm
+        quoteId={
+          quote.id
+        }
+        laborTotal={
+          laborTotal
+        }
+        items={
+          items
+        }
+        discountType={
+          quote.discount_type
+        }
+        discountValue={
+          quote.discount_value
+        }
+        locked={
+          locked
+        }
+      />
+
+
+      {quote.commercial_status ===
+      "ready" ? (
+
+        <section className="commercial-decision-panel">
+
+          <div>
+
+            <span className="orbiq-eyebrow">
+              DECISÃO DO CLIENTE
+            </span>
+
+            <h2>
+              {money(
+                quote.final_amount ??
+                0,
+              )}
+            </h2>
+
+            <p>
+              Registre somente depois de apresentar o orçamento ao cliente.
+            </p>
+
+          </div>
+
+
+          <div className="commercial-decision-actions">
+
+            <form
+              action={
+                approveCommercialAction
+              }
+            >
+
+              <input
+                type="hidden"
+                name="quote_id"
+                value={
+                  quote.id
+                }
+              />
+
+              <button
+                type="submit"
+                className="orbiq-primary-button commercial-approve-button"
+              >
+                ✓ Aprovado pelo cliente
+              </button>
+
+            </form>
+
+
+            <details className="commercial-reject-details">
+
+              <summary>
+                Reprovado pelo cliente
+              </summary>
+
+
+              <form
+                action={
+                  rejectCommercialAction
+                }
+              >
+
+                <input
+                  type="hidden"
+                  name="quote_id"
+                  value={
+                    quote.id
+                  }
+                />
+
+
+                <textarea
+                  name="reason"
+                  rows={3}
+                  placeholder="Motivo da reprovação (opcional)"
+                />
+
+
+                <button
+                  type="submit"
+                  className="orbiq-secondary-button"
+                >
+                  Confirmar reprovação
+                </button>
+
+              </form>
+
+            </details>
+
+          </div>
+
+        </section>
+
+      ) : null}
+
+
+      {quote.commercial_status ===
+      "approved" ? (
+
+        <section className="commercial-approved-banner">
+
+          <div>
+
+            <span className="orbiq-eyebrow">
+              APROVADO PELO CLIENTE
+            </span>
+
+            <strong>
+              {money(
+                quote.final_amount ??
+                0,
+              )}
+            </strong>
+
+            <span>
+              {items.length >
+              0
+                ? "O orçamento está liberado para o fluxo de Compras."
+                : "O orçamento está liberado para Execução."}
+            </span>
+
+          </div>
+
+
+          <Link
+            href={
+              items.length >
+              0
+                ? "/dashboard/compras"
+                : "/dashboard/execucao"
+            }
+            className="orbiq-primary-button"
+          >
+            {items.length >
+            0
+              ? "Ir para Compras"
+              : "Ir para Execução"}
+          </Link>
+
+        </section>
+
+      ) : null}
+
+
+      {quote.commercial_status ===
+      "rejected" ? (
+
+        <section className="commercial-rejected-banner">
+
+          <div>
+
+            <span className="orbiq-eyebrow">
+              REPROVADO PELO CLIENTE
+            </span>
+
+            <strong>
+              Orçamento não aprovado
+            </strong>
+
+            {quote.commercial_rejection_reason ? (
+
+              <span>
+                Motivo:{" "}
+                {quote.commercial_rejection_reason}
+              </span>
+
+            ) : null}
+
+          </div>
+
+
+          <form
+            action={
+              reopenCommercialAction
+            }
+          >
+
+            <input
+              type="hidden"
+              name="quote_id"
+              value={
+                quote.id
+              }
+            />
+
+            <button
+              type="submit"
+              className="orbiq-secondary-button"
+            >
+              Reabrir negociação
+            </button>
+
+          </form>
+
+        </section>
+
+      ) : null}
+
+    </div>
+  );
+}

@@ -385,6 +385,8 @@ export type Database = {
           purchase_status: string
           quantity: number
           quote_id: string
+          sale_total_amount: number | null
+          sale_unit_amount: number | null
           side: string | null
           specification: string | null
           supplier_id: string | null
@@ -402,6 +404,8 @@ export type Database = {
           purchase_status?: string
           quantity?: number
           quote_id: string
+          sale_total_amount?: number | null
+          sale_unit_amount?: number | null
           side?: string | null
           specification?: string | null
           supplier_id?: string | null
@@ -419,6 +423,8 @@ export type Database = {
           purchase_status?: string
           quantity?: number
           quote_id?: string
+          sale_total_amount?: number | null
+          sale_unit_amount?: number | null
           side?: string | null
           specification?: string | null
           supplier_id?: string | null
@@ -701,47 +707,80 @@ export type Database = {
       }
       quotes: {
         Row: {
+          commercial_approved_at: string | null
+          commercial_rejected_at: string | null
+          commercial_rejection_reason: string | null
+          commercial_status: string
           created_at: string
           created_by: string | null
           customer_id: string
+          discount_amount: number
+          discount_type: string
+          discount_value: number
           final_amount: number | null
           id: string
+          labor_sale_amount: number
           mileage: number | null
           notes: string | null
           organization_id: string
+          parts_cost_amount: number
+          parts_sale_amount: number
           priority: string
           protocol: string
           status: string
+          subtotal_amount: number
           updated_at: string
           vehicle_id: string
         }
         Insert: {
+          commercial_approved_at?: string | null
+          commercial_rejected_at?: string | null
+          commercial_rejection_reason?: string | null
+          commercial_status?: string
           created_at?: string
           created_by?: string | null
           customer_id: string
+          discount_amount?: number
+          discount_type?: string
+          discount_value?: number
           final_amount?: number | null
           id?: string
+          labor_sale_amount?: number
           mileage?: number | null
           notes?: string | null
           organization_id: string
+          parts_cost_amount?: number
+          parts_sale_amount?: number
           priority?: string
           protocol: string
           status?: string
+          subtotal_amount?: number
           updated_at?: string
           vehicle_id: string
         }
         Update: {
+          commercial_approved_at?: string | null
+          commercial_rejected_at?: string | null
+          commercial_rejection_reason?: string | null
+          commercial_status?: string
           created_at?: string
           created_by?: string | null
           customer_id?: string
+          discount_amount?: number
+          discount_type?: string
+          discount_value?: number
           final_amount?: number | null
           id?: string
+          labor_sale_amount?: number
           mileage?: number | null
           notes?: string | null
           organization_id?: string
+          parts_cost_amount?: number
+          parts_sale_amount?: number
           priority?: string
           protocol?: string
           status?: string
+          subtotal_amount?: number
           updated_at?: string
           vehicle_id?: string
         }
@@ -1090,6 +1129,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_quote_commercial: {
+        Args: { target_org_id: string; target_quote_id: string }
+        Returns: string
+      }
       award_supplier_quote_item: {
         Args: {
           target_org_id: string
@@ -1175,6 +1218,18 @@ export type Database = {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: boolean
       }
+      reject_quote_commercial: {
+        Args: {
+          target_org_id: string
+          target_quote_id: string
+          target_reason: string
+        }
+        Returns: undefined
+      }
+      reopen_quote_commercial: {
+        Args: { target_org_id: string; target_quote_id: string }
+        Returns: undefined
+      }
       save_labor_service: {
         Args: {
           target_amount: number
@@ -1185,6 +1240,23 @@ export type Database = {
           target_service_id: string
         }
         Returns: string
+      }
+      save_quote_commercial: {
+        Args: {
+          target_discount_type: string
+          target_discount_value: number
+          target_items: Json
+          target_org_id: string
+          target_quote_id: string
+        }
+        Returns: {
+          discount_amount: number
+          final_amount: number
+          labor_sale_amount: number
+          parts_cost_amount: number
+          parts_sale_amount: number
+          subtotal_amount: number
+        }[]
       }
       save_supplier: {
         Args: {

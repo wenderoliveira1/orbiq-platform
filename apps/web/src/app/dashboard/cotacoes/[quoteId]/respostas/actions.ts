@@ -599,8 +599,18 @@ export async function finalizePurchasesAction(
   );
 
 
-  return success(
-    quoteId,
-    `${data ?? 0} item(ns) aprovado(s). O orçamento agora está aguardando peças.`,
+  revalidatePath(
+    "/dashboard/comercial",
+  );
+
+  revalidatePath(
+    `/dashboard/comercial/${quoteId}`,
+  );
+
+
+  redirect(
+    `/dashboard/comercial/${quoteId}?ok=${encodeURIComponent(
+      `${data ?? 0} item(ns) confirmado(s). Fornecedores definidos. Agora registre a decisão do cliente.`,
+    )}`,
   );
 }

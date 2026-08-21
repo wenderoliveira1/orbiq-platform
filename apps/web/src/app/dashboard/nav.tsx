@@ -26,6 +26,11 @@ const items = [
     label: "Cotações",
   },
   {
+    href: "/dashboard/comercial",
+    icon: "$",
+    label: "Comercial",
+  },
+  {
     href: "/dashboard/compras",
     icon: "□",
     label: "Compras",
