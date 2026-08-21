@@ -6452,3 +6452,562 @@ a {
 }
 
 /* ORBIQ PHASE 1.5C END */
+
+/* ORBIQ PHASE 1.6A START */
+
+.ops-dashboard {
+  gap: 14px;
+}
+
+.ops-hero {
+  min-height: 116px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 17px;
+  background:
+    linear-gradient(
+      135deg,
+      var(--orbiq-surface) 0%,
+      var(--orbiq-surface-soft) 100%
+    );
+}
+
+.ops-hero::after {
+  content: "O";
+  position: absolute;
+  right: 34px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 110px;
+  line-height: 1;
+  font-weight: 950;
+  color: var(--orbiq-accent);
+  opacity: .035;
+  pointer-events: none;
+}
+
+.ops-hero > div:first-child {
+  display: grid;
+  gap: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.ops-hero h1 {
+  margin: 0;
+  font-size: clamp(23px, 3vw, 34px);
+  letter-spacing: -.04em;
+}
+
+.ops-hero p {
+  margin: 0;
+  color: var(--orbiq-muted);
+  font-size: 9px;
+}
+
+.ops-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  position: relative;
+  z-index: 2;
+}
+
+.ops-primary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.ops-primary-card {
+  min-height: 154px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 9px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 15px;
+  background: var(--orbiq-surface);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform .16s ease,
+    border-color .16s ease,
+    box-shadow .16s ease;
+}
+
+.ops-primary-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--orbiq-border-strong);
+  box-shadow: 0 12px 30px rgba(0,0,0,.08);
+}
+
+.ops-primary-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ops-primary-icon {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--orbiq-surface-soft);
+  color: var(--orbiq-accent);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.ops-primary-arrow {
+  color: var(--orbiq-muted);
+  font-size: 11px;
+}
+
+.ops-primary-card > strong {
+  font-size: 29px;
+  line-height: 1;
+  letter-spacing: -.05em;
+}
+
+.ops-primary-card > div:last-child {
+  display: grid;
+  gap: 3px;
+}
+
+.ops-primary-card > div:last-child > span {
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.ops-primary-card small {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.ops-grid-main {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.8fr)
+    minmax(260px, .8fr);
+  gap: 12px;
+}
+
+.ops-pipeline {
+  padding: 8px 0 2px;
+  display: grid;
+  grid-template-columns:
+    minmax(105px, 1fr)
+    auto
+    minmax(105px, 1fr)
+    auto
+    minmax(105px, 1fr)
+    auto
+    minmax(105px, 1fr)
+    auto
+    minmax(105px, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.ops-pipeline-step {
+  min-height: 92px;
+  padding: 11px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 12px;
+  background: var(--orbiq-surface-soft);
+  color: inherit;
+  text-decoration: none;
+}
+
+a.ops-pipeline-step:hover {
+  border-color: var(--orbiq-border-strong);
+}
+
+.ops-pipeline-step > span {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-muted);
+  font-size: 7px;
+  font-weight: 900;
+}
+
+.ops-pipeline-step > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.ops-pipeline-step strong {
+  font-size: 9px;
+}
+
+.ops-pipeline-step small {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+  line-height: 1.35;
+}
+
+.ops-pipeline-step.is-complete {
+  background: var(--orbiq-success-bg);
+}
+
+.ops-pipeline-connector {
+  color: var(--orbiq-muted);
+  font-size: 10px;
+}
+
+.ops-attention-list {
+  display: grid;
+}
+
+.ops-attention-row {
+  min-height: 57px;
+  padding: 8px 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--orbiq-border);
+  color: inherit;
+  text-decoration: none;
+}
+
+.ops-attention-row:last-child {
+  border-bottom: 0;
+}
+
+.ops-attention-row > div {
+  display: grid;
+  gap: 2px;
+}
+
+.ops-attention-row strong {
+  font-size: 9px;
+}
+
+.ops-attention-row span {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.ops-attention-row b {
+  min-width: 31px;
+  height: 31px;
+  padding: 0 7px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--orbiq-surface-soft);
+  font-size: 10px;
+}
+
+.ops-attention-row.tone-danger b {
+  background: rgba(220,38,38,.08);
+  color: var(--orbiq-danger);
+}
+
+.ops-attention-row.tone-warning b {
+  background: rgba(234,179,8,.09);
+  color: #a16207;
+}
+
+.ops-action-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ops-action {
+  min-height: 74px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 12px;
+  background: var(--orbiq-surface);
+  color: inherit;
+  text-decoration: none;
+}
+
+.ops-action:hover {
+  border-color: var(--orbiq-border-strong);
+  background: var(--orbiq-surface-soft);
+}
+
+.ops-action > span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--orbiq-surface-soft);
+  color: var(--orbiq-accent);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.ops-action > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.ops-action strong {
+  font-size: 8px;
+}
+
+.ops-action small {
+  overflow: hidden;
+  color: var(--orbiq-muted);
+  font-size: 6px;
+  line-height: 1.3;
+}
+
+.ops-action b {
+  color: var(--orbiq-muted);
+  font-size: 9px;
+}
+
+.ops-recent-list {
+  display: grid;
+}
+
+.ops-recent-row {
+  min-height: 68px;
+  padding: 9px 3px;
+  display: grid;
+  grid-template-columns:
+    minmax(150px, 1.2fr)
+    minmax(130px, 1fr)
+    minmax(130px, 1fr)
+    minmax(135px, 1fr)
+    120px
+    100px
+    18px;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--orbiq-border);
+  border-radius: 9px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ops-recent-row:hover {
+  background: var(--orbiq-surface-soft);
+}
+
+.ops-recent-row:last-child {
+  border-bottom: 0;
+}
+
+.ops-recent-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.ops-recent-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 8px;
+}
+
+.ops-recent-row span,
+.ops-recent-row small {
+  overflow: hidden;
+  color: var(--orbiq-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 6px;
+}
+
+.ops-recent-protocol > strong {
+  font-size: 9px;
+}
+
+.ops-recent-plate {
+  font-size: 10px !important;
+  letter-spacing: .05em;
+}
+
+.ops-status-stack {
+  align-items: start;
+}
+
+.ops-status-stack .quote-status {
+  width: fit-content;
+}
+
+.ops-priority {
+  width: fit-content;
+  min-height: 24px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 999px;
+  font-size: 6px !important;
+  font-weight: 800;
+}
+
+.ops-priority.priority-customer_waiting {
+  border-color: rgba(234,179,8,.25);
+  background: rgba(234,179,8,.06);
+  color: #a16207;
+}
+
+.ops-priority.priority-vehicle_stopped {
+  border-color: rgba(220,38,38,.22);
+  background: rgba(220,38,38,.05);
+  color: var(--orbiq-danger);
+}
+
+.ops-recent-value {
+  text-align: right;
+  font-size: 9px !important;
+}
+
+.ops-recent-arrow {
+  color: var(--orbiq-muted);
+}
+
+
+/* ==========================================================
+   RESPONSIVO
+   ========================================================== */
+
+@media (max-width: 1180px) {
+
+  .ops-primary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ops-grid-main {
+    grid-template-columns: 1fr;
+  }
+
+  .ops-pipeline {
+    grid-template-columns:
+      repeat(5, minmax(110px, 1fr));
+    overflow-x: auto;
+  }
+
+  .ops-pipeline-connector {
+    display: none;
+  }
+
+  .ops-action-grid {
+    grid-template-columns:
+      repeat(3, 1fr);
+  }
+
+  .ops-recent-row {
+    grid-template-columns:
+      1.2fr
+      1fr
+      1fr
+      auto;
+  }
+
+  .ops-recent-row > *:nth-child(4),
+  .ops-recent-row > *:nth-child(5) {
+    display: none;
+  }
+}
+
+
+@media (max-width: 760px) {
+
+  .ops-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ops-hero-actions {
+    display: grid;
+  }
+
+  .ops-hero-actions a {
+    width: 100%;
+  }
+
+  .ops-primary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ops-primary-card {
+    min-height: 138px;
+  }
+
+  .ops-action-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+  .ops-recent-row {
+    grid-template-columns:
+      1fr
+      auto;
+    gap: 7px;
+  }
+
+  .ops-recent-row > * {
+    grid-column: 1;
+  }
+
+  .ops-recent-row > *:nth-child(3),
+  .ops-recent-row > *:nth-child(4),
+  .ops-recent-row > *:nth-child(5) {
+    display: grid;
+  }
+
+  .ops-recent-row > .ops-priority {
+    display: inline-flex;
+  }
+
+  .ops-recent-arrow {
+    grid-column: 2;
+    grid-row: 1 / 7;
+    align-self: center;
+  }
+
+  .ops-recent-value {
+    text-align: left;
+  }
+}
+
+
+@media (max-width: 500px) {
+
+  .ops-primary-grid,
+  .ops-action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ops-primary-card {
+    min-height: 125px;
+  }
+}
+
+/* ORBIQ PHASE 1.6A END */
