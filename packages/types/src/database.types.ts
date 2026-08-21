@@ -1392,6 +1392,18 @@ export type Database = {
         Args: { target_org_id: string }
         Returns: string
       }
+      orbiq_has_permission: {
+        Args: { target_org_id: string; target_permission: string }
+        Returns: boolean
+      }
+      orbiq_list_my_permissions: {
+        Args: { target_org_id: string }
+        Returns: string[]
+      }
+      orbiq_permissions_for_role: {
+        Args: { target_role: string }
+        Returns: string[]
+      }
       orbiq_sync_awarded_supplier_items: {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: number
