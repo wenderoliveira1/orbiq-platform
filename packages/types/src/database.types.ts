@@ -9,6 +9,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          actor_type: string
+          actor_user_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+          organization_id: string
+          quote_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_type?: string
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+          organization_id: string
+          quote_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_type?: string
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+          organization_id?: string
+          quote_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_logs_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string
@@ -1256,6 +1310,19 @@ export type Database = {
       orbiq_sync_awarded_supplier_items: {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: number
+      }
+      orbiq_write_audit_log: {
+        Args: {
+          target_action: string
+          target_actor_type: string
+          target_actor_user_id: string
+          target_entity_id: string
+          target_entity_type: string
+          target_metadata: Json
+          target_org_id: string
+          target_quote_id: string
+        }
+        Returns: undefined
       }
       prepare_quote_supplier_requests: {
         Args: {

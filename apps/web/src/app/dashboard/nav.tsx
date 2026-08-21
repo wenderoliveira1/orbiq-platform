@@ -16,6 +16,11 @@ const items = [
     label: "Indicadores",
   },
   {
+    href: "/dashboard/atividade",
+    icon: "◉",
+    label: "Atividade",
+  },
+  {
     href: "/dashboard/orcamentos/novo",
     icon: "+",
     label: "Novo orçamento",
@@ -119,19 +124,15 @@ export function DashboardNav() {
                 item.href ||
               pathname.startsWith(
                 item.href +
-                "/",
+                  "/",
               );
           }
 
 
           return (
             <Link
-              key={
-                item.href
-              }
-              href={
-                item.href
-              }
+              key={item.href}
+              href={item.href}
               className={
                 `orbiq-nav-item${
                   active
