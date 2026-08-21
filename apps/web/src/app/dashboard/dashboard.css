@@ -6425,3 +6425,30 @@ a {
 }
 
 /* ORBIQ PHASE 1.5B END */
+
+/* ORBIQ PHASE 1.5C START */
+
+.commercial-public-share {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.commercial-public-share small {
+  max-width: 150px;
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+@media (max-width: 760px) {
+
+  .commercial-public-share {
+    display: grid;
+  }
+
+  .commercial-public-share button {
+    width: 100%;
+  }
+}
+
+/* ORBIQ PHASE 1.5C END */

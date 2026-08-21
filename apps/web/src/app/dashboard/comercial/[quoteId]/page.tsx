@@ -22,6 +22,10 @@ import {
   CommercialForm,
 } from "./commercial-form";
 
+import {
+  PublicQuoteShare,
+} from "./public-share";
+
 
 type PageProps = {
 
@@ -384,6 +388,12 @@ export default async function CommercialDetailPage({
 
 
         <div className="commercial-detail-heading-actions">
+
+          <PublicQuoteShare
+            quoteId={
+              quote.id
+            }
+          />
 
           <span
             className={

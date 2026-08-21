@@ -455,6 +455,57 @@ export type Database = {
           },
         ]
       }
+      quote_public_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          last_viewed_at: string | null
+          organization_id: string
+          quote_id: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          last_viewed_at?: string | null
+          organization_id: string
+          quote_id: string
+          revoked_at?: string | null
+          token: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          last_viewed_at?: string | null
+          organization_id?: string
+          quote_id?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_public_links_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_public_links_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_services: {
         Row: {
           category: string
@@ -1169,6 +1220,10 @@ export type Database = {
           quote_id: string
         }[]
       }
+      create_quote_public_link: {
+        Args: { target_org_id: string; target_quote_id: string }
+        Returns: string
+      }
       create_quote_v2: {
         Args: {
           items: Json
@@ -1198,6 +1253,10 @@ export type Database = {
         Args: { target_order_id: string; target_org_id: string }
         Returns: string
       }
+      orbiq_sync_awarded_supplier_items: {
+        Args: { target_org_id: string; target_quote_id: string }
+        Returns: number
+      }
       prepare_quote_supplier_requests: {
         Args: {
           target_org_id: string
@@ -1206,6 +1265,15 @@ export type Database = {
         }
         Returns: number
       }
+      public_decide_quote: {
+        Args: {
+          target_decision: string
+          target_reason: string
+          target_token: string
+        }
+        Returns: Json
+      }
+      public_get_quote: { Args: { target_token: string }; Returns: Json }
       receive_purchase_order_all: {
         Args: { target_order_id: string; target_org_id: string }
         Returns: number
@@ -1227,6 +1295,10 @@ export type Database = {
         Returns: undefined
       }
       reopen_quote_commercial: {
+        Args: { target_org_id: string; target_quote_id: string }
+        Returns: undefined
+      }
+      revoke_quote_public_link: {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: undefined
       }
