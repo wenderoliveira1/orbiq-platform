@@ -398,6 +398,16 @@ export default async function CommercialDetailPage({
 
           <Link
             href={
+              `/dashboard/comercial/${quote.id}/cliente`
+            }
+            className="orbiq-primary-button"
+          >
+            Versão do cliente
+          </Link>
+
+
+          <Link
+            href={
               `/dashboard/orcamentos/${quote.id}`
             }
             className="orbiq-secondary-button"
