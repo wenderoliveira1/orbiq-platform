@@ -13,25 +13,6 @@ import {
 } from "../../_lib/current-organization";
 
 
-type Service = {
-  category: string;
-  description: string;
-  needs_part: boolean;
-  labor_amount: null;
-};
-
-
-type Item = {
-  category: string;
-  description: string;
-  quantity: number;
-  unit: string;
-  side: string | null;
-  specification: string | null;
-  notes: string | null;
-};
-
-
 function text(
   value: FormDataEntryValue | null,
 ): string {
@@ -41,7 +22,40 @@ function text(
 }
 
 
-function fail(
+function parseMileage(
+  raw: string,
+): number | null {
+  if (!raw) {
+    return null;
+  }
+
+  const normalized =
+    raw.replace(
+      /\D/g,
+      "",
+    );
+
+  if (!normalized) {
+    return null;
+  }
+
+  const value =
+    Number(
+      normalized,
+    );
+
+  if (
+    !Number.isFinite(value) ||
+    value < 0
+  ) {
+    return null;
+  }
+
+  return Math.trunc(value);
+}
+
+
+function failure(
   message: string,
 ): never {
   redirect(
@@ -52,45 +66,7 @@ function fail(
 }
 
 
-/*
- * CORRECAO TS2366
- *
- * O JSON.parse fica isolado.
- * TODOS os caminhos agora retornam T[] ou never.
- */
-function parseArray<T>(
-  raw: string,
-  label: string,
-): T[] {
-  let parsed: unknown;
-
-  try {
-    parsed =
-      JSON.parse(
-        raw || "[]",
-      );
-  }
-  catch {
-    return fail(
-      `${label} inválidos. Atualize a página e tente novamente.`,
-    );
-  }
-
-  if (
-    !Array.isArray(
-      parsed,
-    )
-  ) {
-    return fail(
-      `${label} inválidos.`,
-    );
-  }
-
-  return parsed as T[];
-}
-
-
-export async function createQuoteAction(
+export async function createQuoteV2Action(
   formData: FormData,
 ): Promise<never> {
   const {
@@ -121,13 +97,16 @@ export async function createQuoteAction(
       formData.get(
         "priority",
       ),
-    );
+    ) ||
+    "normal";
 
 
-  const mileageRaw =
-    text(
-      formData.get(
-        "mileage",
+  const mileage =
+    parseMileage(
+      text(
+        formData.get(
+          "mileage",
+        ),
       ),
     );
 
@@ -140,197 +119,86 @@ export async function createQuoteAction(
     );
 
 
-  const services =
-    parseArray<Service>(
-      text(
-        formData.get(
-          "services_json",
-        ),
+  const servicesRaw =
+    text(
+      formData.get(
+        "services_json",
       ),
-      "Serviços",
     );
 
 
-  const items =
-    parseArray<Item>(
-      text(
-        formData.get(
-          "items_json",
-        ),
+  const itemsRaw =
+    text(
+      formData.get(
+        "items_json",
       ),
-      "Peças",
     );
 
 
   if (!customerId) {
-    return fail(
-      "Selecione o cliente.",
+    return failure(
+      "Selecione um cliente.",
     );
   }
 
 
   if (!vehicleId) {
-    return fail(
-      "Selecione o veículo.",
+    return failure(
+      "Selecione um veículo.",
+    );
+  }
+
+
+  if (mileage === null) {
+    return failure(
+      "Informe a quilometragem do veículo.",
+    );
+  }
+
+
+  let services;
+  let items;
+
+
+  try {
+    services =
+      JSON.parse(
+        servicesRaw ||
+        "[]",
+      );
+
+    items =
+      JSON.parse(
+        itemsRaw ||
+        "[]",
+      );
+  }
+  catch {
+    return failure(
+      "Os dados do orçamento estão inválidos.",
     );
   }
 
 
   if (
-    ![
-      "normal",
-      "customer_waiting",
-      "vehicle_stopped",
-    ].includes(
-      priority,
+    !Array.isArray(
+      services,
+    ) ||
+    services.length === 0
+  ) {
+    return failure(
+      "Adicione pelo menos um serviço.",
+    );
+  }
+
+
+  if (
+    !Array.isArray(
+      items,
     )
   ) {
-    return fail(
-      "Prioridade inválida.",
-    );
-  }
-
-
-  if (
-    services.length === 0 &&
-    items.length === 0
-  ) {
-    return fail(
-      "Adicione pelo menos um serviço ou uma peça.",
-    );
-  }
-
-
-  let mileage:
-    number | null =
-    null;
-
-
-  if (mileageRaw) {
-    const parsedMileage =
-      Number(
-        mileageRaw,
-      );
-
-    if (
-      !Number.isInteger(
-        parsedMileage,
-      ) ||
-      parsedMileage < 0
-    ) {
-      return fail(
-        "Quilometragem inválida.",
-      );
-    }
-
-    mileage =
-      parsedMileage;
-  }
-
-
-  const cleanServices =
-    services
-      .map(
-        (service) => ({
-          category:
-            String(
-              service.category ??
-                "",
-            ).trim() ||
-            "Outros",
-
-          description:
-            String(
-              service.description ??
-                "",
-            ).trim(),
-
-          needs_part:
-            service.needs_part ===
-            true,
-
-          labor_amount:
-            null,
-        }),
-      )
-      .filter(
-        (service) =>
-          service.description.length >
-          0,
-      );
-
-
-  const cleanItems =
-    items
-      .map(
-        (item) => ({
-          category:
-            String(
-              item.category ??
-                "",
-            ).trim() ||
-            "Outros",
-
-          description:
-            String(
-              item.description ??
-                "",
-            ).trim(),
-
-          quantity:
-            Number(
-              item.quantity,
-            ),
-
-          unit:
-            String(
-              item.unit ??
-                "",
-            ).trim() ||
-            "un",
-
-          side:
-            String(
-              item.side ??
-                "",
-            ).trim() ||
-            null,
-
-          specification:
-            String(
-              item.specification ??
-                "",
-            ).trim() ||
-            null,
-
-          notes:
-            String(
-              item.notes ??
-                "",
-            ).trim() ||
-            null,
-        }),
-      )
-      .filter(
-        (item) =>
-          item.description.length >
-            0 &&
-          Number.isFinite(
-            item.quantity,
-          ) &&
-          item.quantity >
-            0,
-      );
-
-
-  if (
-    cleanServices.length ===
-      0 &&
-    cleanItems.length ===
-      0
-  ) {
-    return fail(
-      "Nenhum serviço ou peça válida foi informado.",
+    return failure(
+      "A lista de peças está inválida.",
     );
   }
 
@@ -340,7 +208,7 @@ export async function createQuoteAction(
     error,
   } =
     await supabase.rpc(
-      "create_quote",
+      "create_quote_v2",
       {
         target_org_id:
           organization.id,
@@ -358,20 +226,17 @@ export async function createQuoteAction(
           mileage,
 
         target_notes:
-          notes ||
-          null,
+          notes,
 
-        services:
-          cleanServices,
+        services,
 
-        items:
-          cleanItems,
+        items,
       },
     );
 
 
   if (error) {
-    return fail(
+    return failure(
       `Não foi possível salvar o orçamento: ${error.message}`,
     );
   }
@@ -383,10 +248,10 @@ export async function createQuoteAction(
 
   if (
     !created ||
-    !created.protocol
+    !created.quote_id
   ) {
-    return fail(
-      "O orçamento foi salvo sem um protocolo válido.",
+    return failure(
+      "O PostgreSQL não retornou o orçamento criado.",
     );
   }
 
@@ -396,13 +261,23 @@ export async function createQuoteAction(
   );
 
   revalidatePath(
-    "/dashboard/orcamentos/novo",
+    "/dashboard/orcamentos",
+  );
+
+  revalidatePath(
+    "/dashboard/cotacoes",
+  );
+
+  revalidatePath(
+    "/dashboard/compras",
+  );
+
+  revalidatePath(
+    "/dashboard/execucao",
   );
 
 
   redirect(
-    `/dashboard/orcamentos/novo?created=${encodeURIComponent(
-      created.protocol,
-    )}`,
+    `/dashboard/orcamentos/${created.quote_id}?created=1`,
   );
 }

@@ -4443,3 +4443,630 @@ a {
 }
 
 /* ORBIQ PHASE 1.4B END */
+
+/* ORBIQ PHASE 1.4C START */
+
+.quote-builder {
+  display: grid;
+  gap: 14px;
+}
+
+.quote-builder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.quote-builder-header h1 {
+  margin: 6px 0 4px;
+  font-size: clamp(30px, 4vw, 44px);
+  letter-spacing: -.045em;
+}
+
+.quote-builder-header p {
+  margin: 0;
+  color: var(--orbiq-muted);
+  font-size: 9px;
+}
+
+.quote-builder-total {
+  min-width: 160px;
+  padding: 14px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 14px;
+  background: var(--orbiq-surface);
+  text-align: right;
+}
+
+.quote-builder-total span,
+.quote-builder-total small {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+}
+
+.quote-builder-total strong {
+  font-size: 20px;
+}
+
+.quote-builder-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr .7fr;
+  gap: 9px;
+}
+
+.quote-builder label {
+  display: grid;
+  gap: 5px;
+}
+
+.quote-builder label > span {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.quote-builder input,
+.quote-builder select,
+.quote-builder textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 9px;
+  outline: none;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-text);
+  font: inherit;
+  font-size: 9px;
+}
+
+.quote-builder textarea {
+  resize: vertical;
+}
+
+.quote-builder input:focus,
+.quote-builder select:focus,
+.quote-builder textarea:focus {
+  border-color: rgba(227, 6, 19, .38);
+  box-shadow: 0 0 0 3px rgba(227, 6, 19, .05);
+}
+
+.quote-builder-vehicle-preview {
+  margin-top: 11px;
+  padding: 11px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 11px;
+  background: var(--orbiq-surface-soft);
+}
+
+.quote-builder-vehicle-preview > div {
+  display: grid;
+  gap: 3px;
+}
+
+.quote-builder-vehicle-preview strong {
+  font-size: 10px;
+}
+
+.quote-builder-vehicle-preview span:last-child {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+}
+
+.quote-priority-group {
+  margin-top: 14px;
+  display: grid;
+  gap: 7px;
+}
+
+.quote-priority-group > span {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.quote-priority-group > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.quote-priority-group label {
+  position: relative;
+  padding: 11px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 11px;
+  background: var(--orbiq-surface-soft);
+  cursor: pointer;
+}
+
+.quote-priority-group input {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: auto;
+  min-height: auto;
+}
+
+.quote-priority-group strong {
+  font-size: 9px;
+}
+
+.quote-priority-group small {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.quote-builder-section-description {
+  margin: 4px 0 0;
+  color: var(--orbiq-muted);
+  font-size: 8px;
+}
+
+.quote-labor-browser {
+  display: grid;
+  gap: 10px;
+}
+
+.quote-labor-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.quote-labor-search input {
+  flex: 1;
+}
+
+.quote-labor-search span {
+  white-space: nowrap;
+  color: var(--orbiq-muted);
+  font-size: 8px;
+}
+
+.quote-labor-catalog {
+  max-height: 320px;
+  overflow: auto;
+  padding-right: 3px;
+  display: grid;
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+  gap: 7px;
+}
+
+.quote-labor-card {
+  min-height: 105px;
+  padding: 11px;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 11px;
+  background: var(--orbiq-surface-soft);
+  color: var(--orbiq-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.quote-labor-card:hover:not(:disabled) {
+  border-color: var(--orbiq-border-strong);
+  transform: translateY(-1px);
+}
+
+.quote-labor-card.added {
+  border-color: rgba(21, 128, 61, .25);
+  background: var(--orbiq-success-bg);
+}
+
+.quote-labor-card span {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.quote-labor-card strong {
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.quote-labor-card b {
+  margin-top: auto;
+  font-size: 11px;
+}
+
+.quote-labor-card small {
+  color: var(--orbiq-success);
+  font-size: 7px;
+  font-weight: 800;
+}
+
+.quote-manual-service {
+  margin-top: 12px;
+  padding: 11px;
+  display: grid;
+  grid-template-columns:
+    minmax(145px, .8fr)
+    minmax(190px, 1.4fr)
+    minmax(140px, 1fr)
+    115px
+    auto;
+  gap: 7px;
+  align-items: center;
+  border: 1px dashed var(--orbiq-border-strong);
+  border-radius: 12px;
+}
+
+.quote-manual-service > div {
+  display: grid;
+  gap: 3px;
+}
+
+.quote-manual-service > div strong {
+  font-size: 9px;
+}
+
+.quote-selected-services {
+  margin-top: 15px;
+  display: grid;
+  gap: 8px;
+}
+
+.quote-selected-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.quote-selected-title strong {
+  font-size: 10px;
+}
+
+.quote-selected-title span {
+  min-width: 25px;
+  min-height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--orbiq-surface-soft);
+  color: var(--orbiq-muted);
+  font-size: 8px;
+}
+
+.quote-selected-service {
+  padding: 12px;
+  display: grid;
+  gap: 11px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 12px;
+  background: var(--orbiq-surface-soft);
+}
+
+.quote-selected-service-heading {
+  display: grid;
+  grid-template-columns: 1fr auto 28px;
+  gap: 12px;
+  align-items: center;
+}
+
+.quote-selected-service-heading h3 {
+  margin: 4px 0 0;
+  font-size: 11px;
+}
+
+.quote-selected-service-price {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+
+.quote-selected-service-price strong {
+  font-size: 12px;
+}
+
+.quote-selected-service-price span {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.quote-remove-button {
+  width: 27px;
+  height: 27px;
+  min-height: 27px !important;
+  padding: 0 !important;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--orbiq-border) !important;
+  border-radius: 8px !important;
+  background: var(--orbiq-surface) !important;
+  color: var(--orbiq-muted) !important;
+  cursor: pointer;
+  font-size: 15px !important;
+}
+
+.quote-needs-part {
+  padding: 9px;
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 9px;
+  background: var(--orbiq-surface);
+}
+
+.quote-needs-part input {
+  width: 15px;
+  height: 15px;
+  min-height: 15px;
+  flex: 0 0 15px;
+}
+
+.quote-needs-part > span {
+  display: grid;
+  gap: 2px;
+}
+
+.quote-needs-part strong {
+  color: var(--orbiq-text);
+  font-size: 8px;
+}
+
+.quote-needs-part small {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.quote-service-part-grid {
+  display: grid;
+  grid-template-columns:
+    1.5fr
+    1.1fr
+    75px
+    90px
+    1fr
+    1fr;
+  gap: 7px;
+}
+
+.quote-builder-empty {
+  min-height: 130px;
+  margin-top: 14px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  text-align: center;
+  border: 1px dashed var(--orbiq-border);
+  border-radius: 12px;
+}
+
+.quote-builder-empty.compact {
+  min-height: 90px;
+}
+
+.quote-builder-empty > span {
+  font-size: 20px;
+  color: var(--orbiq-muted);
+}
+
+.quote-builder-empty strong {
+  font-size: 10px;
+}
+
+.quote-builder-empty small {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+}
+
+.quote-extra-item-form {
+  display: grid;
+  grid-template-columns:
+    1.3fr
+    1fr
+    65px
+    90px
+    1fr
+    1fr
+    auto;
+  gap: 7px;
+}
+
+.quote-parts-summary {
+  margin-top: 13px;
+  display: grid;
+  gap: 5px;
+}
+
+.quote-parts-summary article {
+  min-height: 55px;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 9px;
+  background: var(--orbiq-surface-soft);
+}
+
+.quote-parts-summary article > div {
+  display: grid;
+  gap: 2px;
+}
+
+.quote-parts-summary strong {
+  font-size: 9px;
+}
+
+.quote-parts-summary small,
+.quote-parts-summary article > span {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.quote-builder-notes {
+  min-height: 110px;
+}
+
+.quote-builder-finish {
+  position: sticky;
+  bottom: 12px;
+  z-index: 10;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns:
+    110px
+    130px
+    150px
+    1fr;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--orbiq-border-strong);
+  border-radius: 14px;
+  background: var(--orbiq-surface);
+  box-shadow: 0 12px 38px rgba(0,0,0,.12);
+}
+
+.quote-builder-finish > div {
+  display: grid;
+  gap: 2px;
+}
+
+.quote-builder-finish span {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.quote-builder-finish strong {
+  font-size: 11px;
+}
+
+.quote-save-button {
+  justify-self: end;
+  min-width: 180px;
+}
+
+.quote-save-button:disabled {
+  opacity: .42;
+  cursor: not-allowed;
+}
+
+
+@media (max-width: 1150px) {
+
+  .quote-labor-catalog {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .quote-manual-service {
+    grid-template-columns:
+      1fr
+      1fr;
+  }
+
+  .quote-manual-service > div {
+    grid-column: 1 / -1;
+  }
+
+  .quote-service-part-grid {
+    grid-template-columns:
+      repeat(3, 1fr);
+  }
+
+  .quote-extra-item-form {
+    grid-template-columns:
+      repeat(3, 1fr);
+  }
+}
+
+
+@media (max-width: 800px) {
+
+  .quote-builder-header {
+    display: grid;
+  }
+
+  .quote-builder-total {
+    width: 100%;
+    text-align: left;
+  }
+
+  .quote-builder-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-priority-group > div {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-labor-catalog {
+    grid-template-columns: 1fr;
+    max-height: 430px;
+  }
+
+  .quote-manual-service {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-service-part-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-extra-item-form {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-builder-finish {
+    position: static;
+    grid-template-columns:
+      repeat(3, 1fr);
+  }
+
+  .quote-save-button {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-self: stretch;
+  }
+}
+
+
+@media (max-width: 500px) {
+
+  .quote-selected-service-heading {
+    grid-template-columns:
+      1fr
+      auto;
+  }
+
+  .quote-selected-service-price {
+    grid-row: 2;
+    text-align: left;
+  }
+
+  .quote-remove-button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .quote-builder-finish {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-save-button {
+    grid-column: auto;
+  }
+}
+
+/* ORBIQ PHASE 1.4C END */

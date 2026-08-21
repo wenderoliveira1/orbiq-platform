@@ -3,14 +3,13 @@ import {
 } from "../../_lib/current-organization";
 
 import {
-  QuoteForm,
-} from "./quote-form";
+  QuoteBuilder,
+} from "./quote-builder";
 
 
 type SearchParams =
   Promise<{
     error?: string;
-    created?: string;
   }>;
 
 
@@ -19,7 +18,7 @@ export default async function NewQuotePage({
 }: {
   searchParams: SearchParams;
 }) {
-  const params =
+  const query =
     await searchParams;
 
 
@@ -33,10 +32,13 @@ export default async function NewQuotePage({
   const [
     customersResult,
     vehiclesResult,
+    laborResult,
   ] =
     await Promise.all([
       supabase
-        .from("customers")
+        .from(
+          "customers",
+        )
         .select(
           "id, name, phone",
         )
@@ -52,9 +54,11 @@ export default async function NewQuotePage({
         ),
 
       supabase
-        .from("vehicles")
+        .from(
+          "vehicles",
+        )
         .select(
-          "id, customer_id, plate, brand, model, version, mileage",
+          "id, customer_id, plate, brand, model, version, model_year, mileage",
         )
         .eq(
           "organization_id",
@@ -66,6 +70,28 @@ export default async function NewQuotePage({
             ascending: true,
           },
         ),
+
+      supabase
+        .from(
+          "labor_services",
+        )
+        .select(
+          "id, description, category, amount",
+        )
+        .eq(
+          "organization_id",
+          organization.id,
+        )
+        .eq(
+          "active",
+          true,
+        )
+        .order(
+          "description",
+          {
+            ascending: true,
+          },
+        ),
     ]);
 
 
@@ -73,7 +99,7 @@ export default async function NewQuotePage({
     customersResult.error
   ) {
     throw new Error(
-      `Falha ao carregar clientes: ${customersResult.error.message}`,
+      customersResult.error.message,
     );
   }
 
@@ -82,73 +108,37 @@ export default async function NewQuotePage({
     vehiclesResult.error
   ) {
     throw new Error(
-      `Falha ao carregar veículos: ${vehiclesResult.error.message}`,
+      vehiclesResult.error.message,
+    );
+  }
+
+
+  if (
+    laborResult.error
+  ) {
+    throw new Error(
+      laborResult.error.message,
     );
   }
 
 
   return (
-    <div className="orbiq-page">
-      <section className="orbiq-page-heading">
-        <div>
-          <span className="orbiq-eyebrow">
-            NOVO ORÇAMENTO
-          </span>
-
-          <h1>
-            Atendimento rápido
-          </h1>
-
-          <p>
-            Cliente, veículo, serviços e peças em um único fluxo.
-          </p>
-        </div>
-      </section>
-
-
-      {params.error ? (
-        <div className="orbiq-alert error">
-          {params.error}
-        </div>
-      ) : null}
-
-
-      {params.created ? (
-        <div className="orbiq-created-banner">
-          <div>
-            <span className="orbiq-eyebrow">
-              ORÇAMENTO SALVO
-            </span>
-
-            <strong>
-              {params.created}
-            </strong>
-
-            <span>
-              O formulário já está pronto para um novo atendimento.
-            </span>
-          </div>
-
-          <a
-            href="/dashboard/orcamentos/novo"
-            className="orbiq-secondary-button"
-          >
-            Realizar novo orçamento
-          </a>
-        </div>
-      ) : null}
-
-
-      <QuoteForm
-        customers={
-          customersResult.data ??
-          []
-        }
-        vehicles={
-          vehiclesResult.data ??
-          []
-        }
-      />
-    </div>
+    <QuoteBuilder
+      customers={
+        customersResult.data ??
+        []
+      }
+      vehicles={
+        vehiclesResult.data ??
+        []
+      }
+      laborServices={
+        laborResult.data ??
+        []
+      }
+      errorMessage={
+        query.error
+      }
+    />
   );
 }

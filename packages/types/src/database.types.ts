@@ -1126,6 +1126,22 @@ export type Database = {
           quote_id: string
         }[]
       }
+      create_quote_v2: {
+        Args: {
+          items: Json
+          services: Json
+          target_customer_id: string
+          target_mileage: number
+          target_notes: string
+          target_org_id: string
+          target_priority: string
+          target_vehicle_id: string
+        }
+        Returns: {
+          protocol: string
+          quote_id: string
+        }[]
+      }
       finalize_quote_supplier_awards: {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: number

@@ -1,4 +1,4 @@
-﻿node_modules/
+node_modules/
 .pnpm-store/
 
 .next/
@@ -28,3 +28,14 @@ Thumbs.db
 *.keystore
 google-services.json
 GoogleService-Info.plist
+# ORBIQ LOCAL DEVELOPMENT
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
+node_modules/
+**/node_modules/
+.next/
+**/.next/
