@@ -21,6 +21,11 @@ const items = [
     label: "Atividade",
   },
   {
+    href: "/dashboard/equipe",
+    icon: "♙",
+    label: "Equipe",
+  },
+  {
     href: "/dashboard/orcamentos/novo",
     icon: "+",
     label: "Novo orçamento",
@@ -84,6 +89,7 @@ export function DashboardNav() {
       className="orbiq-nav"
       aria-label="Navegação principal"
     >
+
       {items.map(
         (item) => {
 
@@ -124,7 +130,7 @@ export function DashboardNav() {
                 item.href ||
               pathname.startsWith(
                 item.href +
-                  "/",
+                "/",
               );
           }
 
@@ -141,6 +147,7 @@ export function DashboardNav() {
                 }`
               }
             >
+
               <span
                 className="orbiq-nav-icon"
                 aria-hidden="true"
@@ -148,13 +155,16 @@ export function DashboardNav() {
                 {item.icon}
               </span>
 
+
               <span>
                 {item.label}
               </span>
+
             </Link>
           );
         },
       )}
+
     </nav>
   );
 }

@@ -7928,3 +7928,518 @@ a.ops-pipeline-step:hover {
 }
 
 /* ORBIQ HOTFIX 1.6C.1 END */
+
+/* ORBIQ PHASE 1.7A START */
+
+.team-page {
+  gap: 14px;
+}
+
+.team-heading {
+  min-height: 108px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 17px;
+  background:
+    linear-gradient(
+      135deg,
+      var(--orbiq-surface),
+      var(--orbiq-surface-soft)
+    );
+}
+
+.team-heading > div {
+  display: grid;
+  gap: 4px;
+}
+
+.team-heading h1 {
+  margin: 0;
+  font-size: clamp(25px, 3vw, 36px);
+  letter-spacing: -.04em;
+}
+
+.team-heading p {
+  margin: 0;
+  color: var(--orbiq-muted);
+  font-size: 9px;
+}
+
+.team-current-role {
+  min-width: 145px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 12px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.team-current-role strong {
+  color: var(--orbiq-text);
+  font-size: 10px;
+}
+
+.team-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.team-metrics article {
+  min-height: 104px;
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 14px;
+  background: var(--orbiq-surface);
+}
+
+.team-metrics span {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.team-metrics strong {
+  font-size: 25px;
+}
+
+.team-metrics small {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.team-invite-form {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1fr)
+    minmax(170px, 240px)
+    auto;
+  gap: 9px;
+  align-items: end;
+}
+
+.team-invite-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.team-invite-form label > span {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.team-invite-form input,
+.team-invite-form select,
+.team-role-form select {
+  width: 100%;
+  min-height: 41px;
+  padding: 0 10px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 10px;
+  outline: none;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-text);
+  font: inherit;
+  font-size: 9px;
+}
+
+.team-invite-form input:focus,
+.team-invite-form select:focus,
+.team-role-form select:focus {
+  border-color: var(--orbiq-border-strong);
+}
+
+.team-invite-created {
+  padding: 16px;
+  display: grid;
+  grid-template-columns:
+    minmax(200px, .8fr)
+    minmax(280px, 1.5fr)
+    auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid rgba(21,128,61,.25);
+  border-radius: 14px;
+  background: var(--orbiq-success-bg);
+}
+
+.team-invite-created > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.team-invite-created > div:first-child > span {
+  color: var(--orbiq-success);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.team-invite-created strong {
+  font-size: 10px;
+}
+
+.team-invite-created p {
+  margin: 0;
+  color: var(--orbiq-muted);
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+.team-invite-created code {
+  overflow: hidden;
+  padding: 10px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 9px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 7px;
+}
+
+.team-invite-created-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.team-list,
+.team-pending-list {
+  display: grid;
+}
+
+.team-member-row {
+  min-height: 88px;
+  padding: 10px 2px;
+  display: grid;
+  grid-template-columns:
+    38px
+    minmax(180px, 1.3fr)
+    minmax(150px, .9fr)
+    90px
+    minmax(250px, auto);
+  gap: 11px;
+  align-items: center;
+  border-bottom: 1px solid var(--orbiq-border);
+}
+
+.team-member-row:last-child {
+  border-bottom: 0;
+}
+
+.team-member-row.is-disabled {
+  opacity: .58;
+}
+
+.team-avatar {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--orbiq-surface-soft);
+  color: var(--orbiq-text);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.team-member-person {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.team-member-person > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.team-member-person strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+}
+
+.team-member-person > span,
+.team-member-person small {
+  overflow: hidden;
+  color: var(--orbiq-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 7px;
+}
+
+.team-you {
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: var(--orbiq-surface-soft);
+  color: var(--orbiq-accent) !important;
+  font-size: 6px !important;
+  font-weight: 850;
+}
+
+.team-role-view {
+  display: grid;
+  gap: 2px;
+}
+
+.team-role-view > span {
+  color: var(--orbiq-muted);
+  font-size: 6px;
+}
+
+.team-role-view > strong {
+  font-size: 8px;
+}
+
+.team-role-view > small {
+  color: var(--orbiq-muted);
+  font-size: 6px;
+  line-height: 1.35;
+}
+
+.team-status {
+  width: fit-content;
+  min-height: 25px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 6px;
+  font-weight: 850;
+}
+
+.team-status.status-active {
+  border: 1px solid rgba(21,128,61,.2);
+  background: var(--orbiq-success-bg);
+  color: var(--orbiq-success);
+}
+
+.team-status.status-disabled {
+  border: 1px solid rgba(185,28,28,.18);
+  background: var(--orbiq-danger-bg);
+  color: var(--orbiq-danger);
+}
+
+.team-member-actions {
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.team-role-form {
+  display: grid;
+  grid-template-columns: 145px auto;
+  gap: 6px;
+}
+
+.team-disable-button {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(185,28,28,.18);
+  border-radius: 11px;
+  background: transparent;
+  color: var(--orbiq-danger);
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.team-protected {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.team-disabled-count {
+  margin: 12px 0 0;
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.team-pending-row {
+  min-height: 66px;
+  padding: 9px 2px;
+  display: grid;
+  grid-template-columns:
+    minmax(200px, 1fr)
+    minmax(140px, .7fr)
+    auto;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid var(--orbiq-border);
+}
+
+.team-pending-row:last-child {
+  border-bottom: 0;
+}
+
+.team-pending-row > div {
+  display: grid;
+  gap: 3px;
+}
+
+.team-pending-row strong {
+  font-size: 8px;
+}
+
+.team-pending-row span {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.team-role-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.team-role-grid article {
+  min-height: 88px;
+  padding: 12px;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 11px;
+  background: var(--orbiq-surface-soft);
+}
+
+.team-role-grid span {
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.team-role-grid p {
+  margin: 0;
+  color: var(--orbiq-muted);
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+.team-permission-next,
+.team-readonly-note {
+  margin-top: 12px;
+  padding: 12px;
+  display: grid;
+  gap: 3px;
+  border: 1px dashed var(--orbiq-border-strong);
+  border-radius: 11px;
+}
+
+.team-permission-next strong,
+.team-readonly-note strong {
+  font-size: 8px;
+}
+
+.team-permission-next span,
+.team-readonly-note span {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+
+@media (max-width: 1100px) {
+
+  .team-metrics {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+  .team-member-row {
+    grid-template-columns:
+      38px
+      minmax(160px, 1fr)
+      minmax(140px, .8fr)
+      auto;
+  }
+
+  .team-member-actions {
+    grid-column: 2 / -1;
+    justify-content: flex-start;
+  }
+
+  .team-invite-created {
+    grid-template-columns: 1fr;
+  }
+
+  .team-invite-created-actions {
+    justify-content: flex-start;
+  }
+}
+
+
+@media (max-width: 760px) {
+
+  .team-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .team-current-role {
+    width: 100%;
+  }
+
+  .team-invite-form {
+    grid-template-columns: 1fr;
+  }
+
+  .team-invite-form button {
+    width: 100%;
+  }
+
+  .team-member-row {
+    grid-template-columns:
+      38px
+      minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .team-role-view,
+  .team-status,
+  .team-member-actions {
+    grid-column: 2;
+  }
+
+  .team-member-actions {
+    display: grid;
+  }
+
+  .team-role-form {
+    grid-template-columns: 1fr;
+  }
+
+  .team-role-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .team-pending-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+@media (max-width: 500px) {
+
+  .team-metrics,
+  .team-role-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ORBIQ PHASE 1.7A END */

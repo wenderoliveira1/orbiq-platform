@@ -1,39 +1,199 @@
-'use server'
+"use server";
 
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import {
+  redirect,
+} from "next/navigation";
 
-export async function signup(formData: FormData) {
-  const name = String(formData.get('name') ?? '').trim()
-  const email = String(formData.get('email') ?? '').trim()
-  const password = String(formData.get('password') ?? '')
+import {
+  createClient,
+} from "@/lib/supabase/server";
 
-  if (name.length < 2) {
-    redirect('/signup?error=' + encodeURIComponent('Informe seu nome.'))
+
+function safeNext(
+  value:
+    FormDataEntryValue |
+    null,
+): string {
+
+  const next =
+    String(
+      value ??
+      "",
+    ).trim();
+
+
+  if (
+    next.startsWith(
+      "/convite/",
+    ) &&
+    !next.startsWith(
+      "//",
+    )
+  ) {
+
+    return next;
   }
 
-  if (!email || password.length < 6) {
-    redirect('/signup?error=' + encodeURIComponent('Informe um e-mail válido e senha com pelo menos 6 caracteres.'))
+
+  return "/onboarding";
+}
+
+
+function signupErrorUrl(
+  message:
+    string,
+
+  next:
+    string,
+): string {
+
+  return (
+    "/signup?error=" +
+    encodeURIComponent(
+      message,
+    ) +
+    (
+      next !==
+      "/onboarding"
+        ? "&next=" +
+          encodeURIComponent(
+            next,
+          )
+        : ""
+    )
+  );
+}
+
+
+export async function signup(
+  formData:
+    FormData,
+): Promise<never> {
+
+  const name =
+    String(
+      formData.get(
+        "name",
+      ) ??
+      "",
+    ).trim();
+
+
+  const email =
+    String(
+      formData.get(
+        "email",
+      ) ??
+      "",
+    ).trim();
+
+
+  const password =
+    String(
+      formData.get(
+        "password",
+      ) ??
+      "",
+    );
+
+
+  const next =
+    safeNext(
+      formData.get(
+        "next",
+      ),
+    );
+
+
+  if (
+    name.length <
+    2
+  ) {
+
+    redirect(
+      signupErrorUrl(
+        "Informe seu nome.",
+        next,
+      ),
+    );
   }
 
-  const supabase = await createClient()
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: name,
+
+  if (
+    !email ||
+    password.length <
+    6
+  ) {
+
+    redirect(
+      signupErrorUrl(
+        "Informe um e-mail válido e senha com pelo menos 6 caracteres.",
+        next,
+      ),
+    );
+  }
+
+
+  const supabase =
+    await createClient();
+
+
+  const {
+    data,
+    error,
+  } =
+    await supabase.auth.signUp({
+
+      email,
+
+      password,
+
+      options: {
+
+        data: {
+          full_name:
+            name,
+        },
       },
-    },
-  })
+    });
+
 
   if (error) {
-    redirect('/signup?error=' + encodeURIComponent(error.message))
+
+    redirect(
+      signupErrorUrl(
+        error.message,
+        next,
+      ),
+    );
   }
 
-  if (!data.session) {
-    redirect('/login?message=' + encodeURIComponent('Conta criada. Confirme seu e-mail para continuar.'))
+
+  if (
+    !data.session
+  ) {
+
+    const loginNext =
+      next !==
+      "/onboarding"
+        ? "&next=" +
+          encodeURIComponent(
+            next,
+          )
+        : "";
+
+
+    redirect(
+      "/login?message=" +
+      encodeURIComponent(
+        "Conta criada. Confirme seu e-mail para continuar.",
+      ) +
+      loginNext,
+    );
   }
 
-  redirect('/onboarding')
+
+  redirect(
+    next,
+  );
 }

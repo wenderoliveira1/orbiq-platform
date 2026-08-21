@@ -189,6 +189,53 @@ export type Database = {
           },
         ]
       }
+      organization_invites: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          organization_id: string
+          revoked_at: string | null
+          role: string
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by?: string | null
+          organization_id: string
+          revoked_at?: string | null
+          role: string
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          organization_id?: string
+          revoked_at?: string | null
+          role?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_invites_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -1234,6 +1281,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_organization_invite: {
+        Args: { target_token: string }
+        Returns: Json
+      }
       approve_quote_commercial: {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: string
@@ -1257,6 +1308,14 @@ export type Database = {
           organization_slug: string
         }
         Returns: string
+      }
+      create_organization_invite: {
+        Args: {
+          target_email: string
+          target_org_id: string
+          target_role: string
+        }
+        Returns: Json
       }
       create_quote: {
         Args: {
@@ -1303,8 +1362,34 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { target_org_id: string }; Returns: boolean }
+      list_organization_invites: {
+        Args: { target_org_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          expires_at: string
+          invite_id: string
+          role: string
+        }[]
+      }
+      list_organization_team: {
+        Args: { target_org_id: string }
+        Returns: {
+          email: string
+          full_name: string
+          joined_at: string
+          phone: string
+          role: string
+          status: string
+          user_id: string
+        }[]
+      }
       mark_purchase_order_ordered: {
         Args: { target_order_id: string; target_org_id: string }
+        Returns: string
+      }
+      orbiq_current_org_role: {
+        Args: { target_org_id: string }
         Returns: string
       }
       orbiq_sync_awarded_supplier_items: {
@@ -1340,6 +1425,10 @@ export type Database = {
         }
         Returns: Json
       }
+      public_get_organization_invite: {
+        Args: { target_token: string }
+        Returns: Json
+      }
       public_get_quote: { Args: { target_token: string }; Returns: Json }
       receive_purchase_order_all: {
         Args: { target_order_id: string; target_org_id: string }
@@ -1363,6 +1452,10 @@ export type Database = {
       }
       reopen_quote_commercial: {
         Args: { target_org_id: string; target_quote_id: string }
+        Returns: undefined
+      }
+      revoke_organization_invite: {
+        Args: { target_invite_id: string; target_org_id: string }
         Returns: undefined
       }
       revoke_quote_public_link: {
@@ -1426,6 +1519,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_organization_member_status: {
+        Args: {
+          target_org_id: string
+          target_status: string
+          target_user_id: string
+        }
+        Returns: undefined
+      }
       set_supplier_active: {
         Args: {
           target_active: boolean
@@ -1453,6 +1554,14 @@ export type Database = {
       sync_quote_work_order: {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: string
+      }
+      update_organization_member_role: {
+        Args: {
+          target_org_id: string
+          target_role: string
+          target_user_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
