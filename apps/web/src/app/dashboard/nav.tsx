@@ -11,6 +11,11 @@ const items = [
     label: "Visão geral",
   },
   {
+    href: "/dashboard/indicadores",
+    icon: "◒",
+    label: "Indicadores",
+  },
+  {
     href: "/dashboard/orcamentos/novo",
     icon: "+",
     label: "Novo orçamento",
@@ -64,6 +69,7 @@ const items = [
 
 
 export function DashboardNav() {
+
   const pathname =
     usePathname();
 
@@ -75,6 +81,7 @@ export function DashboardNav() {
     >
       {items.map(
         (item) => {
+
           let active =
             false;
 
@@ -112,7 +119,7 @@ export function DashboardNav() {
                 item.href ||
               pathname.startsWith(
                 item.href +
-                  "/",
+                "/",
               );
           }
 
