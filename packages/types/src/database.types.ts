@@ -1388,6 +1388,10 @@ export type Database = {
         Args: { target_order_id: string; target_org_id: string }
         Returns: string
       }
+      orbiq_assert_permission: {
+        Args: { target_org_id: string; target_permission: string }
+        Returns: undefined
+      }
       orbiq_current_org_role: {
         Args: { target_org_id: string }
         Returns: string
