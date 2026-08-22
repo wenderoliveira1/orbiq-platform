@@ -1392,6 +1392,10 @@ export type Database = {
         Args: { target_org_id: string }
         Returns: string
       }
+      orbiq_has_any_permission: {
+        Args: { target_org_id: string; target_permissions: string[] }
+        Returns: boolean
+      }
       orbiq_has_permission: {
         Args: { target_org_id: string; target_permission: string }
         Returns: boolean
