@@ -190,6 +190,19 @@ const items = [
     permission:
       "vehicles.manage",
   },
+  {
+    href:
+      "/dashboard/configuracoes",
+
+    icon:
+      "⚙",
+
+    label:
+      "Configurações",
+
+    permission:
+      "settings.manage",
+  },
 ];
 
 

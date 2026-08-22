@@ -271,6 +271,74 @@ export type Database = {
           },
         ]
       }
+      organization_settings: {
+        Row: {
+          address_complement: string | null
+          address_line: string | null
+          address_number: string | null
+          city: string | null
+          created_at: string
+          default_parts_margin_percent: number
+          default_quote_notes: string | null
+          district: string | null
+          email: string | null
+          legal_name: string | null
+          organization_id: string
+          phone: string | null
+          postal_code: string | null
+          quote_validity_days: number
+          state: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address_complement?: string | null
+          address_line?: string | null
+          address_number?: string | null
+          city?: string | null
+          created_at?: string
+          default_parts_margin_percent?: number
+          default_quote_notes?: string | null
+          district?: string | null
+          email?: string | null
+          legal_name?: string | null
+          organization_id: string
+          phone?: string | null
+          postal_code?: string | null
+          quote_validity_days?: number
+          state?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address_complement?: string | null
+          address_line?: string | null
+          address_number?: string | null
+          city?: string | null
+          created_at?: string
+          default_parts_margin_percent?: number
+          default_quote_notes?: string | null
+          district?: string | null
+          email?: string | null
+          legal_name?: string | null
+          organization_id?: string
+          phone?: string | null
+          postal_code?: string | null
+          quote_validity_days?: number
+          state?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           cnpj: string | null
@@ -1582,6 +1650,28 @@ export type Database = {
           target_user_id: string
         }
         Returns: undefined
+      }
+      update_organization_settings: {
+        Args: {
+          target_address_complement: string
+          target_address_line: string
+          target_address_number: string
+          target_city: string
+          target_cnpj: string
+          target_default_parts_margin_percent: number
+          target_default_quote_notes: string
+          target_district: string
+          target_email: string
+          target_legal_name: string
+          target_name: string
+          target_org_id: string
+          target_phone: string
+          target_postal_code: string
+          target_quote_validity_days: number
+          target_state: string
+          target_whatsapp: string
+        }
+        Returns: Json
       }
     }
     Enums: {

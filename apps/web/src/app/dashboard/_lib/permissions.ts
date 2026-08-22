@@ -32,6 +32,7 @@ export const ALL_PERMISSIONS = [
   "execution.manage",
   "labor.manage",
   "suppliers.manage",
+  "settings.manage",
 ] as const;
 
 
@@ -111,18 +112,12 @@ export function normalizeRole(
 
 
   if (
-    value ===
-      "owner" ||
-    value ===
-      "admin" ||
-    value ===
-      "manager" ||
-    value ===
-      "estimator" ||
-    value ===
-      "technician" ||
-    value ===
-      "viewer"
+    value === "owner" ||
+    value === "admin" ||
+    value === "manager" ||
+    value === "estimator" ||
+    value === "technician" ||
+    value === "viewer"
   ) {
 
     return value;
