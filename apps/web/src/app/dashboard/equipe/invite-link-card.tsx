@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useEffect,
   useState,
 } from "react";
 
@@ -19,15 +18,6 @@ export function InviteLinkCard({
 
 
   const [
-    url,
-    setUrl,
-  ] =
-    useState(
-      relative,
-    );
-
-
-  const [
     copied,
     setCopied,
   ] =
@@ -36,26 +26,19 @@ export function InviteLinkCard({
     );
 
 
-  useEffect(
-    () => {
-
-      setUrl(
-        window.location.origin +
-        relative,
-      );
-    },
-    [
-      relative,
-    ],
-  );
-
-
   async function copy() {
 
     try {
 
+      const absoluteUrl =
+        new URL(
+          relative,
+          window.location.origin,
+        ).toString();
+
+
       await navigator.clipboard.writeText(
-        url,
+        absoluteUrl,
       );
 
 
@@ -102,7 +85,7 @@ export function InviteLinkCard({
 
 
       <code>
-        {url}
+        {relative}
       </code>
 
 

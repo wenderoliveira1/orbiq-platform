@@ -19,36 +19,6 @@ type SearchParams =
   }>;
 
 
-function workOrderStatus(
-  value:
-    string,
-): string {
-
-  const labels:
-    Record<string, string> = {
-
-    pending:
-      "Pendente",
-
-    in_progress:
-      "Em execução",
-
-    completed:
-      "Concluída",
-
-    cancelled:
-      "Cancelada",
-  };
-
-
-  return (
-    labels[
-      value
-    ] ??
-    value
-  );
-}
-
 
 export default async function ExecutionPage({
   searchParams,
