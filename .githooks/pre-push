@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+
+set -e
+
+echo ""
+echo "============================================================"
+echo " ORBIQ PRE-PUSH QUALITY GATE"
+echo "============================================================"
+echo ""
+
+node scripts/quality-gate.mjs
+
+echo ""
+echo "[OK] Push autorizado pelo Orbiq."
+echo ""
