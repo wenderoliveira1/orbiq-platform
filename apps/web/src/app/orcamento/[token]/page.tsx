@@ -54,6 +54,40 @@ type PublicQuote = {
 };
 
 
+type PublicWorkshopProfile = {
+  organization_name:
+    string;
+  organization_cnpj:
+    string | null;
+  legal_name:
+    string | null;
+  phone:
+    string | null;
+  whatsapp:
+    string | null;
+  email:
+    string | null;
+  postal_code:
+    string | null;
+  address_line:
+    string | null;
+  address_number:
+    string | null;
+  address_complement:
+    string | null;
+  district:
+    string | null;
+  city:
+    string | null;
+  state:
+    string | null;
+  quote_validity_days:
+    number;
+  default_quote_notes:
+    string | null;
+};
+
+
 type PageProps = {
 
   params:
@@ -201,8 +235,78 @@ export default async function PublicQuotePage({
   }
 
 
+  const {
+    data: workshopProfileData,
+    error: workshopProfileError,
+  } =
+    await supabase.rpc(
+      "public_get_workshop_profile",
+      {
+        target_token:
+          token,
+      },
+    );
+
+
+  if (
+    workshopProfileError ||
+    !workshopProfileData
+  ) {
+
+    notFound();
+  }
+
+
   const quote =
     data as unknown as PublicQuote;
+
+
+  const workshop =
+    workshopProfileData as unknown as PublicWorkshopProfile;
+
+
+  const workshopContacts =
+    [
+      workshop.phone
+        ? `Telefone ${workshop.phone}`
+        : null,
+
+      workshop.whatsapp
+        ? `WhatsApp ${workshop.whatsapp}`
+        : null,
+
+      workshop.email,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+
+  const workshopAddress =
+    [
+      [
+        workshop.address_line,
+        workshop.address_number,
+      ]
+        .filter(Boolean)
+        .join(", "),
+
+      workshop.address_complement,
+
+      workshop.district,
+
+      [
+        workshop.city,
+        workshop.state,
+      ]
+        .filter(Boolean)
+        .join(" / "),
+
+      workshop.postal_code
+        ? `CEP ${workshop.postal_code}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
 
 
   const laborTotal =
@@ -786,8 +890,37 @@ export default async function PublicQuotePage({
         <footer className="public-footer">
 
           <strong>
-            {quote.organization_name}
+            {workshop.organization_name}
           </strong>
+
+          {workshop.legal_name ? (
+            <span>
+              {workshop.legal_name}
+            </span>
+          ) : null}
+
+          {workshop.organization_cnpj ? (
+            <span>
+              CNPJ {workshop.organization_cnpj}
+            </span>
+          ) : null}
+
+          {workshopContacts ? (
+            <span>
+              {workshopContacts}
+            </span>
+          ) : null}
+
+          {workshopAddress ? (
+            <span>
+              {workshopAddress}
+            </span>
+          ) : null}
+
+          <span>
+            Validade comercial:{" "}
+            {workshop.quote_validity_days} dias
+          </span>
 
           <span>
             Link válido até{" "}
@@ -795,6 +928,11 @@ export default async function PublicQuotePage({
               quote.expires_at,
             )}
           </span>
+
+          <small>
+            {workshop.default_quote_notes ??
+              "Valores sujeitos à disponibilidade das peças e à confirmação dos serviços pela oficina."}
+          </small>
 
           <small>
             Powered by Orbiq

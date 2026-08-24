@@ -1425,6 +1425,14 @@ export type Database = {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: number
       }
+      get_organization_commercial_defaults: {
+        Args: { target_org_id: string }
+        Returns: Json
+      }
+      get_organization_document_profile: {
+        Args: { target_org_id: string }
+        Returns: Json
+      }
       has_org_role: {
         Args: { allowed_roles: string[]; target_org_id: string }
         Returns: boolean
@@ -1518,6 +1526,10 @@ export type Database = {
         Returns: Json
       }
       public_get_quote: { Args: { target_token: string }; Returns: Json }
+      public_get_workshop_profile: {
+        Args: { target_token: string }
+        Returns: Json
+      }
       receive_purchase_order_all: {
         Args: { target_order_id: string; target_org_id: string }
         Returns: number
