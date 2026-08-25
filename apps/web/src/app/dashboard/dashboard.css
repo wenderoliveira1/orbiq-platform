@@ -51,15 +51,18 @@ a {
   position: sticky;
   top: 0;
   height: 100vh;
+  height: 100dvh;
   padding: 22px 18px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: var(--orbiq-sidebar);
   color: var(--orbiq-sidebar-text);
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .orbiq-brand {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -98,6 +101,7 @@ a {
 }
 
 .orbiq-workshop {
+  flex: 0 0 auto;
   display: grid;
   gap: 5px;
   padding: 16px;
@@ -136,8 +140,40 @@ a {
 }
 
 .orbiq-nav {
+  min-height: 0;
+  flex: 1 1 auto;
   display: grid;
+  align-content: start;
   gap: 6px;
+  padding: 2px 8px 12px 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(203, 213, 225, 0.38) transparent;
+}
+
+.orbiq-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.orbiq-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.orbiq-nav::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(203, 213, 225, 0.32);
+}
+
+.orbiq-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(248, 250, 252, 0.52);
+}
+
+.orbiq-nav:focus-visible {
+  outline: 2px solid rgba(248, 250, 252, 0.72);
+  outline-offset: 3px;
+  border-radius: 12px;
 }
 
 .orbiq-nav-item {
@@ -187,9 +223,12 @@ a {
 }
 
 .orbiq-sidebar-footer {
-  margin-top: auto;
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding-top: 14px;
   display: grid;
   gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .orbiq-user {
@@ -742,7 +781,9 @@ a {
     position: static;
     width: 100%;
     height: auto;
+    min-height: 0;
     padding: 12px;
+    overflow: visible;
   }
 
   .orbiq-sidebar > .orbiq-brand,
@@ -752,9 +793,16 @@ a {
   }
 
   .orbiq-nav {
+    min-height: auto;
+    flex: none;
     display: flex;
+    align-content: normal;
     gap: 6px;
+    padding: 0 0 2px;
     overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-gutter: auto;
   }
 
   .orbiq-nav-item {

@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  useEffect,
+  useRef,
+} from "react";
+
 import Link from "next/link";
 
 import {
@@ -229,6 +234,37 @@ export function DashboardNav({
   const pathname =
     usePathname();
 
+  const navigationRef =
+    useRef<HTMLElement>(
+      null,
+    );
+
+
+  useEffect(
+    () => {
+
+      const activeItem =
+        navigationRef.current
+          ?.querySelector<HTMLElement>(
+            '[aria-current="page"]',
+          );
+
+
+      activeItem?.scrollIntoView(
+        {
+          block:
+            "nearest",
+
+          inline:
+            "nearest",
+        },
+      );
+    },
+    [
+      pathname,
+    ],
+  );
+
 
   const allowed =
     new Set(
@@ -238,8 +274,14 @@ export function DashboardNav({
 
   return (
     <nav
+      ref={
+        navigationRef
+      }
       className="orbiq-nav"
       aria-label="Navegação principal"
+      tabIndex={
+        0
+      }
     >
 
       {items
@@ -301,6 +343,11 @@ export function DashboardNav({
                 }
                 href={
                   item.href
+                }
+                aria-current={
+                  active
+                    ? "page"
+                    : undefined
                 }
                 className={
                   `orbiq-nav-item${
