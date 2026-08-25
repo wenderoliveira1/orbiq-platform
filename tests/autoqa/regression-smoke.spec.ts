@@ -25,6 +25,7 @@ const routes = [
   "/dashboard/execucao",
   "/dashboard/equipe",
   "/dashboard/indicadores",
+  "/dashboard/oficinas",
   "/dashboard/configuracoes",
 ];
 
@@ -69,5 +70,58 @@ test.describe("Regressão operacional - smoke test", () => {
 
     await page.goto("/dashboard/comercial");
     await expect(page.getByText(/AUTOQA-/).first()).toBeVisible();
+  });
+
+  test("navegação lateral mantém todos os módulos acessíveis em telas baixas", async ({
+    page,
+  }) => {
+    await page.setViewportSize({
+      width: 1280,
+      height: 620,
+    });
+
+    const state = await loadState();
+    await login(page, state.email, state.password);
+
+    const navigation = page.getByRole("navigation", {
+      name: "Navegação principal",
+    });
+    const settings = navigation.getByRole("link", {
+      name: "Configurações",
+    });
+    const signOut = page.getByRole("button", {
+      name: "Sair",
+    });
+
+    await expect(navigation).toHaveAttribute("tabindex", "0");
+    await expect(signOut).toBeInViewport();
+
+    const scrollState = await navigation.evaluate((element) => {
+      const styles = window.getComputedStyle(element);
+
+      return {
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+        overflowY: styles.overflowY,
+      };
+    });
+
+    expect(scrollState.overflowY).toBe("auto");
+    expect(scrollState.scrollHeight).toBeGreaterThan(
+      scrollState.clientHeight,
+    );
+
+    await navigation.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+
+    await expect(settings).toBeInViewport();
+    await expect(signOut).toBeInViewport();
+
+    await settings.click();
+
+    await expect(page).toHaveURL("/dashboard/configuracoes");
+    await expect(settings).toHaveAttribute("aria-current", "page");
+    await expect(settings).toBeInViewport();
   });
 });
