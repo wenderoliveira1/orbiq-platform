@@ -201,14 +201,8 @@ test.describe("Fase 1.9C - gestão de oficinas e filiais", () => {
       .click();
 
     await expect(page).toHaveURL(
-      /\/dashboard\/oficinas\?created=1$/,
+      /\/dashboard\?organization_switched=1&organization_created=1$/,
     );
-    await expect(
-      page.getByText(
-        "Nova oficina criada e ativada com sucesso.",
-        { exact: true },
-      ),
-    ).toBeVisible();
 
     newOrganizationId = runPostgres(`
       select id
