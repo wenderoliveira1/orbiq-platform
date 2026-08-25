@@ -124,7 +124,9 @@ test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
 
     await page.goto(`/dashboard/comercial/${state.publicApproveQuoteId}/cliente`);
 
-    await expect(page.getByText("Orbiq AutoQA Oficina", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.locator(".customer-quote-brand strong").first(),
+    ).toHaveText("Orbiq AutoQA Oficina");
     await expect(page.getByText("Orbiq AutoQA Ltda", { exact: true }).first()).toBeVisible();
     await expect(page.getByText(/CNPJ 12\.345\.678\/0001-99/).first()).toBeVisible();
     await expect(page.getByText(/Telefone \(31\) 3333-4444/).first()).toBeVisible();
