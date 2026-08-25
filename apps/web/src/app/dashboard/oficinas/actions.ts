@@ -132,5 +132,5 @@ export async function createAdditionalOrganizationAction(
     activeOrganizationCookieOptions(),
   );
 
-  redirect("/dashboard/oficinas?created=1");
+  redirect("/dashboard?organization_switched=1&organization_created=1");
 }
