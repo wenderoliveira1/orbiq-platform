@@ -80,11 +80,11 @@ export default async function OrganizationsPage({
                 key={item.id}
                 style={{
                   border: active
-                    ? "2px solid var(--orbiq-primary)"
+                    ? "2px solid var(--orbiq-accent)"
                     : "1px solid var(--orbiq-border)",
                   borderRadius: 14,
                   padding: 16,
-                  background: "var(--orbiq-panel)",
+                  background: "var(--orbiq-surface)",
                 }}
               >
                 <span className="orbiq-eyebrow">
