@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { expect, test, type Page } from "@playwright/test";
 
 import {
@@ -33,6 +35,18 @@ async function login(page: Page) {
   await page.goto("/login");
   await page.getByLabel("E-mail").fill(email);
   await page.getByLabel("Senha").fill(password);
+  await page.getByRole("button", { name: "Entrar no Orbiq" }).click();
+  await expect(page).toHaveURL(/\/dashboard/);
+}
+
+async function loginAs(
+  page: Page,
+  accountEmail: string,
+  accountPassword: string,
+) {
+  await page.goto("/login");
+  await page.getByLabel("E-mail").fill(accountEmail);
+  await page.getByLabel("Senha").fill(accountPassword);
   await page.getByRole("button", { name: "Entrar no Orbiq" }).click();
   await expect(page).toHaveURL(/\/dashboard/);
 }
@@ -332,5 +346,232 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
 
     expect(organizations).toEqual([]);
     expect(customers).toEqual([]);
+  });
+});
+
+test.describe("Fase 1.9B - ingresso real em segunda oficina", () => {
+  test("conta já vinculada aceita convite real e ativa exatamente a nova oficina", async ({
+    page,
+  }) => {
+    const invitedEmail = `orbiq.multi.invited.${suffix}@example.com`;
+    const inviterEmail = `orbiq.multi.inviter.${suffix}@example.com`;
+    const invitedWorkshop = `AutoQA Convite Origem ${suffix}`;
+    const destinationWorkshop = `AutoQA Convite Destino ${suffix}`;
+    const invitedSlug = `autoqa-convite-origem-${suffix}`;
+    const destinationSlug = `autoqa-convite-destino-${suffix}`;
+    const inviteToken =
+      randomUUID().replaceAll("-", "") + randomUUID().replaceAll("-", "");
+
+    const invitedAccount = await signUp(invitedEmail, password);
+    await signUp(inviterEmail, password);
+
+    const fixture = JSON.parse(
+      runPostgres(`
+        with invited_account as (
+          select id
+          from auth.users
+          where email = ${q(invitedEmail)}
+          limit 1
+        ),
+        inviter_account as (
+          select id
+          from auth.users
+          where email = ${q(inviterEmail)}
+          limit 1
+        ),
+        source_organization as (
+          insert into public.organizations (
+            name,
+            slug,
+            created_at
+          )
+          values (
+            ${q(invitedWorkshop)},
+            ${q(invitedSlug)},
+            now() - interval '2 minutes'
+          )
+          returning id
+        ),
+        destination_organization as (
+          insert into public.organizations (
+            name,
+            slug,
+            created_at
+          )
+          values (
+            ${q(destinationWorkshop)},
+            ${q(destinationSlug)},
+            now() - interval '1 minute'
+          )
+          returning id
+        ),
+        source_membership as (
+          insert into public.organization_members (
+            organization_id,
+            user_id,
+            role,
+            status,
+            created_at
+          )
+          select
+            source_organization.id,
+            invited_account.id,
+            'owner',
+            'active',
+            now() - interval '2 minutes'
+          from source_organization, invited_account
+          returning organization_id
+        ),
+        destination_owner as (
+          insert into public.organization_members (
+            organization_id,
+            user_id,
+            role,
+            status,
+            created_at
+          )
+          select
+            destination_organization.id,
+            inviter_account.id,
+            'owner',
+            'active',
+            now() - interval '1 minute'
+          from destination_organization, inviter_account
+          returning organization_id
+        ),
+        source_settings as (
+          insert into public.organization_settings (
+            organization_id,
+            legal_name,
+            city,
+            state
+          )
+          select
+            source_organization.id,
+            ${q(`${invitedWorkshop} Ltda`)},
+            'Betim',
+            'MG'
+          from source_organization
+          returning organization_id
+        ),
+        destination_settings as (
+          insert into public.organization_settings (
+            organization_id,
+            legal_name,
+            city,
+            state
+          )
+          select
+            destination_organization.id,
+            ${q(`${destinationWorkshop} Ltda`)},
+            'Nova Lima',
+            'MG'
+          from destination_organization
+          returning organization_id
+        ),
+        invitation as (
+          insert into public.organization_invites (
+            organization_id,
+            email,
+            role,
+            token_hash,
+            expires_at,
+            invited_by
+          )
+          select
+            destination_organization.id,
+            ${q(invitedEmail)},
+            'manager',
+            encode(digest(${q(inviteToken)}, 'sha256'), 'hex'),
+            now() + interval '7 days',
+            inviter_account.id
+          from destination_organization, inviter_account
+          returning id
+        )
+        select json_build_object(
+          'sourceOrganizationId', source_organization.id,
+          'destinationOrganizationId', destination_organization.id,
+          'inviteId', invitation.id
+        )::text
+        from
+          source_organization,
+          destination_organization,
+          source_membership,
+          destination_owner,
+          source_settings,
+          destination_settings,
+          invitation;
+      `),
+    ) as {
+      sourceOrganizationId: string;
+      destinationOrganizationId: string;
+      inviteId: string;
+    };
+
+    expect(invitedAccount.userId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+
+    await loginAs(page, invitedEmail, password);
+
+    await expect(activeWorkshop(page)).toHaveValue(
+      fixture.sourceOrganizationId,
+    );
+    await expect(activeWorkshop(page)).toBeDisabled();
+
+    await page.goto(`/convite/${inviteToken}`);
+    await expect(
+      page.getByRole("heading", {
+        name: `Você foi convidado para a ${destinationWorkshop}`,
+      }),
+    ).toBeVisible();
+    await expect(page.getByText("Gerente", { exact: true })).toBeVisible();
+
+    await page
+      .getByRole("button", { name: "Aceitar convite e entrar" })
+      .click();
+
+    await expect(page).toHaveURL(/\/dashboard\/equipe\?message=/);
+    await expect(activeWorkshop(page)).toHaveValue(
+      fixture.destinationOrganizationId,
+    );
+    await expect(activeWorkshop(page)).toBeEnabled();
+    await expect(
+      page.getByText("Gerente · troque a oficina acima"),
+    ).toBeVisible();
+
+    await expect(
+      activeWorkshop(page).locator(
+        `option[value="${fixture.sourceOrganizationId}"]`,
+      ),
+    ).toHaveText(invitedWorkshop);
+    await expect(
+      activeWorkshop(page).locator(
+        `option[value="${fixture.destinationOrganizationId}"]`,
+      ),
+    ).toHaveText(destinationWorkshop);
+
+    const membershipCount = Number(
+      runPostgres(`
+        select count(*)
+        from public.organization_members
+        where
+          user_id = ${q(invitedAccount.userId)}::uuid
+          and status = 'active';
+      `),
+    );
+
+    const destinationRole = runPostgres(`
+      select role
+      from public.organization_members
+      where
+        user_id = ${q(invitedAccount.userId)}::uuid
+        and organization_id = ${q(fixture.destinationOrganizationId)}::uuid
+        and status = 'active'
+      limit 1;
+    `);
+
+    expect(membershipCount).toBe(2);
+    expect(destinationRole).toBe("manager");
   });
 });
