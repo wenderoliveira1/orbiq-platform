@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+
 import { createClient } from "../../../lib/supabase/server";
 
 export async function getCurrentContext() {
@@ -43,6 +44,24 @@ export async function getCurrentContext() {
         organizationError?.message ?? "oficina não encontrada"
       }`,
     );
+  }
+
+  if (membership.role === "owner") {
+    const { data: settings, error: settingsError } = await supabase
+      .from("organization_settings")
+      .select("organization_id")
+      .eq("organization_id", organization.id)
+      .maybeSingle();
+
+    if (settingsError) {
+      throw new Error(
+        `Falha ao validar a configuração da oficina: ${settingsError.message}`,
+      );
+    }
+
+    if (!settings) {
+      redirect("/onboarding?step=profile");
+    }
   }
 
   return {
