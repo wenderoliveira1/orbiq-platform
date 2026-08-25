@@ -1,16 +1,15 @@
-import {
-  notFound,
-} from "next/navigation";
+import { notFound } from "next/navigation";
 
 import {
-  createPublicSupabaseClient,
-} from "../../../lib/supabase/public";
+  loadWorkshopBrandingByPath,
+  workshopLogoUrl,
+} from "../../../lib/workshop-branding";
 
+import { createPublicSupabaseClient } from "../../../lib/supabase/public";
 import {
   approvePublicQuoteAction,
   rejectPublicQuoteAction,
 } from "./actions";
-
 
 type PublicService = {
   id: string;
@@ -18,7 +17,6 @@ type PublicService = {
   description: string;
   amount: number;
 };
-
 
 type PublicItem = {
   id: string;
@@ -31,7 +29,6 @@ type PublicItem = {
   sale_unit_amount: number;
   sale_total_amount: number;
 };
-
 
 type PublicQuote = {
   protocol: string;
@@ -53,895 +50,356 @@ type PublicQuote = {
   items: PublicItem[];
 };
 
-
 type PublicWorkshopProfile = {
-  organization_name:
-    string;
-  organization_cnpj:
-    string | null;
-  legal_name:
-    string | null;
-  phone:
-    string | null;
-  whatsapp:
-    string | null;
-  email:
-    string | null;
-  postal_code:
-    string | null;
-  address_line:
-    string | null;
-  address_number:
-    string | null;
-  address_complement:
-    string | null;
-  district:
-    string | null;
-  city:
-    string | null;
-  state:
-    string | null;
-  quote_validity_days:
-    number;
-  default_quote_notes:
-    string | null;
+  organization_name: string;
+  organization_cnpj: string | null;
+  legal_name: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  postal_code: string | null;
+  address_line: string | null;
+  address_number: string | null;
+  address_complement: string | null;
+  district: string | null;
+  city: string | null;
+  state: string | null;
+  quote_validity_days: number;
+  default_quote_notes: string | null;
+  branding_manifest_path: string;
 };
-
 
 type PageProps = {
-
-  params:
-    Promise<{
-      token:
-        string;
-    }>;
-
-  searchParams:
-    Promise<{
-      ok?: string;
-      error?: string;
-    }>;
+  params: Promise<{
+    token: string;
+  }>;
+  searchParams: Promise<{
+    ok?: string;
+    error?: string;
+  }>;
 };
 
-
-function money(
-  value:
-    number,
-): string {
-
-  return new Intl.NumberFormat(
-    "pt-BR",
-    {
-      style:
-        "currency",
-
-      currency:
-        "BRL",
-    },
-  ).format(
-    value,
-  );
+function money(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
 }
 
-
-function quantity(
-  value:
-    number,
-): string {
-
-  return new Intl.NumberFormat(
-    "pt-BR",
-    {
-      maximumFractionDigits:
-        3,
-    },
-  ).format(
-    value,
-  );
+function quantity(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    maximumFractionDigits: 3,
+  }).format(value);
 }
 
-
-function date(
-  value:
-    string,
-): string {
-
-  return new Intl.DateTimeFormat(
-    "pt-BR",
-    {
-      day:
-        "2-digit",
-
-      month:
-        "2-digit",
-
-      year:
-        "numeric",
-    },
-  ).format(
-    new Date(
-      value,
-    ),
-  );
+function date(value: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(value));
 }
 
-
-function statusLabel(
-  value:
-    string,
-): string {
-
-  const labels:
-    Record<string, string> = {
-
-    ready:
-      "Aguardando sua aprovação",
-
-    approved:
-      "Orçamento aprovado",
-
-    rejected:
-      "Orçamento não aprovado",
+function statusLabel(value: string): string {
+  const labels: Record<string, string> = {
+    ready: "Aguardando sua aprovação",
+    approved: "Orçamento aprovado",
+    rejected: "Orçamento não aprovado",
   };
 
-
-  return (
-    labels[
-      value
-    ] ??
-    value
-  );
+  return labels[value] ?? value;
 }
-
 
 export default async function PublicQuotePage({
   params,
   searchParams,
 }: PageProps) {
+  const { token } = await params;
+  const query = await searchParams;
+  const supabase = createPublicSupabaseClient();
 
-  const {
-    token,
-  } =
-    await params;
+  const { data, error } = await supabase.rpc("public_get_quote", {
+    target_token: token,
+  });
 
-
-  const query =
-    await searchParams;
-
-
-  const supabase =
-    createPublicSupabaseClient();
-
-
-  const {
-    data,
-    error,
-  } =
-    await supabase.rpc(
-      "public_get_quote",
-      {
-        target_token:
-          token,
-      },
-    );
-
-
-  if (
-    error ||
-    !data
-  ) {
-
+  if (error || !data) {
     notFound();
   }
 
+  const { data: workshopProfileData, error: workshopProfileError } =
+    await supabase.rpc("public_get_workshop_profile", {
+      target_token: token,
+    });
 
-  const {
-    data: workshopProfileData,
-    error: workshopProfileError,
-  } =
-    await supabase.rpc(
-      "public_get_workshop_profile",
-      {
-        target_token:
-          token,
-      },
-    );
-
-
-  if (
-    workshopProfileError ||
-    !workshopProfileData
-  ) {
-
+  if (workshopProfileError || !workshopProfileData) {
     notFound();
   }
 
+  const quote = data as unknown as PublicQuote;
+  const workshop = workshopProfileData as unknown as PublicWorkshopProfile;
+  const branding = await loadWorkshopBrandingByPath(
+    workshop.branding_manifest_path,
+  );
+  const logoUrl = workshopLogoUrl(branding.logoPath);
 
-  const quote =
-    data as unknown as PublicQuote;
+  const workshopContacts = [
+    workshop.phone ? `Telefone ${workshop.phone}` : null,
+    workshop.whatsapp ? `WhatsApp ${workshop.whatsapp}` : null,
+    workshop.email,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
+  const workshopAddress = [
+    [workshop.address_line, workshop.address_number].filter(Boolean).join(", "),
+    workshop.address_complement,
+    workshop.district,
+    [workshop.city, workshop.state].filter(Boolean).join(" / "),
+    workshop.postal_code ? `CEP ${workshop.postal_code}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
-  const workshop =
-    workshopProfileData as unknown as PublicWorkshopProfile;
+  const laborTotal = quote.services.reduce(
+    (total, service) => total + service.amount,
+    0,
+  );
 
+  const partsTotal = quote.items.reduce(
+    (total, item) => total + item.sale_total_amount,
+    0,
+  );
 
-  const workshopContacts =
-    [
-      workshop.phone
-        ? `Telefone ${workshop.phone}`
-        : null,
-
-      workshop.whatsapp
-        ? `WhatsApp ${workshop.whatsapp}`
-        : null,
-
-      workshop.email,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-
-
-  const workshopAddress =
-    [
-      [
-        workshop.address_line,
-        workshop.address_number,
-      ]
-        .filter(Boolean)
-        .join(", "),
-
-      workshop.address_complement,
-
-      workshop.district,
-
-      [
-        workshop.city,
-        workshop.state,
-      ]
-        .filter(Boolean)
-        .join(" / "),
-
-      workshop.postal_code
-        ? `CEP ${workshop.postal_code}`
-        : null,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-
-
-  const laborTotal =
-    quote.services.reduce(
-      (
-        total,
-        service,
-      ) =>
-        total +
-        service.amount,
-      0,
-    );
-
-
-  const partsTotal =
-    quote.items.reduce(
-      (
-        total,
-        item,
-      ) =>
-        total +
-        item.sale_total_amount,
-      0,
-    );
-
-
-  const canDecide =
-    quote.commercial_status ===
-    "ready";
-
+  const canDecide = quote.commercial_status === "ready";
 
   return (
     <main className="public-quote-shell">
-
       <article className="public-quote-card">
-
         <header className="public-quote-header">
-
           <div className="public-brand">
-
-            <span>
-              O
+            <span
+              data-testid="workshop-logo"
+              aria-label={`Marca ${workshop.organization_name}`}
+              style={{
+                backgroundColor: logoUrl ? "#ffffff" : branding.primaryColor,
+                backgroundImage: logoUrl ? `url("${logoUrl}")` : undefined,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+                backgroundSize: "contain",
+                color: logoUrl ? "transparent" : "#ffffff",
+              }}
+            >
+              {logoUrl ? null : "O"}
             </span>
 
             <div>
-
-              <strong>
-                ORBIQ
-              </strong>
-
+              <strong>{workshop.organization_name}</strong>
               <small>
-                {quote.organization_name}
+                {branding.tagline ?? workshop.legal_name ?? "Orçamento digital"}
               </small>
-
             </div>
-
           </div>
-
 
           <div className="public-protocol">
-
-            <span>
-              ORÇAMENTO
-            </span>
-
-            <strong>
-              {quote.protocol}
-            </strong>
-
-            <small>
-              {date(
-                quote.created_at,
-              )}
-            </small>
-
+            <span>ORÇAMENTO</span>
+            <strong>{quote.protocol}</strong>
+            <small>{date(quote.created_at)}</small>
           </div>
-
         </header>
 
-
-        {query.ok ? (
-
-          <div className="public-alert success">
-            {query.ok}
-          </div>
-
-        ) : null}
-
-
+        {query.ok ? <div className="public-alert success">{query.ok}</div> : null}
         {query.error ? (
-
-          <div className="public-alert error">
-            {query.error}
-          </div>
-
+          <div className="public-alert error">{query.error}</div>
         ) : null}
-
 
         <section className="public-hero">
-
           <div>
-
-            <span>
+            <span style={{ color: branding.primaryColor }}>
               ORÇAMENTO AUTOMOTIVO
             </span>
-
             <h1>
-              Olá,{" "}
-              {quote.customer_name
-                .trim()
-                .split(/\s+/)[0]}
+              Olá, {quote.customer_name.trim().split(/\s+/)[0]}
             </h1>
-
             <p>
               Confira abaixo os serviços e peças preparados para o seu veículo.
             </p>
-
           </div>
 
-
-          <span
-            className={
-              `public-status status-${quote.commercial_status}`
-            }
-          >
-            {statusLabel(
-              quote.commercial_status,
-            )}
+          <span className={`public-status status-${quote.commercial_status}`}>
+            {statusLabel(quote.commercial_status)}
           </span>
-
         </section>
-
 
         <section className="public-vehicle">
-
           <div>
-
-            <span>
-              VEÍCULO
-            </span>
-
-            <strong>
-              {quote.plate}
-            </strong>
-
+            <span>VEÍCULO</span>
+            <strong>{quote.plate}</strong>
           </div>
-
-
           <div>
-
-            <span>
-              MODELO
-            </span>
-
+            <span>MODELO</span>
             <strong>
-              {[
-                quote.brand,
-                quote.model,
-                quote.version,
-              ]
-                .filter(Boolean)
-                .join(" ") ||
+              {[quote.brand, quote.model, quote.version].filter(Boolean).join(" ") ||
                 "Não informado"}
             </strong>
-
           </div>
-
-
           <div>
-
-            <span>
-              ANO / KM
-            </span>
-
+            <span>ANO / KM</span>
             <strong>
-              {quote.model_year ??
-                "—"}
-
-              {quote.mileage !==
-              null
-                ? ` · ${quantity(
-                    quote.mileage,
-                  )} km`
+              {quote.model_year ?? "—"}
+              {quote.mileage !== null
+                ? ` · ${quantity(quote.mileage)} km`
                 : ""}
             </strong>
-
           </div>
-
         </section>
-
 
         <section className="public-section">
-
           <div className="public-section-heading">
-
             <div>
-
-              <span>
-                SERVIÇOS
-              </span>
-
-              <h2>
-                Mão de obra
-              </h2>
-
+              <span>SERVIÇOS</span>
+              <h2>Mão de obra</h2>
             </div>
-
-
-            <strong>
-              {money(
-                laborTotal,
-              )}
-            </strong>
-
+            <strong>{money(laborTotal)}</strong>
           </div>
-
 
           <div className="public-list">
-
-            {quote.services.map(
-              (
-                service,
-                index,
-              ) => (
-
-                <div
-                  key={
-                    service.id
-                  }
-                  className="public-service-row"
-                >
-
-                  <span>
-                    {String(
-                      index +
-                      1,
-                    ).padStart(
-                      2,
-                      "0",
-                    )}
-                  </span>
-
-
-                  <div>
-
-                    <strong>
-                      {service.description}
-                    </strong>
-
-                    <small>
-                      {service.category}
-                    </small>
-
-                  </div>
-
-
-                  <strong>
-                    {money(
-                      service.amount,
-                    )}
-                  </strong>
-
+            {quote.services.map((service, index) => (
+              <div key={service.id} className="public-service-row">
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <strong>{service.description}</strong>
+                  <small>{service.category}</small>
                 </div>
-
-              ),
-            )}
-
+                <strong>{money(service.amount)}</strong>
+              </div>
+            ))}
           </div>
-
         </section>
 
-
-        {quote.items.length >
-        0 ? (
-
+        {quote.items.length > 0 ? (
           <section className="public-section">
-
             <div className="public-section-heading">
-
               <div>
-
-                <span>
-                  PEÇAS
-                </span>
-
-                <h2>
-                  Materiais
-                </h2>
-
+                <span>PEÇAS</span>
+                <h2>Materiais</h2>
               </div>
-
-
-              <strong>
-                {money(
-                  partsTotal,
-                )}
-              </strong>
-
+              <strong>{money(partsTotal)}</strong>
             </div>
-
 
             <div className="public-list">
-
-              {quote.items.map(
-                (
-                  item,
-                  index,
-                ) => (
-
-                  <div
-                    key={
-                      item.id
-                    }
-                    className="public-part-row"
-                  >
-
-                    <span>
-                      {String(
-                        index +
-                        1,
-                      ).padStart(
-                        2,
-                        "0",
-                      )}
-                    </span>
-
-
-                    <div>
-
-                      <strong>
-                        {item.description}
-                      </strong>
-
-                      <small>
-                        {[
-                          `${quantity(
-                            item.quantity,
-                          )} ${item.unit}`,
-                          item.side,
-                          item.specification,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </small>
-
-                    </div>
-
-
-                    <div>
-
-                      <small>
-                        Unitário
-                      </small>
-
-                      <strong>
-                        {money(
-                          item.sale_unit_amount,
-                        )}
-                      </strong>
-
-                    </div>
-
-
-                    <strong>
-                      {money(
-                        item.sale_total_amount,
-                      )}
-                    </strong>
-
+              {quote.items.map((item, index) => (
+                <div key={item.id} className="public-part-row">
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <strong>{item.description}</strong>
+                    <small>
+                      {[
+                        `${quantity(item.quantity)} ${item.unit}`,
+                        item.side,
+                        item.specification,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </small>
                   </div>
-
-                ),
-              )}
-
+                  <div>
+                    <small>Unitário</small>
+                    <strong>{money(item.sale_unit_amount)}</strong>
+                  </div>
+                  <strong>{money(item.sale_total_amount)}</strong>
+                </div>
+              ))}
             </div>
-
           </section>
-
         ) : null}
 
-
         <section className="public-totals">
-
           <div>
-
-            <span>
-              Mão de obra
-            </span>
-
-            <strong>
-              {money(
-                laborTotal,
-              )}
-            </strong>
-
+            <span>Mão de obra</span>
+            <strong>{money(laborTotal)}</strong>
+          </div>
+          <div>
+            <span>Peças</span>
+            <strong>{money(partsTotal)}</strong>
+          </div>
+          <div>
+            <span>Subtotal</span>
+            <strong>{money(quote.subtotal_amount)}</strong>
           </div>
 
-
-          <div>
-
-            <span>
-              Peças
-            </span>
-
-            <strong>
-              {money(
-                partsTotal,
-              )}
-            </strong>
-
-          </div>
-
-
-          <div>
-
-            <span>
-              Subtotal
-            </span>
-
-            <strong>
-              {money(
-                quote.subtotal_amount,
-              )}
-            </strong>
-
-          </div>
-
-
-          {quote.discount_amount >
-          0 ? (
-
+          {quote.discount_amount > 0 ? (
             <div className="public-discount">
-
-              <span>
-                Desconto
-              </span>
-
-              <strong>
-                - {money(
-                  quote.discount_amount,
-                )}
-              </strong>
-
+              <span>Desconto</span>
+              <strong>- {money(quote.discount_amount)}</strong>
             </div>
-
           ) : null}
 
-
           <div className="public-grand-total">
-
-            <span>
-              VALOR TOTAL
-            </span>
-
-            <strong>
-              {money(
-                quote.final_amount,
-              )}
-            </strong>
-
+            <span>VALOR TOTAL</span>
+            <strong>{money(quote.final_amount)}</strong>
           </div>
-
         </section>
 
-
         {canDecide ? (
-
           <section className="public-decision">
-
             <div>
-
-              <span>
-                SUA DECISÃO
-              </span>
-
-              <h2>
-                Deseja aprovar este orçamento?
-              </h2>
-
-              <p>
-                A decisão será registrada diretamente na oficina.
-              </p>
-
+              <span>SUA DECISÃO</span>
+              <h2>Deseja aprovar este orçamento?</h2>
+              <p>A decisão será registrada diretamente na oficina.</p>
             </div>
 
-
             <div className="public-decision-actions">
-
-              <form
-                action={
-                  approvePublicQuoteAction
-                }
-              >
-
-                <input
-                  type="hidden"
-                  name="token"
-                  value={
-                    token
-                  }
-                />
-
-
-                <button
-                  type="submit"
-                  className="public-approve"
-                >
+              <form action={approvePublicQuoteAction}>
+                <input type="hidden" name="token" value={token} />
+                <button type="submit" className="public-approve">
                   ✓ Aprovar orçamento
                 </button>
-
               </form>
 
-
               <details className="public-reject">
-
-                <summary>
-                  Não aprovar
-                </summary>
-
-
-                <form
-                  action={
-                    rejectPublicQuoteAction
-                  }
-                >
-
-                  <input
-                    type="hidden"
-                    name="token"
-                    value={
-                      token
-                    }
-                  />
-
-
+                <summary>Não aprovar</summary>
+                <form action={rejectPublicQuoteAction}>
+                  <input type="hidden" name="token" value={token} />
                   <textarea
                     name="reason"
                     rows={3}
                     placeholder="Se quiser, conte o motivo."
                   />
-
-
-                  <button
-                    type="submit"
-                  >
-                    Confirmar que não aprovo
-                  </button>
-
+                  <button type="submit">Confirmar que não aprovo</button>
                 </form>
-
               </details>
-
             </div>
-
           </section>
-
         ) : (
-
           <section
-            className={
-              `public-decision-complete complete-${quote.commercial_status}`
-            }
+            className={`public-decision-complete complete-${quote.commercial_status}`}
           >
-
             <strong>
-              {quote.commercial_status ===
-              "approved"
+              {quote.commercial_status === "approved"
                 ? "✓ Orçamento aprovado"
                 : "Orçamento não aprovado"}
             </strong>
-
-            <span>
-              Sua decisão já foi registrada na oficina.
-            </span>
-
+            <span>Sua decisão já foi registrada na oficina.</span>
           </section>
-
         )}
 
-
         <footer className="public-footer">
-
-          <strong>
-            {workshop.organization_name}
-          </strong>
-
-          {workshop.legal_name ? (
-            <span>
-              {workshop.legal_name}
-            </span>
-          ) : null}
-
+          <strong>{workshop.organization_name}</strong>
+          {workshop.legal_name ? <span>{workshop.legal_name}</span> : null}
           {workshop.organization_cnpj ? (
-            <span>
-              CNPJ {workshop.organization_cnpj}
-            </span>
+            <span>CNPJ {workshop.organization_cnpj}</span>
           ) : null}
-
-          {workshopContacts ? (
-            <span>
-              {workshopContacts}
-            </span>
-          ) : null}
-
-          {workshopAddress ? (
-            <span>
-              {workshopAddress}
-            </span>
-          ) : null}
-
-          <span>
-            Validade comercial:{" "}
-            {workshop.quote_validity_days} dias
-          </span>
-
-          <span>
-            Link válido até{" "}
-            {date(
-              quote.expires_at,
-            )}
-          </span>
-
+          {workshopContacts ? <span>{workshopContacts}</span> : null}
+          {workshopAddress ? <span>{workshopAddress}</span> : null}
+          <span>Validade comercial: {workshop.quote_validity_days} dias</span>
+          <span>Link válido até {date(quote.expires_at)}</span>
           <small>
             {workshop.default_quote_notes ??
               "Valores sujeitos à disponibilidade das peças e à confirmação dos serviços pela oficina."}
           </small>
-
-          <small>
-            Powered by Orbiq
-          </small>
-
+          <small>Powered by Orbiq</small>
         </footer>
-
       </article>
-
     </main>
   );
 }
