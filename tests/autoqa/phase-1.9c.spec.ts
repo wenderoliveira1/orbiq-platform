@@ -146,6 +146,19 @@ test.describe("Fase 1.9C - gestão de oficinas e filiais", () => {
   test("proprietário cria uma filial completa e ela se torna a oficina ativa", async ({
     page,
   }) => {
+    // Playwright repete o teste no mesmo banco quando um ensaio falha
+    // depois do commit. A limpeza por slugs exclusivos torna o cenário
+    // idempotente sem alcançar fixtures de outras fases.
+    runPostgres(`
+      delete from public.organizations
+      where slug in (
+        ${q(primarySlug)},
+        ${q(newSlug)},
+        ${q(duplicateSlug)},
+        ${q(`autoqa-manager-blocked-${suffix}`)}
+      );
+    `);
+
     const owner = await signUp(ownerEmail, password);
     const manager = await signUp(managerEmail, password);
 
