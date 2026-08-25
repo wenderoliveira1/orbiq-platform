@@ -66,7 +66,7 @@ function createInitialFixture() {
       ${uuid(primaryOrganizationId)},
       ${q(primaryWorkshop)},
       ${q(primarySlug)},
-      '12.345.678/0001-90'
+      null
     );
 
     insert into public.organization_members (
