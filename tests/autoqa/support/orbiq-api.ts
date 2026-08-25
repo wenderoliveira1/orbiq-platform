@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -15,6 +16,10 @@ export type AutoQaState = {
   publicRejectQuoteId: string;
   publicApproveToken: string;
   publicRejectToken: string;
+  publicApproveCreatedAt: string;
+  publicApproveExpiresAt: string;
+  publicRejectCreatedAt: string;
+  publicRejectExpiresAt: string;
 };
 
 function required(name: string): string {
@@ -31,7 +36,6 @@ export function autoQaEnv() {
   return {
     url: required("AUTOQA_SUPABASE_URL").replace(/\/$/, ""),
     publicKey: required("AUTOQA_SUPABASE_PUBLIC_KEY"),
-    secretKey: required("AUTOQA_SUPABASE_SECRET_KEY"),
   };
 }
 
@@ -76,9 +80,7 @@ async function request(path: string, options: RequestOptions = {}) {
   };
 
   const authorization =
-    options.accessToken === undefined
-      ? apiKey
-      : options.accessToken;
+    options.accessToken === undefined ? apiKey : options.accessToken;
 
   if (authorization) {
     headers.Authorization = `Bearer ${authorization}`;
@@ -205,49 +207,62 @@ export async function selectRows<T>(
   })) as T;
 }
 
-function adminCredentials() {
-  const { secretKey } = autoQaEnv();
+export function sqlLiteral(value: string | null): string {
+  if (value === null) {
+    return "null";
+  }
 
-  // Chaves service_role legadas são JWTs e podem ir em Authorization.
-  // As novas sb_secret_* são opacas e devem ser usadas como apikey.
-  return {
-    apiKey: secretKey,
-    accessToken: secretKey.startsWith("sb_secret_") ? null : secretKey,
-  };
+  return `'${value.replace(/'/g, "''")}'`;
 }
 
-export async function adminInsertRows<T>(
-  table: string,
-  rows: unknown,
-): Promise<T> {
-  return (await request(`/rest/v1/${table}`, {
-    method: "POST",
-    body: rows,
-    prefer: "return=representation",
-    ...adminCredentials(),
-  })) as T;
-}
+export function runPostgres(sql: string): string {
+  const container =
+    process.env.AUTOQA_POSTGRES_CONTAINER?.trim() ||
+    "supabase_db_orbiq-platform";
 
-export async function adminPatchRows<T>(
-  table: string,
-  query: string,
-  values: unknown,
-): Promise<T> {
-  return (await request(`/rest/v1/${table}?${query}`, {
-    method: "PATCH",
-    body: values,
-    prefer: "return=representation",
-    ...adminCredentials(),
-  })) as T;
-}
+  const result = spawnSync(
+    "docker",
+    [
+      "exec",
+      "-i",
+      container,
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      "-X",
+      "-q",
+      "-A",
+      "-t",
+      "-v",
+      "ON_ERROR_STOP=1",
+    ],
+    {
+      cwd: process.cwd(),
+      input: sql,
+      encoding: "utf8",
+      env: process.env,
+    },
+  );
 
-export async function adminSelectRows<T>(
-  table: string,
-  query: string,
-): Promise<T> {
-  return (await request(`/rest/v1/${table}?${query}`, {
-    ...adminCredentials(),
-  })) as T;
+  if (result.error) {
+    throw new Error(`Falha executando PostgreSQL AutoQA: ${result.error.message}`);
+  }
+
+  if (result.status !== 0) {
+    throw new Error(
+      [
+        "PostgreSQL AutoQA retornou erro.",
+        result.stdout?.trim(),
+        result.stderr?.trim(),
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+
+  return (result.stdout ?? "").trim();
 }
 
 export async function loadState(): Promise<AutoQaState> {

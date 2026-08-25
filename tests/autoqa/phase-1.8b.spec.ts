@@ -3,11 +3,12 @@ import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 
 import {
-  insertRows,
   loadState,
   patchRows,
+  runPostgres,
   selectRows,
   signIn,
+  sqlLiteral,
 } from "./support/orbiq-api";
 
 async function login(page: Page, email: string, password: string) {
@@ -19,9 +20,15 @@ async function login(page: Page, email: string, password: string) {
 }
 
 function expectMoneyInput(locator: ReturnType<Page["locator"]>, expected: number) {
-  return expect(locator).toHaveValue(
-    new RegExp(`^${expected}(?:[,.]0+)?$`),
-  );
+  return expect(locator).toHaveValue(new RegExp(`^${expected}(?:[,.]0+)?$`));
+}
+
+function q(value: string): string {
+  return sqlLiteral(value);
+}
+
+function uuid(value: string): string {
+  return `${q(value)}::uuid`;
 }
 
 test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
@@ -77,7 +84,7 @@ test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
     expect(rows[0].default_quote_notes).toContain("AUTOQA");
   });
 
-  test("aplica margem padrão de 35% em peça ainda sem preço comercial", async ({
+  test("aplica margem padrão de 35% em peça sem preço comercial", async ({
     page,
   }) => {
     const state = await loadState();
@@ -97,7 +104,7 @@ test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
     await expect(row).toContainText("R$ 100,00");
   });
 
-  test("não sobrescreve preço comercial já salvo", async ({ page }) => {
+  test("preserva preço comercial já salvo", async ({ page }) => {
     const state = await loadState();
     await login(page, state.email, state.password);
 
@@ -111,71 +118,76 @@ test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
     await expectMoneyInput(row.locator(".commercial-sale-input input"), 175);
   });
 
-  test("versão do cliente usa identidade e padrões configurados", async ({ page }) => {
+  test("versão do cliente e PDF usam identidade configurada", async ({ page }) => {
     const state = await loadState();
     await login(page, state.email, state.password);
 
-    await page.goto(
-      `/dashboard/comercial/${state.publicApproveQuoteId}/cliente`,
-    );
+    await page.goto(`/dashboard/comercial/${state.publicApproveQuoteId}/cliente`);
 
-    await expect(page.getByText("Orbiq AutoQA Oficina")).toBeVisible();
-    await expect(page.getByText("Orbiq AutoQA Ltda")).toBeVisible();
-    await expect(page.getByText(/CNPJ 12\.345\.678\/0001-99/)).toBeVisible();
-    await expect(page.getByText(/Telefone \(31\) 3333-4444/)).toBeVisible();
-    await expect(page.getByText(/WhatsApp \(31\) 99999-8888/)).toBeVisible();
-    await expect(page.getByText(/qa@orbiq\.example\.com/)).toBeVisible();
-    await expect(page.getByText(/Avenida AutoQA, 100/)).toBeVisible();
-    await expect(page.getByText(/Validade comercial:\s*10 dias/)).toBeVisible();
+    await expect(page.getByText("Orbiq AutoQA Oficina", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Orbiq AutoQA Ltda", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/CNPJ 12\.345\.678\/0001-99/).first()).toBeVisible();
+    await expect(page.getByText(/Telefone \(31\) 3333-4444/).first()).toBeVisible();
+    await expect(page.getByText(/WhatsApp \(31\) 99999-8888/).first()).toBeVisible();
+    await expect(page.getByText(/qa@orbiq\.example\.com/).first()).toBeVisible();
+    await expect(page.getByText(/Avenida AutoQA, 100/).first()).toBeVisible();
+    await expect(page.getByText(/Validade comercial:\s*10 dias/).first()).toBeVisible();
     await expect(
-      page.getByText("AUTOQA: orçamento válido conforme condições da oficina."),
+      page.getByText("AUTOQA: orçamento válido conforme condições da oficina.").first(),
     ).toBeVisible();
+
+    const pdf = await page.pdf({
+      format: "A4",
+      printBackground: true,
+    });
+
+    expect(pdf.byteLength).toBeGreaterThan(10_000);
+
+    await test.info().attach("orcamento-cliente-autoqa.pdf", {
+      body: pdf,
+      contentType: "application/pdf",
+    });
   });
 
-  test("link público novo respeita validade de 10 dias e permite aprovação", async ({
+  test("link público criado pelo RPC respeita 10 dias e permite aprovação", async ({
     page,
   }) => {
     const state = await loadState();
-    const { accessToken } = await signIn(state.email, state.password);
 
-    const links = await selectRows<
-      Array<{ created_at: string; expires_at: string }>
-    >(
-      "quote_public_links",
-      `token=eq.${state.publicApproveToken}&select=created_at,expires_at`,
-      accessToken,
-    );
-
-    expect(links).toHaveLength(1);
     const days =
-      (Date.parse(links[0].expires_at) - Date.parse(links[0].created_at)) /
+      (Date.parse(state.publicApproveExpiresAt) -
+        Date.parse(state.publicApproveCreatedAt)) /
       86_400_000;
+
     expect(days).toBeGreaterThan(9.9);
     expect(days).toBeLessThan(10.1);
 
     await page.goto(`/orcamento/${state.publicApproveToken}`);
-    await expect(page.getByText("Orbiq AutoQA Oficina")).toBeVisible();
-    await expect(page.getByText("Orbiq AutoQA Ltda")).toBeVisible();
-    await expect(page.getByText(/Validade comercial:\s*10 dias/)).toBeVisible();
+    await expect(page.getByText("Orbiq AutoQA Oficina", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Orbiq AutoQA Ltda", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/Validade comercial:\s*10 dias/).first()).toBeVisible();
+    await expect(page.getByText(/Link válido até/).first()).toBeVisible();
     await expect(
-      page.getByText("AUTOQA: orçamento válido conforme condições da oficina."),
+      page.getByText("AUTOQA: orçamento válido conforme condições da oficina.").first(),
     ).toBeVisible();
     await expect(page.getByText("Powered by Orbiq")).toBeVisible();
 
     await page.getByRole("button", { name: /Aprovar orçamento/ }).click();
-    await expect(page.getByText(/Orçamento aprovado/)).toBeVisible();
+    await expect(page.getByText(/Orçamento aprovado/).first()).toBeVisible();
 
+    const { accessToken } = await signIn(state.email, state.password);
     const quotes = await selectRows<Array<{ commercial_status: string }>>(
       "quotes",
       `id=eq.${state.publicApproveQuoteId}&select=commercial_status`,
       accessToken,
     );
+
+    expect(quotes).toHaveLength(1);
     expect(quotes[0]?.commercial_status).toBe("approved");
   });
 
-  test("link público também registra reprovação e motivo", async ({ page }) => {
+  test("link público registra reprovação e motivo", async ({ page }) => {
     const state = await loadState();
-    const { accessToken } = await signIn(state.email, state.password);
 
     await page.goto(`/orcamento/${state.publicRejectToken}`);
     await page.getByText("Não aprovar", { exact: true }).click();
@@ -184,8 +196,9 @@ test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
       .fill("AUTOQA: cliente optou por não aprovar.");
     await page.getByRole("button", { name: "Confirmar que não aprovo" }).click();
 
-    await expect(page.getByText("Orçamento não aprovado")).toBeVisible();
+    await expect(page.getByText("Orçamento não aprovado").first()).toBeVisible();
 
+    const { accessToken } = await signIn(state.email, state.password);
     const quotes = await selectRows<
       Array<{
         commercial_status: string;
@@ -197,11 +210,12 @@ test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
       accessToken,
     );
 
+    expect(quotes).toHaveLength(1);
     expect(quotes[0]?.commercial_status).toBe("rejected");
     expect(quotes[0]?.commercial_rejection_reason).toContain("AUTOQA");
   });
 
-  test("mudança para 40% passa a valer em novo orçamento sem alterar os anteriores", async ({
+  test("mudança para 40% vale no próximo orçamento e não altera preço salvo", async ({
     page,
   }) => {
     const state = await loadState();
@@ -214,60 +228,64 @@ test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
     await page.getByRole("button", { name: "Salvar configurações" }).click();
     await expect(page).toHaveURL(/saved=1/);
 
-    const { accessToken } = await signIn(state.email, state.password);
     const quoteId = randomUUID();
     const itemId = randomUUID();
+    const serviceId = randomUUID();
+
+    runPostgres(`
+      begin;
+
+      insert into public.quotes (
+        id, organization_id, customer_id, vehicle_id, protocol,
+        priority, status, commercial_status, mileage, created_by
+      ) values (
+        ${uuid(quoteId)},
+        ${uuid(state.organizationId)},
+        ${uuid(state.customerId)},
+        ${uuid(state.vehicleId)},
+        ${q(`AUTOQA-40-${Date.now()}`)},
+        ${q("normal")},
+        ${q("estimating")},
+        ${q("draft")},
+        12345,
+        ${uuid(state.userId)}
+      );
+
+      insert into public.quote_services (
+        id, organization_id, quote_id, category, description, needs_part, labor_amount
+      ) values (
+        ${uuid(serviceId)},
+        ${uuid(state.organizationId)},
+        ${uuid(quoteId)},
+        ${q("Mecânica geral")},
+        ${q("Serviço AutoQA 40%")},
+        true,
+        100
+      );
+
+      insert into public.quote_items (
+        id, organization_id, quote_id, category, description,
+        quantity, unit, supplier_id, chosen_amount, sale_unit_amount, sale_total_amount
+      ) values (
+        ${uuid(itemId)},
+        ${uuid(state.organizationId)},
+        ${uuid(quoteId)},
+        ${q("Mecânica")},
+        ${q("Peça AutoQA 40%")},
+        1,
+        ${q("un")},
+        ${uuid(state.supplierId)},
+        100,
+        null,
+        null
+      );
+
+      commit;
+    `);
+
+    const { accessToken } = await signIn(state.email, state.password);
 
     try {
-      await insertRows(
-        "quotes",
-        {
-          id: quoteId,
-          organization_id: state.organizationId,
-          customer_id: state.customerId,
-          vehicle_id: state.vehicleId,
-          protocol: `AUTOQA-40-${Date.now()}`,
-          priority: "normal",
-          status: "estimating",
-          commercial_status: "draft",
-          mileage: 12345,
-          created_by: state.userId,
-        },
-        accessToken,
-      );
-
-      await insertRows(
-        "quote_services",
-        {
-          id: randomUUID(),
-          organization_id: state.organizationId,
-          quote_id: quoteId,
-          category: "Mecânica geral",
-          description: "Serviço AutoQA 40%",
-          needs_part: true,
-          labor_amount: 100,
-        },
-        accessToken,
-      );
-
-      await insertRows(
-        "quote_items",
-        {
-          id: itemId,
-          organization_id: state.organizationId,
-          quote_id: quoteId,
-          category: "Mecânica",
-          description: "Peça AutoQA 40%",
-          quantity: 1,
-          unit: "un",
-          supplier_id: state.supplierId,
-          chosen_amount: 100,
-          sale_unit_amount: null,
-          sale_total_amount: null,
-        },
-        accessToken,
-      );
-
       await page.goto(`/dashboard/comercial/${quoteId}`);
       await expect(page.locator(".commercial-markup-input input")).toHaveValue(
         /^40(?:[,.]0+)?$/,
@@ -276,6 +294,8 @@ test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
       const row = page.locator(".commercial-item-row").filter({
         hasText: "Peça AutoQA 40%",
       });
+
+      await expect(row).toBeVisible();
       await expectMoneyInput(row.locator(".commercial-sale-input input"), 140);
 
       await page.goto(`/dashboard/comercial/${state.savedQuoteId}`);
