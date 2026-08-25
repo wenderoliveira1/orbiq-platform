@@ -169,8 +169,12 @@ test.describe("Fase 1.9C - gestão de oficinas e filiais", () => {
       `${newWorkshop} Ltda`,
     );
     await page.getByLabel("CNPJ").fill(uniqueCnpj);
-    await page.getByLabel("TELEFONE").fill("(31) 3333-1910");
-    await page.getByLabel("WHATSAPP").fill("(31) 99999-1910");
+    await page
+      .getByLabel("Telefone", { exact: true })
+      .fill("(31) 3333-1910");
+    await page
+      .getByLabel("WhatsApp", { exact: true })
+      .fill("(31) 99999-1910");
     await page
       .getByLabel("E-MAIL DA OFICINA")
       .fill(`filial.${suffix}@example.com`);
