@@ -10,16 +10,25 @@ import {
 
 import { createClient } from "../../lib/supabase/server";
 
-function dashboardUrl(
-  kind: "organization_error" | "organization_switched",
-  value: string,
-) {
-  return `/dashboard?${kind}=${encodeURIComponent(value)}`;
+export type SwitchOrganizationResult =
+  | {
+      ok: true;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+function switchFailure(error: string): SwitchOrganizationResult {
+  return {
+    ok: false,
+    error,
+  };
 }
 
 export async function switchOrganizationAction(
   formData: FormData,
-): Promise<never> {
+): Promise<SwitchOrganizationResult> {
   const organizationId = String(
     formData.get("organization_id") ?? "",
   ).trim();
@@ -29,12 +38,7 @@ export async function switchOrganizationAction(
       organizationId,
     )
   ) {
-    redirect(
-      dashboardUrl(
-        "organization_error",
-        "Oficina inválida.",
-      ),
-    );
+    return switchFailure("Oficina inválida.");
   }
 
   const supabase = await createClient();
@@ -56,20 +60,14 @@ export async function switchOrganizationAction(
     .maybeSingle();
 
   if (membershipError) {
-    redirect(
-      dashboardUrl(
-        "organization_error",
-        "Não foi possível validar o acesso à oficina.",
-      ),
+    return switchFailure(
+      "Não foi possível validar o acesso à oficina.",
     );
   }
 
   if (!membership) {
-    redirect(
-      dashboardUrl(
-        "organization_error",
-        "Você não possui acesso a essa oficina.",
-      ),
+    return switchFailure(
+      "Você não possui acesso a essa oficina.",
     );
   }
 
@@ -81,12 +79,9 @@ export async function switchOrganizationAction(
     activeOrganizationCookieOptions(),
   );
 
-  redirect(
-    dashboardUrl(
-      "organization_switched",
-      "1",
-    ),
-  );
+  return {
+    ok: true,
+  };
 }
 
 export async function signOutAction() {

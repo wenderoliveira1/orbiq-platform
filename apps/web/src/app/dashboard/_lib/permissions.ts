@@ -33,6 +33,7 @@ export const ALL_PERMISSIONS = [
   "labor.manage",
   "suppliers.manage",
   "settings.manage",
+  "organizations.manage",
 ] as const;
 
 
@@ -52,7 +53,10 @@ const ROLE_PERMISSIONS:
     ALL_PERMISSIONS,
 
   admin:
-    ALL_PERMISSIONS,
+    ALL_PERMISSIONS.filter(
+      (permission) =>
+        permission !== "organizations.manage",
+    ),
 
   manager: [
     "dashboard.view",

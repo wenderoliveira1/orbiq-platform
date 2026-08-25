@@ -1,6 +1,15 @@
 "use client";
 
-import { useTransition, type ChangeEvent } from "react";
+import {
+  useState,
+  useTransition,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
+
+import type {
+  SwitchOrganizationResult,
+} from "./actions";
 
 const ROLE_LABELS: Record<string, string> = {
   owner: "Proprietário",
@@ -20,7 +29,9 @@ type OrganizationOption = {
 type Props = {
   organizations: OrganizationOption[];
   currentOrganizationId: string;
-  action: (formData: FormData) => void | Promise<void>;
+  action: (
+    formData: FormData,
+  ) => Promise<SwitchOrganizationResult>;
 };
 
 export function OrganizationSwitcher({
@@ -28,11 +39,16 @@ export function OrganizationSwitcher({
   currentOrganizationId,
   action,
 }: Props) {
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const current = organizations.find(
     (organization) => organization.id === currentOrganizationId,
   );
   const canSwitch = organizations.length > 1;
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+  }
 
   function handleOrganizationChange(
     event: ChangeEvent<HTMLSelectElement>,
@@ -48,17 +64,33 @@ export function OrganizationSwitcher({
 
     const formData = new FormData();
     formData.set("organization_id", nextOrganizationId);
+    setError(null);
 
     startTransition(async () => {
-      await action(formData);
+      try {
+        const result = await action(formData);
+
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+
+        window.location.replace(
+          "/dashboard?organization_switched=1",
+        );
+      } catch {
+        setError(
+          "Não foi possível trocar de oficina agora. Tente novamente.",
+        );
+      }
     });
   }
 
   return (
     <form
-      action={action}
       aria-label="Troca de oficina"
       style={{ display: "grid", gap: 8 }}
+      onSubmit={handleSubmit}
     >
       <label style={{ display: "grid", gap: 6 }}>
         <span className="orbiq-eyebrow">OFICINA ATIVA</span>
@@ -92,12 +124,16 @@ export function OrganizationSwitcher({
       </label>
 
       <span className="orbiq-role" aria-live="polite">
-        {ROLE_LABELS[current?.role ?? ""] ?? current?.role ?? "Usuário"}
-        {isPending
-          ? " · trocando oficina..."
-          : canSwitch
-            ? " · troque a oficina acima"
-            : " · 1 oficina vinculada"}
+        {error ??
+          (ROLE_LABELS[current?.role ?? ""] ??
+            current?.role ??
+            "Usuário")}
+        {!error &&
+          (isPending
+            ? " · trocando oficina..."
+            : canSwitch
+              ? " · troque a oficina acima"
+              : " · 1 oficina vinculada")}
       </span>
     </form>
   );

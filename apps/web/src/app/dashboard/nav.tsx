@@ -192,6 +192,19 @@ const items = [
   },
   {
     href:
+      "/dashboard/oficinas",
+
+    icon:
+      "▦",
+
+    label:
+      "Oficinas",
+
+    permission:
+      "organizations.manage",
+  },
+  {
+    href:
       "/dashboard/configuracoes",
 
     icon:

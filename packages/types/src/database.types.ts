@@ -1369,6 +1369,20 @@ export type Database = {
         Args: { target_org_id: string; target_work_order_service_id: string }
         Returns: string
       }
+      create_additional_organization: {
+        Args: {
+          organization_city: string
+          organization_cnpj: string
+          organization_email: string
+          organization_legal_name: string
+          organization_name: string
+          organization_phone: string
+          organization_slug: string
+          organization_state: string
+          organization_whatsapp: string
+        }
+        Returns: Json
+      }
       create_organization: {
         Args: {
           organization_cnpj?: string
