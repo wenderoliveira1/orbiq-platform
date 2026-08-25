@@ -31,7 +31,7 @@ export function CreateOrganizationForm({
         return;
       }
 
-      window.location.assign(
+      window.location.replace(
         "/dashboard?organization_switched=1&organization_created=1",
       );
     } catch {
