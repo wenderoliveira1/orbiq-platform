@@ -30,6 +30,7 @@ type Props = {
   items: Item[];
   discountType: string;
   discountValue: number;
+  defaultMarkup: number;
   locked: boolean;
 };
 
@@ -137,6 +138,7 @@ export function CommercialForm({
   items,
   discountType: initialDiscountType,
   discountValue: initialDiscountValue,
+  defaultMarkup,
   locked,
 }: Props) {
 
@@ -152,7 +154,21 @@ export function CommercialForm({
           (item) => [
             item.id,
             numberInput(
-              item.sale_unit_amount,
+              item.sale_unit_amount ??
+              (
+                item.chosen_amount !== null &&
+                item.quantity > 0
+                  ? (
+                      item.chosen_amount /
+                      item.quantity
+                    ) *
+                    (
+                      1 +
+                      defaultMarkup /
+                      100
+                    )
+                  : null
+              ),
             ),
           ],
         ),
@@ -165,7 +181,9 @@ export function CommercialForm({
     setMarkup,
   ] =
     useState(
-      "30",
+      numberInput(
+        defaultMarkup,
+      ),
     );
 
 

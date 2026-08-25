@@ -1,0 +1,94 @@
+name: Orbiq AutoQA
+
+on:
+  push:
+    branches:
+      - "qa/**"
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orbiq-autoqa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  autoqa:
+    name: AutoQA / Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install project dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Technical Quality Gate
+        run: node scripts/quality-gate.mjs
+
+      - name: Install Playwright test runner
+        run: pnpm add -Dw @playwright/test@1.55.0
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Export isolated Supabase environment
+        shell: bash
+        run: |
+          eval "$(pnpm exec supabase status -o env)"
+
+          PUBLIC_KEY="${PUBLISHABLE_KEY:-${ANON_KEY:-}}"
+
+          if [ -z "${API_URL:-}" ]; then
+            echo "Supabase API_URL not found"
+            exit 1
+          fi
+
+          if [ -z "$PUBLIC_KEY" ]; then
+            echo "Supabase publishable/anon key not found"
+            exit 1
+          fi
+
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLIC_KEY"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$PUBLIC_KEY"
+            echo "AUTOQA_SUPABASE_URL=$API_URL"
+            echo "AUTOQA_SUPABASE_PUBLIC_KEY=$PUBLIC_KEY"
+            echo "AUTOQA_POSTGRES_CONTAINER=supabase_db_orbiq-platform"
+            echo "AUTOQA_BASE_URL=http://127.0.0.1:3000"
+          } >> "$GITHUB_ENV"
+
+      - name: Run Orbiq AutoQA
+        run: pnpm exec playwright test
+
+      - name: Upload AutoQA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbiq-autoqa-report-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            playwright-report
+            test-results

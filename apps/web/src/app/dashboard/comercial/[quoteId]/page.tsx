@@ -255,6 +255,36 @@ export default async function CommercialDetailPage({
   }
 
 
+  const {
+    data: commercialDefaultsData,
+    error: commercialDefaultsError,
+  } =
+    await supabase.rpc(
+      "get_organization_commercial_defaults",
+      {
+        target_org_id:
+          organization.id,
+      },
+    );
+
+
+  if (
+    commercialDefaultsError
+  ) {
+
+    throw new Error(
+      `Falha ao carregar a margem padrão da oficina: ${commercialDefaultsError.message}`,
+    );
+  }
+
+
+  const commercialDefaults =
+    commercialDefaultsData as unknown as {
+      default_parts_margin_percent:
+        number;
+    } | null;
+
+
   const customer =
     customerResult.data;
 
@@ -664,6 +694,10 @@ export default async function CommercialDetailPage({
         }
         discountValue={
           quote.discount_value
+        }
+        defaultMarkup={
+          commercialDefaults?.default_parts_margin_percent ??
+          30
         }
         locked={
           locked
