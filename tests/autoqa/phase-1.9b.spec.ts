@@ -37,6 +37,10 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/dashboard/);
 }
 
+function activeWorkshop(page: Page) {
+  return page.getByLabel("Oficina ativa", { exact: true });
+}
+
 function createMultiOrganizationFixture() {
   const payload = runPostgres(`
     with account as (
@@ -237,7 +241,7 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
 
     await login(page);
 
-    const switcher = page.getByLabel("Oficina ativa");
+    const switcher = activeWorkshop(page);
     await expect(switcher).toHaveValue(organizationAId);
     await expect(
       switcher.locator(`option[value="${organizationAId}"]`),
@@ -259,13 +263,13 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
   }) => {
     await login(page);
 
-    const switcher = page.getByLabel("Oficina ativa");
+    const switcher = activeWorkshop(page);
     await expect(switcher).toHaveValue(organizationAId);
 
     await switcher.selectOption(organizationBId);
     await expect(page).toHaveURL(/organization_switched=1/);
 
-    const switched = page.getByLabel("Oficina ativa");
+    const switched = activeWorkshop(page);
     await expect(switched).toHaveValue(organizationBId);
     await expect(page.getByText("Gerente · troque a oficina acima")).toBeVisible();
     await expect(page.getByRole("link", { name: "Configurações" })).toHaveCount(0);
@@ -275,7 +279,7 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
     await expect(page.getByText("Cliente Exclusivo Matriz", { exact: true })).toHaveCount(0);
 
     await page.reload();
-    await expect(page.getByLabel("Oficina ativa")).toHaveValue(organizationBId);
+    await expect(activeWorkshop(page)).toHaveValue(organizationBId);
     await expect(page.getByText("Cliente Exclusivo Filial", { exact: true })).toBeVisible();
   });
 
@@ -283,9 +287,9 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
     page,
   }) => {
     await login(page);
-    await expect(page.getByLabel("Oficina ativa")).toHaveValue(organizationBId);
+    await expect(activeWorkshop(page)).toHaveValue(organizationBId);
 
-    await page.getByLabel("Oficina ativa").evaluate(
+    await activeWorkshop(page).evaluate(
       (node, targetId) => {
         const select = node as HTMLSelectElement;
         const option = document.createElement("option");
@@ -299,7 +303,7 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
     );
 
     await expect(page).toHaveURL(/organization_error=/);
-    await expect(page.getByLabel("Oficina ativa")).toHaveValue(organizationBId);
+    await expect(activeWorkshop(page)).toHaveValue(organizationBId);
 
     await page.goto("/dashboard/clientes");
     await expect(page.getByText("Cliente Exclusivo Filial", { exact: true })).toBeVisible();
