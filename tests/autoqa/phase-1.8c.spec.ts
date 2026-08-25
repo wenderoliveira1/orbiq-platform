@@ -67,7 +67,9 @@ test.describe("Fase 1.8C - identidade visual da oficina", () => {
     await login(page, state.email, state.password);
     await page.goto("/dashboard/configuracoes");
 
-    await page.locator('input[name="brand_primary_color"]').fill(BRAND_COLOR);
+    await page
+      .locator('input[name="brand_primary_color"]')
+      .fill(BRAND_COLOR.toLowerCase());
     await page.locator('input[name="brand_tagline"]').fill(BRAND_TAGLINE);
     await page.locator('input[name="logo"]').setInputFiles({
       name: "orbiq-autoqa-logo.png",
