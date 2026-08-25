@@ -19,7 +19,14 @@ const newWorkshop = `AutoQA Filial 1.9C ${suffix}`;
 const primarySlug = `autoqa-matriz-19c-${suffix}`;
 const newSlug = `autoqa-filial-19c-${suffix}`;
 const duplicateSlug = `autoqa-filial-duplicada-19c-${suffix}`;
-const uniqueCnpj = "48.765.432/0001-19";
+const uniqueCnpjDigits = suffix
+  .replace(/\D/g, "")
+  .slice(-14)
+  .padStart(14, "0");
+const uniqueCnpj = uniqueCnpjDigits.replace(
+  /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
+  "$1.$2.$3/$4-$5",
+);
 
 let ownerUserId = "";
 let managerUserId = "";
@@ -266,7 +273,7 @@ test.describe("Fase 1.9C - gestão de oficinas e filiais", () => {
         "create_additional_organization",
         additionalOrganizationArgs(
           duplicateSlug,
-          "48765432000119",
+          uniqueCnpjDigits,
         ),
         session.accessToken,
       ),
@@ -338,6 +345,9 @@ test.describe("Fase 1.9C - gestão de oficinas e filiais", () => {
 
     await activeWorkshop(page).selectOption(
       newOrganizationId,
+    );
+    await expect(page).toHaveURL(
+      /\/dashboard\?organization_switched=1$/,
     );
     await expect(activeWorkshop(page)).toHaveValue(
       newOrganizationId,
