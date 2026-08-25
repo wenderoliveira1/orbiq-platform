@@ -287,6 +287,11 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
     page,
   }) => {
     await login(page);
+
+    const legitimateSwitcher = activeWorkshop(page);
+    await expect(legitimateSwitcher).toHaveValue(organizationAId);
+    await legitimateSwitcher.selectOption(organizationBId);
+    await expect(page).toHaveURL(/organization_switched=1/);
     await expect(activeWorkshop(page)).toHaveValue(organizationBId);
 
     await activeWorkshop(page).evaluate(
