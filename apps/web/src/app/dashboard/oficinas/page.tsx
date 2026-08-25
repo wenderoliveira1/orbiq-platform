@@ -170,6 +170,7 @@ export default async function OrganizationsPage({
               <span>TELEFONE</span>
               <input
                 name="phone"
+                aria-label="Telefone"
                 maxLength={30}
                 placeholder="(00) 0000-0000"
               />
@@ -179,6 +180,7 @@ export default async function OrganizationsPage({
               <span>WHATSAPP</span>
               <input
                 name="whatsapp"
+                aria-label="WhatsApp"
                 maxLength={30}
                 placeholder="(00) 00000-0000"
               />
