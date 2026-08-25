@@ -38,7 +38,7 @@ export function OrganizationSwitcher({
     <form
       ref={formRef}
       action={action}
-      aria-label="Selecionar oficina ativa"
+      aria-label="Troca de oficina"
       style={{ display: "grid", gap: 8 }}
     >
       <label style={{ display: "grid", gap: 6 }}>
