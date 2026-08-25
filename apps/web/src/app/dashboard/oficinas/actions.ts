@@ -1,7 +1,6 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 import {
   ACTIVE_ORGANIZATION_COOKIE,
@@ -16,6 +15,16 @@ type CreatedOrganization = {
   slug: string;
   role: string;
 };
+
+export type CreateOrganizationResult =
+  | {
+      ok: true;
+      organizationId: string;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
 
 function text(formData: FormData, field: string): string {
   return String(formData.get(field) ?? "").trim();
@@ -36,10 +45,11 @@ function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function fail(message: string): never {
-  redirect(
-    `/dashboard/oficinas?error=${encodeURIComponent(message)}`,
-  );
+function failure(error: string): CreateOrganizationResult {
+  return {
+    ok: false,
+    error,
+  };
 }
 
 function isUuid(value: string): boolean {
@@ -50,7 +60,7 @@ function isUuid(value: string): boolean {
 
 export async function createAdditionalOrganizationAction(
   formData: FormData,
-): Promise<never> {
+): Promise<CreateOrganizationResult> {
   const { supabase } = await requireCurrentPermission(
     "organizations.manage",
   );
@@ -65,23 +75,25 @@ export async function createAdditionalOrganizationAction(
   const state = text(formData, "state").toUpperCase();
 
   if (name.length < 2 || name.length > 120 || !slug) {
-    fail("Informe um nome de oficina válido.");
+    return failure("Informe um nome de oficina válido.");
   }
 
   if (!phone && !whatsapp) {
-    fail("Informe pelo menos um telefone ou WhatsApp da oficina.");
+    return failure(
+      "Informe pelo menos um telefone ou WhatsApp da oficina.",
+    );
   }
 
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    fail("Informe um e-mail válido.");
+    return failure("Informe um e-mail válido.");
   }
 
   if (city.length < 2) {
-    fail("Informe a cidade da oficina.");
+    return failure("Informe a cidade da oficina.");
   }
 
   if (!/^[A-Z]{2}$/.test(state)) {
-    fail("Informe a UF com exatamente 2 letras.");
+    return failure("Informe a UF com exatamente 2 letras.");
   }
 
   const { data, error } = await supabase.rpc(
@@ -106,7 +118,7 @@ export async function createAdditionalOrganizationAction(
       normalized.includes("unique") ||
       normalized.includes("já existe");
 
-    fail(
+    return failure(
       duplicated
         ? "Já existe uma oficina com esse identificador ou CNPJ."
         : error.message,
@@ -119,7 +131,7 @@ export async function createAdditionalOrganizationAction(
   ).trim();
 
   if (!isUuid(organizationId)) {
-    fail(
+    return failure(
       "A oficina foi criada, mas não pôde ser ativada. Tente entrar novamente.",
     );
   }
@@ -132,5 +144,8 @@ export async function createAdditionalOrganizationAction(
     activeOrganizationCookieOptions(),
   );
 
-  redirect("/dashboard?organization_switched=1&organization_created=1");
+  return {
+    ok: true,
+    organizationId,
+  };
 }
