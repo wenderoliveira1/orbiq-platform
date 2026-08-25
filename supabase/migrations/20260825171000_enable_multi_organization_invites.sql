@@ -9,6 +9,9 @@ begin;
 -- possuía vínculo ativo com outra oficina. Com o contexto multiempresa,
 -- uma mesma conta pode pertencer a várias organizações e o isolamento
 -- continua sendo garantido por organization_members + RLS.
+--
+-- pgcrypto é instalado pelo Supabase no schema extensions. Por isso,
+-- funções que usam digest() precisam manter extensions no search_path.
 -- ===========================================================
 
 create or replace function
@@ -18,7 +21,7 @@ public.accept_organization_invite(
 returns jsonb
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
     invitation record;
@@ -136,9 +139,14 @@ to authenticated;
 do $verify$
 declare
     function_source text;
+    function_config text[];
 begin
-    select procedure_row.prosrc
-    into function_source
+    select
+        procedure_row.prosrc,
+        procedure_row.proconfig
+    into
+        function_source,
+        function_config
     from pg_proc as procedure_row
     join pg_namespace as namespace_row
         on namespace_row.oid = procedure_row.pronamespace
@@ -158,6 +166,14 @@ begin
     ) > 0 then
         raise exception
             'A barreira single-org ainda está presente';
+    end if;
+
+    if not coalesce(
+        'search_path=public, extensions' = any(function_config),
+        false
+    ) then
+        raise exception
+            'accept_organization_invite precisa de search_path public, extensions';
     end if;
 end;
 $verify$;
