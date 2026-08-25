@@ -9,8 +9,20 @@ import {
 } from "@/lib/organization-context";
 import { createClient } from "@/lib/supabase/server";
 
+type AcceptedInvite = {
+  organization_id: string;
+  organization_name: string;
+  role: string;
+};
+
 function token(formData: FormData): string {
   return String(formData.get("token") ?? "").trim();
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 }
 
 export async function acceptInviteAction(
@@ -24,7 +36,7 @@ export async function acceptInviteAction(
 
   const supabase = await createClient();
 
-  const { error } = await supabase.rpc(
+  const { data, error } = await supabase.rpc(
     "accept_organization_invite",
     {
       target_token: inviteToken,
@@ -37,30 +49,26 @@ export async function acceptInviteAction(
     );
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const acceptedInvite = data as unknown as AcceptedInvite | null;
+  const organizationId = String(
+    acceptedInvite?.organization_id ?? "",
+  ).trim();
 
-  if (user) {
-    const { data: newestMembership } = await supabase
-      .from("organization_members")
-      .select("organization_id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (newestMembership?.organization_id) {
-      const cookieStore = await cookies();
-
-      cookieStore.set(
-        ACTIVE_ORGANIZATION_COOKIE,
-        newestMembership.organization_id,
-        activeOrganizationCookieOptions(),
-      );
-    }
+  if (!isUuid(organizationId)) {
+    redirect(
+      `/convite/${inviteToken}?error=${encodeURIComponent(
+        "O convite foi aceito, mas a oficina não pôde ser ativada.",
+      )}`,
+    );
   }
+
+  const cookieStore = await cookies();
+
+  cookieStore.set(
+    ACTIVE_ORGANIZATION_COOKIE,
+    organizationId,
+    activeOrganizationCookieOptions(),
+  );
 
   redirect(
     "/dashboard/equipe?message=" +
