@@ -1,8 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import {
+  rpc,
   runPostgres,
   selectRows,
+  signIn,
   signUp,
   sqlLiteral,
 } from "./support/orbiq-api";
@@ -75,6 +77,28 @@ test.describe("Fase 1.9A - onboarding profissional da oficina", () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
 
+    const ownerRole = runPostgres(`
+      select membership.role
+      from auth.users as account
+      join public.organization_members as membership
+        on membership.user_id = account.id
+      where account.email = ${q(ownerEmail)}
+        and membership.organization_id = ${q(organizationId)}::uuid
+      limit 1;
+    `);
+
+    expect(ownerRole).toBe("owner");
+
+    const categoryCount = Number(
+      runPostgres(`
+        select count(*)
+        from public.supplier_categories
+        where organization_id = ${q(organizationId)}::uuid;
+      `),
+    );
+
+    expect(categoryCount).toBe(7);
+
     const settingsCount = Number(
       runPostgres(`
         select count(*)
@@ -84,6 +108,36 @@ test.describe("Fase 1.9A - onboarding profissional da oficina", () => {
     );
 
     expect(settingsCount).toBe(0);
+
+    const ownerSession = await signIn(ownerEmail, ownerPassword);
+
+    await expect(
+      rpc<string>(
+        "create_organization",
+        {
+          organization_name: `Duplicada ${suffix}`,
+          organization_slug: `duplicada-${suffix}`,
+          organization_cnpj: null,
+        },
+        ownerSession.accessToken,
+      ),
+    ).rejects.toThrow(/already has an active organization/i);
+
+    const organizationCount = Number(
+      runPostgres(`
+        select count(*)
+        from public.organization_members
+        where user_id = (
+          select id
+          from auth.users
+          where email = ${q(ownerEmail)}
+          limit 1
+        )
+          and status = 'active';
+      `),
+    );
+
+    expect(organizationCount).toBe(1);
 
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/onboarding\?step=profile/);
