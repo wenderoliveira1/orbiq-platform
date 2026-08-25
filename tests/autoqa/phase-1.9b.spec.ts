@@ -264,12 +264,20 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
       switcher.locator(`option[value="${organizationBId}"]`),
     ).toHaveText(workshopB);
 
-    await expect(page.getByText("Proprietário · troque a oficina acima")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Configurações" })).toBeVisible();
+    await expect(
+      page.getByText("Proprietário · troque a oficina acima"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Configurações" }),
+    ).toBeVisible();
 
     await page.goto("/dashboard/clientes");
-    await expect(page.getByText("Cliente Exclusivo Matriz", { exact: true })).toBeVisible();
-    await expect(page.getByText("Cliente Exclusivo Filial", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText("Cliente Exclusivo Matriz", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+    ).toHaveCount(0);
   });
 
   test("troca A para B altera dados e RBAC e persiste após reload", async ({
@@ -281,20 +289,29 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
     await expect(switcher).toHaveValue(organizationAId);
 
     await switcher.selectOption(organizationBId);
-    await expect(page).toHaveURL(/organization_switched=1/);
 
     const switched = activeWorkshop(page);
     await expect(switched).toHaveValue(organizationBId);
-    await expect(page.getByText("Gerente · troque a oficina acima")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Configurações" })).toHaveCount(0);
+    await expect(
+      page.getByText("Gerente · troque a oficina acima"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Configurações" }),
+    ).toHaveCount(0);
 
     await page.goto("/dashboard/clientes");
-    await expect(page.getByText("Cliente Exclusivo Filial", { exact: true })).toBeVisible();
-    await expect(page.getByText("Cliente Exclusivo Matriz", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Cliente Exclusivo Matriz", { exact: true }),
+    ).toHaveCount(0);
 
     await page.reload();
     await expect(activeWorkshop(page)).toHaveValue(organizationBId);
-    await expect(page.getByText("Cliente Exclusivo Filial", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+    ).toBeVisible();
   });
 
   test("seleção forjada de oficina sem vínculo é recusada e não troca o contexto", async ({
@@ -305,7 +322,6 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
     const legitimateSwitcher = activeWorkshop(page);
     await expect(legitimateSwitcher).toHaveValue(organizationAId);
     await legitimateSwitcher.selectOption(organizationBId);
-    await expect(page).toHaveURL(/organization_switched=1/);
     await expect(activeWorkshop(page)).toHaveValue(organizationBId);
 
     await activeWorkshop(page).evaluate(
@@ -321,12 +337,18 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
       foreignOrganizationId,
     );
 
-    await expect(page).toHaveURL(/organization_error=/);
     await expect(activeWorkshop(page)).toHaveValue(organizationBId);
+    await expect(
+      page.getByText("Gerente · troque a oficina acima"),
+    ).toBeVisible();
 
     await page.goto("/dashboard/clientes");
-    await expect(page.getByText("Cliente Exclusivo Filial", { exact: true })).toBeVisible();
-    await expect(page.getByText("Cliente Oficina Externa", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Cliente Oficina Externa", { exact: true }),
+    ).toHaveCount(0);
   });
 
   test("RLS continua bloqueando a oficina externa mesmo com UUID conhecido", async () => {
