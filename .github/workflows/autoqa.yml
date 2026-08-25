@@ -52,12 +52,13 @@ jobs:
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Export local Supabase environment
+      - name: Export isolated Supabase environment
         shell: bash
         run: |
           eval "$(pnpm exec supabase status -o env)"
 
           PUBLIC_KEY="${PUBLISHABLE_KEY:-${ANON_KEY:-}}"
+          ADMIN_KEY="${SERVICE_ROLE_KEY:-${SECRET_KEY:-}}"
 
           if [ -z "${API_URL:-}" ]; then
             echo "Supabase API_URL not found"
@@ -69,12 +70,20 @@ jobs:
             exit 1
           fi
 
+          if [ -z "$ADMIN_KEY" ]; then
+            echo "Supabase service/secret key not found"
+            exit 1
+          fi
+
+          echo "::add-mask::$ADMIN_KEY"
+
           {
             echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
             echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLIC_KEY"
             echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$PUBLIC_KEY"
             echo "AUTOQA_SUPABASE_URL=$API_URL"
             echo "AUTOQA_SUPABASE_PUBLIC_KEY=$PUBLIC_KEY"
+            echo "AUTOQA_SUPABASE_SECRET_KEY=$ADMIN_KEY"
             echo "AUTOQA_BASE_URL=http://127.0.0.1:3000"
           } >> "$GITHUB_ENV"
 

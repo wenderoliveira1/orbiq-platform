@@ -19,9 +19,11 @@ export type AutoQaState = {
 
 function required(name: string): string {
   const value = process.env[name]?.trim();
+
   if (!value) {
     throw new Error(`Variavel obrigatoria ausente: ${name}`);
   }
+
   return value;
 }
 
@@ -29,6 +31,7 @@ export function autoQaEnv() {
   return {
     url: required("AUTOQA_SUPABASE_URL").replace(/\/$/, ""),
     publicKey: required("AUTOQA_SUPABASE_PUBLIC_KEY"),
+    secretKey: required("AUTOQA_SUPABASE_SECRET_KEY"),
   };
 }
 
@@ -55,37 +58,52 @@ async function parseResponse(response: Response) {
   return data;
 }
 
-async function request(
-  path: string,
-  options: {
-    method?: string;
-    body?: unknown;
-    accessToken?: string;
-    prefer?: string;
-  } = {},
-) {
+type RequestOptions = {
+  method?: string;
+  body?: unknown;
+  accessToken?: string | null;
+  apiKey?: string;
+  prefer?: string;
+};
+
+async function request(path: string, options: RequestOptions = {}) {
   const { url, publicKey } = autoQaEnv();
-  const token = options.accessToken ?? publicKey;
+  const apiKey = options.apiKey ?? publicKey;
+  const headers: Record<string, string> = {
+    apikey: apiKey,
+    "Content-Type": "application/json",
+    ...(options.prefer ? { Prefer: options.prefer } : {}),
+  };
+
+  const authorization =
+    options.accessToken === undefined
+      ? apiKey
+      : options.accessToken;
+
+  if (authorization) {
+    headers.Authorization = `Bearer ${authorization}`;
+  }
 
   const response = await fetch(`${url}${path}`, {
     method: options.method ?? "GET",
-    headers: {
-      apikey: publicKey,
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      ...(options.prefer ? { Prefer: options.prefer } : {}),
-    },
+    headers,
     ...(options.body === undefined
       ? {}
-      : { body: JSON.stringify(options.body) }),
+      : {
+          body: JSON.stringify(options.body),
+        }),
   });
 
   return parseResponse(response);
 }
 
 export async function signUp(email: string, password: string) {
+  const { publicKey } = autoQaEnv();
+
   const data = (await request("/auth/v1/signup", {
     method: "POST",
+    apiKey: publicKey,
+    accessToken: publicKey,
     body: {
       email,
       password,
@@ -95,7 +113,9 @@ export async function signUp(email: string, password: string) {
     },
   })) as {
     access_token?: string;
-    user?: { id?: string };
+    user?: {
+      id?: string;
+    };
   };
 
   if (!data.access_token || !data.user?.id) {
@@ -109,15 +129,21 @@ export async function signUp(email: string, password: string) {
 }
 
 export async function signIn(email: string, password: string) {
-  const data = (await request(
-    "/auth/v1/token?grant_type=password",
-    {
-      method: "POST",
-      body: { email, password },
+  const { publicKey } = autoQaEnv();
+
+  const data = (await request("/auth/v1/token?grant_type=password", {
+    method: "POST",
+    apiKey: publicKey,
+    accessToken: publicKey,
+    body: {
+      email,
+      password,
     },
-  )) as {
+  })) as {
     access_token?: string;
-    user?: { id?: string };
+    user?: {
+      id?: string;
+    };
   };
 
   if (!data.access_token || !data.user?.id) {
@@ -176,6 +202,51 @@ export async function selectRows<T>(
 ): Promise<T> {
   return (await request(`/rest/v1/${table}?${query}`, {
     accessToken,
+  })) as T;
+}
+
+function adminCredentials() {
+  const { secretKey } = autoQaEnv();
+
+  // Chaves service_role legadas são JWTs e podem ir em Authorization.
+  // As novas sb_secret_* são opacas e devem ser usadas como apikey.
+  return {
+    apiKey: secretKey,
+    accessToken: secretKey.startsWith("sb_secret_") ? null : secretKey,
+  };
+}
+
+export async function adminInsertRows<T>(
+  table: string,
+  rows: unknown,
+): Promise<T> {
+  return (await request(`/rest/v1/${table}`, {
+    method: "POST",
+    body: rows,
+    prefer: "return=representation",
+    ...adminCredentials(),
+  })) as T;
+}
+
+export async function adminPatchRows<T>(
+  table: string,
+  query: string,
+  values: unknown,
+): Promise<T> {
+  return (await request(`/rest/v1/${table}?${query}`, {
+    method: "PATCH",
+    body: values,
+    prefer: "return=representation",
+    ...adminCredentials(),
+  })) as T;
+}
+
+export async function adminSelectRows<T>(
+  table: string,
+  query: string,
+): Promise<T> {
+  return (await request(`/rest/v1/${table}?${query}`, {
+    ...adminCredentials(),
   })) as T;
 }
 

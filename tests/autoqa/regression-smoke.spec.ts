@@ -20,6 +20,7 @@ const routes = [
   "/dashboard/cotacoes",
   "/dashboard/comercial",
   "/dashboard/fornecedores",
+  "/dashboard/mao-de-obra",
   "/dashboard/compras",
   "/dashboard/execucao",
   "/dashboard/equipe",
@@ -35,14 +36,19 @@ test.describe("Regressão operacional - smoke test", () => {
     await login(page, state.email, state.password);
 
     for (const route of routes) {
-      const response = await page.goto(route, { waitUntil: "domcontentloaded" });
+      const response = await page.goto(route, {
+        waitUntil: "domcontentloaded",
+      });
 
       expect(
         response?.status() ?? 200,
         `HTTP inválido em ${route}`,
       ).toBeLessThan(500);
 
-      await expect(page.locator("body"), `erro visual em ${route}`).not.toContainText(
+      await expect(
+        page.locator("body"),
+        `erro visual em ${route}`,
+      ).not.toContainText(
         /Application error|Internal Server Error|Unhandled Runtime Error|permission denied|Permissão negada/i,
       );
     }

@@ -3,9 +3,8 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 
 import {
-  insertRows,
-  rpc,
-  selectRows,
+  adminInsertRows,
+  adminSelectRows,
   signUp,
   type AutoQaState,
 } from "./support/orbiq-api";
@@ -13,57 +12,69 @@ import {
 const stateDirectory = resolve(process.cwd(), ".autoqa");
 const statePath = resolve(stateDirectory, "state.json");
 
+function token() {
+  return randomBytes(32).toString("hex");
+}
+
 export default async function globalSetup() {
   const stamp = Date.now();
   const email = `orbiq.autoqa.${stamp}@example.com`;
   const password = `Orbiq-AutoQA-${stamp}!Aa1`;
 
-  const { accessToken, userId } = await signUp(email, password);
+  // O usuário é criado pela mesma API pública usada pelo produto.
+  // Apenas a preparação dos fixtures usa a chave administrativa LOCAL do runner.
+  // Nenhuma chave ou dado de produção participa deste processo.
+  const { userId } = await signUp(email, password);
 
-  const organizationId = await rpc<string>(
-    "create_organization",
-    {
-      organization_name: "Orbiq AutoQA Oficina",
-      organization_slug: `orbiq-autoqa-${stamp}`,
-      organization_cnpj: "12.345.678/0001-99",
-    },
-    accessToken,
-  );
-
-  if (!organizationId) {
-    throw new Error("create_organization nao retornou organization_id.");
-  }
-
-  await rpc(
-    "update_organization_settings",
-    {
-      target_org_id: organizationId,
-      target_name: "Orbiq AutoQA Oficina",
-      target_cnpj: "12.345.678/0001-99",
-      target_legal_name: "Orbiq AutoQA Ltda",
-      target_phone: "(31) 3333-4444",
-      target_whatsapp: "(31) 99999-8888",
-      target_email: "qa@orbiq.example.com",
-      target_postal_code: "30110-000",
-      target_address_line: "Avenida AutoQA",
-      target_address_number: "100",
-      target_address_complement: "Box 1",
-      target_district: "Centro",
-      target_city: "Belo Horizonte",
-      target_state: "MG",
-      target_quote_validity_days: 10,
-      target_default_parts_margin_percent: 35,
-      target_default_quote_notes:
-        "AUTOQA: orçamento válido conforme condições da oficina.",
-    },
-    accessToken,
-  );
-
+  const organizationId = randomUUID();
   const customerId = randomUUID();
   const vehicleId = randomUUID();
   const supplierId = randomUUID();
 
-  await insertRows(
+  await adminInsertRows(
+    "organizations",
+    {
+      id: organizationId,
+      name: "Orbiq AutoQA Oficina",
+      slug: `orbiq-autoqa-${stamp}`,
+      cnpj: "12.345.678/0001-99",
+      plan: "professional",
+    },
+  );
+
+  await adminInsertRows(
+    "organization_members",
+    {
+      organization_id: organizationId,
+      user_id: userId,
+      role: "owner",
+      status: "active",
+    },
+  );
+
+  await adminInsertRows(
+    "organization_settings",
+    {
+      organization_id: organizationId,
+      legal_name: "Orbiq AutoQA Ltda",
+      phone: "(31) 3333-4444",
+      whatsapp: "(31) 99999-8888",
+      email: "qa@orbiq.example.com",
+      postal_code: "30110-000",
+      address_line: "Avenida AutoQA",
+      address_number: "100",
+      address_complement: "Box 1",
+      district: "Centro",
+      city: "Belo Horizonte",
+      state: "MG",
+      quote_validity_days: 10,
+      default_parts_margin_percent: 35,
+      default_quote_notes:
+        "AUTOQA: orçamento válido conforme condições da oficina.",
+    },
+  );
+
+  await adminInsertRows(
     "customers",
     {
       id: customerId,
@@ -73,10 +84,9 @@ export default async function globalSetup() {
       email: "cliente.autoqa@example.com",
       created_by: userId,
     },
-    accessToken,
   );
 
-  await insertRows(
+  await adminInsertRows(
     "vehicles",
     {
       id: vehicleId,
@@ -89,10 +99,9 @@ export default async function globalSetup() {
       model_year: 2026,
       mileage: 12345,
     },
-    accessToken,
   );
 
-  await insertRows(
+  await adminInsertRows(
     "suppliers",
     {
       id: supplierId,
@@ -102,7 +111,6 @@ export default async function globalSetup() {
       notes: "Criado automaticamente pelo AutoQA",
       active: true,
     },
-    accessToken,
   );
 
   const marginQuoteId = randomUUID();
@@ -110,7 +118,7 @@ export default async function globalSetup() {
   const publicApproveQuoteId = randomUUID();
   const publicRejectQuoteId = randomUUID();
 
-  await insertRows(
+  await adminInsertRows(
     "quotes",
     [
       {
@@ -133,8 +141,16 @@ export default async function globalSetup() {
         protocol: `AUTOQA-${stamp}-SAVED`,
         priority: "normal",
         status: "estimating",
-        commercial_status: "draft",
+        commercial_status: "ready",
         mileage: 12345,
+        parts_cost_amount: 100,
+        parts_sale_amount: 175,
+        labor_sale_amount: 150,
+        subtotal_amount: 325,
+        discount_type: "none",
+        discount_value: 0,
+        discount_amount: 0,
+        final_amount: 325,
         created_by: userId,
       },
       {
@@ -145,8 +161,16 @@ export default async function globalSetup() {
         protocol: `AUTOQA-${stamp}-PUBLIC-A`,
         priority: "normal",
         status: "estimating",
-        commercial_status: "draft",
+        commercial_status: "ready",
         mileage: 12345,
+        parts_cost_amount: 100,
+        parts_sale_amount: 135,
+        labor_sale_amount: 150,
+        subtotal_amount: 285,
+        discount_type: "none",
+        discount_value: 0,
+        discount_amount: 0,
+        final_amount: 285,
         created_by: userId,
       },
       {
@@ -157,12 +181,19 @@ export default async function globalSetup() {
         protocol: `AUTOQA-${stamp}-PUBLIC-R`,
         priority: "normal",
         status: "estimating",
-        commercial_status: "draft",
+        commercial_status: "ready",
         mileage: 12345,
+        parts_cost_amount: 100,
+        parts_sale_amount: 135,
+        labor_sale_amount: 150,
+        subtotal_amount: 285,
+        discount_type: "none",
+        discount_value: 0,
+        discount_amount: 0,
+        final_amount: 285,
         created_by: userId,
       },
     ],
-    accessToken,
   );
 
   const marginItemId = randomUUID();
@@ -170,7 +201,7 @@ export default async function globalSetup() {
   const approveItemId = randomUUID();
   const rejectItemId = randomUUID();
 
-  await insertRows(
+  await adminInsertRows(
     "quote_services",
     [
       {
@@ -210,10 +241,9 @@ export default async function globalSetup() {
         labor_amount: 150,
       },
     ],
-    accessToken,
   );
 
-  await insertRows(
+  await adminInsertRows(
     "quote_items",
     [
       {
@@ -239,8 +269,8 @@ export default async function globalSetup() {
         unit: "un",
         supplier_id: supplierId,
         chosen_amount: 100,
-        sale_unit_amount: null,
-        sale_total_amount: null,
+        sale_unit_amount: 175,
+        sale_total_amount: 175,
       },
       {
         id: approveItemId,
@@ -252,8 +282,8 @@ export default async function globalSetup() {
         unit: "un",
         supplier_id: supplierId,
         chosen_amount: 100,
-        sale_unit_amount: null,
-        sale_total_amount: null,
+        sale_unit_amount: 135,
+        sale_total_amount: 135,
       },
       {
         id: rejectItemId,
@@ -265,76 +295,63 @@ export default async function globalSetup() {
         unit: "un",
         supplier_id: supplierId,
         chosen_amount: 100,
-        sale_unit_amount: null,
-        sale_total_amount: null,
+        sale_unit_amount: 135,
+        sale_total_amount: 135,
       },
     ],
-    accessToken,
   );
 
-  await rpc(
-    "save_quote_commercial",
-    {
-      target_org_id: organizationId,
-      target_quote_id: savedQuoteId,
-      target_items: [
-        { quote_item_id: savedItemId, sale_unit_amount: 175 },
-      ],
-      target_discount_type: "none",
-      target_discount_value: 0,
-    },
-    accessToken,
-  );
+  // Inserimos links diretamente no banco isolado para testar o trigger real da 1.8B.
+  // O expires_at enviado aqui é propositalmente incorreto (1 dia); o trigger deve
+  // substituí-lo pela validade configurada de 10 dias.
+  const publicApproveToken = token();
+  const publicRejectToken = token();
+  const dummyExpiry = new Date(Date.now() + 86_400_000).toISOString();
 
-  for (const [quoteId, itemId] of [
-    [publicApproveQuoteId, approveItemId],
-    [publicRejectQuoteId, rejectItemId],
-  ] as const) {
-    await rpc(
-      "save_quote_commercial",
-      {
-        target_org_id: organizationId,
-        target_quote_id: quoteId,
-        target_items: [
-          { quote_item_id: itemId, sale_unit_amount: 135 },
-        ],
-        target_discount_type: "none",
-        target_discount_value: 0,
-      },
-      accessToken,
-    );
-  }
-
-  const publicApproveToken = await rpc<string>(
-    "create_quote_public_link",
-    {
-      target_org_id: organizationId,
-      target_quote_id: publicApproveQuoteId,
-    },
-    accessToken,
-  );
-
-  const publicRejectToken = await rpc<string>(
-    "create_quote_public_link",
-    {
-      target_org_id: organizationId,
-      target_quote_id: publicRejectQuoteId,
-    },
-    accessToken,
-  );
-
-  if (!publicApproveToken || !publicRejectToken) {
-    throw new Error("AutoQA nao conseguiu gerar os links publicos.");
-  }
-
-  const links = await selectRows<Array<{ token: string; expires_at: string }>>(
+  await adminInsertRows(
     "quote_public_links",
-    `token=in.(${publicApproveToken},${publicRejectToken})&select=token,expires_at`,
-    accessToken,
+    [
+      {
+        organization_id: organizationId,
+        quote_id: publicApproveQuoteId,
+        token: publicApproveToken,
+        expires_at: dummyExpiry,
+        created_by: userId,
+      },
+      {
+        organization_id: organizationId,
+        quote_id: publicRejectQuoteId,
+        token: publicRejectToken,
+        expires_at: dummyExpiry,
+        created_by: userId,
+      },
+    ],
+  );
+
+  const links = await adminSelectRows<
+    Array<{
+      token: string;
+      created_at: string;
+      expires_at: string;
+    }>
+  >(
+    "quote_public_links",
+    `token=in.(${publicApproveToken},${publicRejectToken})&select=token,created_at,expires_at`,
   );
 
   if (links.length !== 2) {
-    throw new Error(`Links publicos esperados: 2; encontrados: ${links.length}`);
+    throw new Error(`Links públicos esperados: 2; encontrados: ${links.length}`);
+  }
+
+  for (const link of links) {
+    const days =
+      (Date.parse(link.expires_at) - Date.parse(link.created_at)) / 86_400_000;
+
+    if (days < 9.9 || days > 10.1) {
+      throw new Error(
+        `Trigger de validade falhou no fixture AutoQA. Dias encontrados: ${days}`,
+      );
+    }
   }
 
   const state: AutoQaState = {
@@ -353,11 +370,18 @@ export default async function globalSetup() {
     publicRejectToken,
   };
 
-  await mkdir(stateDirectory, { recursive: true });
-  await writeFile(statePath, JSON.stringify(state, null, 2), "utf8");
+  await mkdir(stateDirectory, {
+    recursive: true,
+  });
+
+  await writeFile(
+    statePath,
+    JSON.stringify(state, null, 2),
+    "utf8",
+  );
 
   console.log("[AUTOQA] Ambiente isolado criado com sucesso.");
-  console.log(`[AUTOQA] Oficina: ${organizationId}`);
-  console.log(`[AUTOQA] Usuario: ${email}`);
-  console.log("[AUTOQA] Nenhum dado de producao foi utilizado.");
+  console.log(`[AUTOQA] Oficina sintética: ${organizationId}`);
+  console.log(`[AUTOQA] Usuário sintético: ${email}`);
+  console.log("[AUTOQA] Nenhum dado de produção foi utilizado.");
 }
