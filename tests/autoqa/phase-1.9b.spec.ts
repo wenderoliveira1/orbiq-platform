@@ -1,0 +1,599 @@
+import { randomUUID } from "node:crypto";
+
+import { expect, test, type Page } from "@playwright/test";
+
+import {
+  runPostgres,
+  selectRows,
+  signIn,
+  signUp,
+  sqlLiteral,
+} from "./support/orbiq-api";
+
+const suffix = `${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+const email = `orbiq.multi.${suffix}@example.com`;
+const password = "OrbiqQA!2026";
+
+const workshopA = `AutoQA Matriz ${suffix}`;
+const workshopB = `AutoQA Filial ${suffix}`;
+const workshopForeign = `AutoQA Externa ${suffix}`;
+
+const slugA = `autoqa-matriz-${suffix}`;
+const slugB = `autoqa-filial-${suffix}`;
+const slugForeign = `autoqa-externa-${suffix}`;
+
+let userId = "";
+let organizationAId = "";
+let organizationBId = "";
+let foreignOrganizationId = "";
+
+function q(value: string): string {
+  return sqlLiteral(value);
+}
+
+async function login(page: Page) {
+  await page.goto("/login");
+  await page.getByLabel("E-mail").fill(email);
+  await page.getByLabel("Senha").fill(password);
+  await page.getByRole("button", { name: "Entrar no Orbiq" }).click();
+  await expect(page).toHaveURL(/\/dashboard/);
+}
+
+async function loginAs(
+  page: Page,
+  accountEmail: string,
+  accountPassword: string,
+) {
+  await page.goto("/login");
+  await page.getByLabel("E-mail").fill(accountEmail);
+  await page.getByLabel("Senha").fill(accountPassword);
+  await page.getByRole("button", { name: "Entrar no Orbiq" }).click();
+  await expect(page).toHaveURL(/\/dashboard/);
+}
+
+function activeWorkshop(page: Page) {
+  return page.getByLabel("Oficina ativa", { exact: true });
+}
+
+function createMultiOrganizationFixture() {
+  const payload = runPostgres(`
+    with account as (
+      select id
+      from auth.users
+      where email = ${q(email)}
+      limit 1
+    ),
+    organization_a as (
+      insert into public.organizations (
+        name,
+        slug,
+        cnpj,
+        created_at
+      )
+      values (
+        ${q(workshopA)},
+        ${q(slugA)},
+        '11.111.111/0001-11',
+        now() - interval '2 minutes'
+      )
+      returning id
+    ),
+    organization_b as (
+      insert into public.organizations (
+        name,
+        slug,
+        cnpj,
+        created_at
+      )
+      values (
+        ${q(workshopB)},
+        ${q(slugB)},
+        '22.222.222/0001-22',
+        now() - interval '1 minute'
+      )
+      returning id
+    ),
+    organization_foreign as (
+      insert into public.organizations (
+        name,
+        slug,
+        cnpj
+      )
+      values (
+        ${q(workshopForeign)},
+        ${q(slugForeign)},
+        '33.333.333/0001-33'
+      )
+      returning id
+    ),
+    membership_a as (
+      insert into public.organization_members (
+        organization_id,
+        user_id,
+        role,
+        status,
+        created_at
+      )
+      select
+        organization_a.id,
+        account.id,
+        'owner',
+        'active',
+        now() - interval '2 minutes'
+      from organization_a, account
+      returning organization_id
+    ),
+    membership_b as (
+      insert into public.organization_members (
+        organization_id,
+        user_id,
+        role,
+        status,
+        created_at
+      )
+      select
+        organization_b.id,
+        account.id,
+        'manager',
+        'active',
+        now() - interval '1 minute'
+      from organization_b, account
+      returning organization_id
+    ),
+    settings_a as (
+      insert into public.organization_settings (
+        organization_id,
+        legal_name,
+        city,
+        state
+      )
+      select
+        organization_a.id,
+        ${q(`${workshopA} Ltda`)},
+        'Belo Horizonte',
+        'MG'
+      from organization_a
+      returning organization_id
+    ),
+    settings_b as (
+      insert into public.organization_settings (
+        organization_id,
+        legal_name,
+        city,
+        state
+      )
+      select
+        organization_b.id,
+        ${q(`${workshopB} Ltda`)},
+        'Contagem',
+        'MG'
+      from organization_b
+      returning organization_id
+    ),
+    customer_a as (
+      insert into public.customers (
+        organization_id,
+        name,
+        phone
+      )
+      select
+        organization_a.id,
+        'Cliente Exclusivo Matriz',
+        '(31) 99999-1001'
+      from organization_a
+      returning id
+    ),
+    customer_b as (
+      insert into public.customers (
+        organization_id,
+        name,
+        phone
+      )
+      select
+        organization_b.id,
+        'Cliente Exclusivo Filial',
+        '(31) 99999-2002'
+      from organization_b
+      returning id
+    ),
+    customer_foreign as (
+      insert into public.customers (
+        organization_id,
+        name,
+        phone
+      )
+      select
+        organization_foreign.id,
+        'Cliente Oficina Externa',
+        '(31) 99999-3003'
+      from organization_foreign
+      returning id
+    )
+    select json_build_object(
+      'userId', account.id,
+      'organizationAId', organization_a.id,
+      'organizationBId', organization_b.id,
+      'foreignOrganizationId', organization_foreign.id
+    )::text
+    from
+      account,
+      organization_a,
+      organization_b,
+      organization_foreign,
+      membership_a,
+      membership_b,
+      settings_a,
+      settings_b,
+      customer_a,
+      customer_b,
+      customer_foreign;
+  `);
+
+  return JSON.parse(payload) as {
+    userId: string;
+    organizationAId: string;
+    organizationBId: string;
+    foreignOrganizationId: string;
+  };
+}
+
+test.describe("Fase 1.9B - contexto multiempresa", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test("conta com duas oficinas inicia em contexto determinístico", async ({
+    page,
+  }) => {
+    const signup = await signUp(email, password);
+    userId = signup.userId;
+
+    const fixture = createMultiOrganizationFixture();
+    organizationAId = fixture.organizationAId;
+    organizationBId = fixture.organizationBId;
+    foreignOrganizationId = fixture.foreignOrganizationId;
+
+    expect(fixture.userId).toBe(userId);
+
+    await login(page);
+
+    const switcher = activeWorkshop(page);
+    await expect(switcher).toHaveValue(organizationAId);
+    await expect(
+      switcher.locator(`option[value="${organizationAId}"]`),
+    ).toHaveText(workshopA);
+    await expect(
+      switcher.locator(`option[value="${organizationBId}"]`),
+    ).toHaveText(workshopB);
+
+    await expect(
+      page.getByText("Proprietário · troque a oficina acima"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Configurações" }),
+    ).toBeVisible();
+
+    await page.goto("/dashboard/clientes");
+    await expect(
+      page.getByText("Cliente Exclusivo Matriz", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+    ).toHaveCount(0);
+  });
+
+  test("troca A para B altera dados e RBAC e persiste após reload", async ({
+    page,
+  }) => {
+    await login(page);
+
+    const switcher = activeWorkshop(page);
+    await expect(switcher).toHaveValue(organizationAId);
+
+    await switcher.selectOption(organizationBId);
+
+    const switched = activeWorkshop(page);
+    await expect(switched).toHaveValue(organizationBId);
+    await expect(
+      page.getByText("Gerente · troque a oficina acima"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Configurações" }),
+    ).toHaveCount(0);
+
+    await page.goto("/dashboard/clientes");
+    await expect(
+      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Cliente Exclusivo Matriz", { exact: true }),
+    ).toHaveCount(0);
+
+    await page.reload();
+    await expect(activeWorkshop(page)).toHaveValue(organizationBId);
+    await expect(
+      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+    ).toBeVisible();
+  });
+
+  test("seleção forjada de oficina sem vínculo é recusada e não troca o contexto", async ({
+    page,
+  }) => {
+    await login(page);
+
+    const legitimateSwitcher = activeWorkshop(page);
+    await expect(legitimateSwitcher).toHaveValue(organizationAId);
+    await legitimateSwitcher.selectOption(organizationBId);
+    await expect(activeWorkshop(page)).toHaveValue(organizationBId);
+
+    await activeWorkshop(page).evaluate(
+      (node, targetId) => {
+        const select = node as HTMLSelectElement;
+        const option = document.createElement("option");
+        option.value = String(targetId);
+        option.textContent = "Oficina forjada";
+        select.append(option);
+        select.value = String(targetId);
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      },
+      foreignOrganizationId,
+    );
+
+    await expect(activeWorkshop(page)).toHaveValue(organizationBId);
+    await expect(
+      page.getByText("Gerente · troque a oficina acima"),
+    ).toBeVisible();
+
+    await page.goto("/dashboard/clientes");
+    await expect(
+      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Cliente Oficina Externa", { exact: true }),
+    ).toHaveCount(0);
+  });
+
+  test("RLS continua bloqueando a oficina externa mesmo com UUID conhecido", async () => {
+    const session = await signIn(email, password);
+
+    const organizations = await selectRows<Array<{ id: string }>>(
+      "organizations",
+      `select=id&id=eq.${foreignOrganizationId}`,
+      session.accessToken,
+    );
+
+    const customers = await selectRows<Array<{ id: string }>>(
+      "customers",
+      `select=id&organization_id=eq.${foreignOrganizationId}`,
+      session.accessToken,
+    );
+
+    expect(organizations).toEqual([]);
+    expect(customers).toEqual([]);
+  });
+});
+
+test.describe("Fase 1.9B - ingresso real em segunda oficina", () => {
+  test("conta já vinculada aceita convite real e ativa exatamente a nova oficina", async ({
+    page,
+  }) => {
+    const invitedEmail = `orbiq.multi.invited.${suffix}@example.com`;
+    const inviterEmail = `orbiq.multi.inviter.${suffix}@example.com`;
+    const invitedWorkshop = `AutoQA Convite Origem ${suffix}`;
+    const destinationWorkshop = `AutoQA Convite Destino ${suffix}`;
+    const invitedSlug = `autoqa-convite-origem-${suffix}`;
+    const destinationSlug = `autoqa-convite-destino-${suffix}`;
+    const inviteToken =
+      randomUUID().replaceAll("-", "") + randomUUID().replaceAll("-", "");
+
+    const invitedAccount = await signUp(invitedEmail, password);
+    await signUp(inviterEmail, password);
+
+    const fixture = JSON.parse(
+      runPostgres(`
+        with invited_account as (
+          select id
+          from auth.users
+          where email = ${q(invitedEmail)}
+          limit 1
+        ),
+        inviter_account as (
+          select id
+          from auth.users
+          where email = ${q(inviterEmail)}
+          limit 1
+        ),
+        source_organization as (
+          insert into public.organizations (
+            name,
+            slug,
+            created_at
+          )
+          values (
+            ${q(invitedWorkshop)},
+            ${q(invitedSlug)},
+            now() - interval '2 minutes'
+          )
+          returning id
+        ),
+        destination_organization as (
+          insert into public.organizations (
+            name,
+            slug,
+            created_at
+          )
+          values (
+            ${q(destinationWorkshop)},
+            ${q(destinationSlug)},
+            now() - interval '1 minute'
+          )
+          returning id
+        ),
+        source_membership as (
+          insert into public.organization_members (
+            organization_id,
+            user_id,
+            role,
+            status,
+            created_at
+          )
+          select
+            source_organization.id,
+            invited_account.id,
+            'owner',
+            'active',
+            now() - interval '2 minutes'
+          from source_organization, invited_account
+          returning organization_id
+        ),
+        destination_owner as (
+          insert into public.organization_members (
+            organization_id,
+            user_id,
+            role,
+            status,
+            created_at
+          )
+          select
+            destination_organization.id,
+            inviter_account.id,
+            'owner',
+            'active',
+            now() - interval '1 minute'
+          from destination_organization, inviter_account
+          returning organization_id
+        ),
+        source_settings as (
+          insert into public.organization_settings (
+            organization_id,
+            legal_name,
+            city,
+            state
+          )
+          select
+            source_organization.id,
+            ${q(`${invitedWorkshop} Ltda`)},
+            'Betim',
+            'MG'
+          from source_organization
+          returning organization_id
+        ),
+        destination_settings as (
+          insert into public.organization_settings (
+            organization_id,
+            legal_name,
+            city,
+            state
+          )
+          select
+            destination_organization.id,
+            ${q(`${destinationWorkshop} Ltda`)},
+            'Nova Lima',
+            'MG'
+          from destination_organization
+          returning organization_id
+        ),
+        invitation as (
+          insert into public.organization_invites (
+            organization_id,
+            email,
+            role,
+            token_hash,
+            expires_at,
+            invited_by
+          )
+          select
+            destination_organization.id,
+            ${q(invitedEmail)},
+            'manager',
+            encode(digest(${q(inviteToken)}, 'sha256'), 'hex'),
+            now() + interval '7 days',
+            inviter_account.id
+          from destination_organization, inviter_account
+          returning id
+        )
+        select json_build_object(
+          'sourceOrganizationId', source_organization.id,
+          'destinationOrganizationId', destination_organization.id,
+          'inviteId', invitation.id
+        )::text
+        from
+          source_organization,
+          destination_organization,
+          source_membership,
+          destination_owner,
+          source_settings,
+          destination_settings,
+          invitation;
+      `),
+    ) as {
+      sourceOrganizationId: string;
+      destinationOrganizationId: string;
+      inviteId: string;
+    };
+
+    expect(invitedAccount.userId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+
+    await loginAs(page, invitedEmail, password);
+
+    await expect(activeWorkshop(page)).toHaveValue(
+      fixture.sourceOrganizationId,
+    );
+    await expect(activeWorkshop(page)).toBeDisabled();
+
+    await page.goto(`/convite/${inviteToken}`);
+    await expect(
+      page.getByRole("heading", {
+        name: `Você foi convidado para a ${destinationWorkshop}`,
+      }),
+    ).toBeVisible();
+    await expect(page.getByText("Gerente", { exact: true })).toBeVisible();
+
+    await page
+      .getByRole("button", { name: "Aceitar convite e entrar" })
+      .click();
+
+    await expect(page).toHaveURL(/\/dashboard\/equipe\?message=/);
+    await expect(activeWorkshop(page)).toHaveValue(
+      fixture.destinationOrganizationId,
+    );
+    await expect(activeWorkshop(page)).toBeEnabled();
+    await expect(
+      page.getByText("Gerente · troque a oficina acima"),
+    ).toBeVisible();
+
+    await expect(
+      activeWorkshop(page).locator(
+        `option[value="${fixture.sourceOrganizationId}"]`,
+      ),
+    ).toHaveText(invitedWorkshop);
+    await expect(
+      activeWorkshop(page).locator(
+        `option[value="${fixture.destinationOrganizationId}"]`,
+      ),
+    ).toHaveText(destinationWorkshop);
+
+    const membershipCount = Number(
+      runPostgres(`
+        select count(*)
+        from public.organization_members
+        where
+          user_id = ${q(invitedAccount.userId)}::uuid
+          and status = 'active';
+      `),
+    );
+
+    const destinationRole = runPostgres(`
+      select role
+      from public.organization_members
+      where
+        user_id = ${q(invitedAccount.userId)}::uuid
+        and organization_id = ${q(fixture.destinationOrganizationId)}::uuid
+        and status = 'active'
+      limit 1;
+    `);
+
+    expect(membershipCount).toBe(2);
+    expect(destinationRole).toBe("manager");
+  });
+});

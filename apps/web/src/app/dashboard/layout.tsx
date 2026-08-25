@@ -1,91 +1,40 @@
-import type {
-  ReactNode,
-} from "react";
+import type { ReactNode } from "react";
 
 import Link from "next/link";
 
 import {
-  DashboardNav,
-} from "./nav";
-
-import {
-  signOutAction,
-} from "./actions";
-
-import {
   getCurrentContext,
 } from "./_lib/current-organization";
-
 import {
   permissionsForRole,
 } from "./_lib/permissions";
+import {
+  signOutAction,
+  switchOrganizationAction,
+} from "./actions";
+import { DashboardNav } from "./nav";
+import { OrganizationSwitcher } from "./organization-switcher";
 
 import "./dashboard.css";
-
-
-const ROLE_LABELS:
-  Record<
-    string,
-    string
-  > = {
-
-  owner:
-    "Proprietário",
-
-  admin:
-    "Administrador",
-
-  manager:
-    "Gerente",
-
-  estimator:
-    "Orçamentista",
-
-  technician:
-    "Técnico",
-
-  viewer:
-    "Somente leitura",
-};
-
 
 export default async function DashboardLayout({
   children,
 }: {
-  children:
-    ReactNode;
+  children: ReactNode;
 }) {
-
   const {
     organization,
     membership,
     user,
-  } =
-    await getCurrentContext();
+    availableOrganizations,
+  } = await getCurrentContext();
 
-
-  /*
-   * A fonte de verdade desta camada é
-   * organization_members.role.
-   *
-   * Não dependemos mais de uma segunda RPC
-   * para decidir se o proprietário pode enxergar
-   * o próprio sistema.
-   */
-
-  const permissions =
-    permissionsForRole(
-      membership.role,
-    );
-
+  const permissions = permissionsForRole(membership.role);
 
   return (
     <div className="orbiq-shell">
-
       <aside className="orbiq-sidebar">
-
         <div className="orbiq-brand">
-
           <Link
             href="/dashboard"
             className="orbiq-brand-mark"
@@ -94,99 +43,51 @@ export default async function DashboardLayout({
             O
           </Link>
 
-
           <div>
-
-            <strong>
-              Orbiq
-            </strong>
-
-            <span>
-              Automotive Operations Platform
-            </span>
-
+            <strong>Orbiq</strong>
+            <span>Automotive Operations Platform</span>
           </div>
-
         </div>
-
 
         <div className="orbiq-workshop">
-
-          <span className="orbiq-eyebrow">
-            OFICINA ATIVA
-          </span>
-
-          <strong>
-            {organization.name}
-          </strong>
-
-          <span className="orbiq-role">
-            {ROLE_LABELS[
-              membership.role
-            ] ??
-            membership.role}
-          </span>
-
+          <OrganizationSwitcher
+            organizations={availableOrganizations.map((item) => ({
+              id: item.id,
+              name: item.name,
+              role: item.role,
+            }))}
+            currentOrganizationId={organization.id}
+            action={switchOrganizationAction}
+          />
         </div>
 
-
-        <DashboardNav
-          permissions={
-            permissions
-          }
-        />
-
+        <DashboardNav permissions={permissions} />
 
         <div className="orbiq-sidebar-footer">
-
           <div className="orbiq-user">
-
             <span className="orbiq-avatar">
-              {(user.email?.[0] ??
-                "U").toUpperCase()}
+              {(user.email?.[0] ?? "U").toUpperCase()}
             </span>
 
-
             <div>
-
-              <strong>
-                {user.email ??
-                  "Usuário Orbiq"}
-              </strong>
-
-              <span>
-                Sessão protegida
-              </span>
-
+              <strong>{user.email ?? "Usuário Orbiq"}</strong>
+              <span>Sessão protegida</span>
             </div>
-
           </div>
 
-
-          <form
-            action={
-              signOutAction
-            }
-          >
-
+          <form action={signOutAction}>
             <button
               type="submit"
               className="orbiq-ghost-button full-width"
             >
               Sair
             </button>
-
           </form>
-
         </div>
-
       </aside>
 
-
       <main className="orbiq-main">
-
         <header className="orbiq-mobile-header">
-
           <Link
             href="/dashboard"
             className="orbiq-brand-mark"
@@ -195,28 +96,14 @@ export default async function DashboardLayout({
             O
           </Link>
 
-
           <div>
-
-            <strong>
-              Orbiq
-            </strong>
-
-            <span>
-              {organization.name}
-            </span>
-
+            <strong>Orbiq</strong>
+            <span>{organization.name}</span>
           </div>
-
         </header>
 
-
-        <div className="orbiq-content">
-          {children}
-        </div>
-
+        <div className="orbiq-content">{children}</div>
       </main>
-
     </div>
   );
 }
