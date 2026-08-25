@@ -113,7 +113,9 @@ test.describe("Fase 1.8C - identidade visual da oficina", () => {
     await expect(logo).toBeVisible();
     await expect(logo).toHaveCSS("background-image", /organization-branding/);
     await expect(page.getByText(BRAND_TAGLINE, { exact: true })).toBeVisible();
-    await expect(page.getByText("Orbiq AutoQA Oficina", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.locator(".customer-quote-brand strong").first(),
+    ).toHaveText("Orbiq AutoQA Oficina");
     await expect(page.getByText("Powered by Orbiq", { exact: true })).toBeVisible();
 
     const pdf = await page.pdf({
