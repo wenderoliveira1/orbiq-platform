@@ -1439,6 +1439,14 @@ export type Database = {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: number
       }
+      get_organization_commercial_defaults: {
+        Args: { target_org_id: string }
+        Returns: Json
+      }
+      get_organization_document_profile: {
+        Args: { target_org_id: string }
+        Returns: Json
+      }
       get_owned_organization_overview: {
         Args: { report_month?: string }
         Returns: {
@@ -1457,14 +1465,6 @@ export type Database = {
           vehicles_total: number
           waiting_quotes_month: number
         }[]
-      }
-      get_organization_commercial_defaults: {
-        Args: { target_org_id: string }
-        Returns: Json
-      }
-      get_organization_document_profile: {
-        Args: { target_org_id: string }
-        Returns: Json
       }
       has_org_role: {
         Args: { allowed_roles: string[]; target_org_id: string }
