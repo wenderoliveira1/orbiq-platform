@@ -1,8 +1,18 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import net from "node:net";
+import { resolve } from "node:path";
 
 const windows = process.platform === "win32";
+const pnpmCommand = windows ? "pnpm.cmd" : "pnpm";
+const dockerCommand = windows ? "docker.exe" : "docker";
 const dbContainer = "supabase_db_orbiq-platform";
+const phaseMigration = resolve(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260826200000_data_continuity.sql",
+);
 
 function section(title) {
   console.log("");
@@ -11,19 +21,23 @@ function section(title) {
   console.log("============================================================");
 }
 
-function execute(command, args, { capture = false, env = process.env } = {}) {
+function execute(
+  command,
+  args,
+  { capture = false, env = process.env, input = undefined } = {},
+) {
   return spawnSync(command, args, {
     cwd: process.cwd(),
-    stdio: capture ? "pipe" : "inherit",
+    stdio: capture ? "pipe" : input === undefined ? "inherit" : ["pipe", "inherit", "inherit"],
     encoding: "utf8",
-    shell: windows,
+    shell: false,
     env,
+    input,
   });
 }
 
 function run(name, command, args, options = {}) {
   section(name);
-
   const result = execute(command, args, options);
 
   if (result.error) {
@@ -33,7 +47,6 @@ function run(name, command, args, options = {}) {
   if (result.status !== 0) {
     if (options.capture && result.stdout) process.stdout.write(result.stdout);
     if (options.capture && result.stderr) process.stderr.write(result.stderr);
-
     throw new Error(`${name} falhou com código ${result.status ?? "desconhecido"}.`);
   }
 
@@ -63,42 +76,86 @@ function parseEnv(output) {
 }
 
 function portIsAvailable(port) {
-  return new Promise((resolve) => {
+  return new Promise((resolvePort) => {
     const server = net.createServer();
-
-    server.once("error", () => resolve(false));
-    server.once("listening", () => {
-      server.close(() => resolve(true));
-    });
-
+    server.once("error", () => resolvePort(false));
+    server.once("listening", () => server.close(() => resolvePort(true)));
     server.listen(port, "127.0.0.1");
   });
 }
 
 function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
 }
 
-function reloadPostgrestSchema() {
-  const result = capture("docker", [
-    "exec",
-    dbContainer,
-    "psql",
-    "-U",
-    "postgres",
-    "-d",
-    "postgres",
-    "-v",
-    "ON_ERROR_STOP=1",
-    "-c",
-    "notify pgrst, 'reload schema';",
-  ]);
+function psql(sql, { captureOutput = false } = {}) {
+  return execute(
+    dockerCommand,
+    [
+      "exec",
+      "-i",
+      dbContainer,
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-f",
+      "-",
+    ],
+    {
+      capture: captureOutput,
+      input: sql,
+    },
+  );
+}
+
+function phaseObjectsExistInDatabase() {
+  const result = psql(
+    `select\n` +
+      `  to_regclass('public.organization_data_exports') is not null\n` +
+      `  and to_regprocedure('public.get_owned_data_governance_overview()') is not null\n` +
+      `  and to_regprocedure('public.create_organization_data_export(uuid)') is not null\n` +
+      `  and to_regprocedure('public.consume_organization_data_export(uuid)') is not null\n` +
+      `  as ready;\n`,
+    { captureOutput: true },
+  );
 
   if (result.error || result.status !== 0) {
     const detail = result.error?.message || result.stderr || result.stdout;
-    throw new Error(
-      `Não foi possível solicitar reload do schema do PostgREST. ${detail}`,
-    );
+    throw new Error(`Falha ao consultar o banco local. ${detail}`);
+  }
+
+  return /\bt\b/.test(result.stdout ?? "");
+}
+
+function applyPhase19GDirectly() {
+  section("Aplicando schema da Fase 1.9G");
+  console.log(
+    "[INFO] O banco local possui lacunas antigas no histórico de migrations. " +
+      "Para não reaplicar migrations antigas sobre um schema já existente, " +
+      "o bootstrap instalará somente a migration da Fase 1.9G.",
+  );
+
+  const sql = readFileSync(phaseMigration, "utf8");
+  const result = psql(sql);
+
+  if (result.error || result.status !== 0) {
+    const detail = result.error?.message || result.stderr || result.stdout || "erro SQL desconhecido";
+    throw new Error(`Falha ao aplicar a migration da Fase 1.9G. ${detail}`);
+  }
+
+  console.log("[OK] Schema da Fase 1.9G aplicado sem replay de migrations antigas");
+}
+
+function reloadPostgrestSchema() {
+  const result = psql("notify pgrst, 'reload schema';\n", { captureOutput: true });
+
+  if (result.error || result.status !== 0) {
+    const detail = result.error?.message || result.stderr || result.stdout;
+    throw new Error(`Não foi possível recarregar o schema do PostgREST. ${detail}`);
   }
 }
 
@@ -124,41 +181,45 @@ async function governanceRpcIsVisible(apiUrl, publicKey) {
   );
 }
 
-async function ensureGovernanceRpc(apiUrl, publicKey) {
-  section("Validando RPCs da Fase 1.9G");
+async function ensurePhase19G(apiUrl, publicKey) {
+  section("Validando banco da Fase 1.9G");
+
+  if (!phaseObjectsExistInDatabase()) {
+    applyPhase19GDirectly();
+  } else {
+    console.log("[OK] Objetos da Fase 1.9G já existem no PostgreSQL");
+  }
 
   reloadPostgrestSchema();
 
-  for (let attempt = 1; attempt <= 5; attempt += 1) {
-    await sleep(attempt === 1 ? 700 : 1200);
+  for (let attempt = 1; attempt <= 6; attempt += 1) {
+    await sleep(attempt === 1 ? 800 : 1200);
 
     if (await governanceRpcIsVisible(apiUrl, publicKey)) {
-      console.log("[OK] RPC get_owned_data_governance_overview visível no PostgREST");
+      console.log("[OK] RPC get_owned_data_governance_overview disponível no PostgREST");
       return;
     }
 
-    console.log(`[INFO] Aguardando atualização do schema cache (${attempt}/5)...`);
+    console.log(`[INFO] Atualizando schema cache do PostgREST (${attempt}/6)...`);
     reloadPostgrestSchema();
   }
 
   throw new Error(
-    "O banco recebeu as migrations, mas o PostgREST ainda não expôs " +
-      "get_owned_data_governance_overview. Execute `pnpm exec supabase stop`, " +
-      "depois `pnpm exec supabase start` e rode `pnpm dev` novamente.",
+    "A Fase 1.9G existe no PostgreSQL, mas o PostgREST ainda não publicou a RPC. " +
+      "Reinicie o Supabase local e execute pnpm dev novamente.",
   );
 }
 
 async function main() {
   section("ORBIQ LOCAL DEVELOPMENT");
-
   console.log(`[OK] Node.js ${process.versions.node}`);
-  console.log("[INFO] Preparando Supabase, migrations e schema cache antes do Next.js.");
+  console.log("[INFO] Inicialização segura do ambiente local.");
 
-  let status = capture("pnpm", ["exec", "supabase", "status"]);
+  let status = capture(pnpmCommand, ["exec", "supabase", "status"]);
 
   if (status.status !== 0) {
-    run("Supabase Start", "pnpm", ["exec", "supabase", "start"]);
-    status = capture("pnpm", ["exec", "supabase", "status"]);
+    run("Supabase Start", pnpmCommand, ["exec", "supabase", "start"]);
+    status = capture(pnpmCommand, ["exec", "supabase", "status"]);
   }
 
   if (status.error || status.status !== 0) {
@@ -169,19 +230,7 @@ async function main() {
 
   console.log("[OK] Supabase local disponível");
 
-  // Bancos locais persistentes podem ter migrations mais novas registradas
-  // enquanto migrations antigas do repositório ainda não foram aplicadas.
-  // --include-all garante que TODO o histórico pendente seja sincronizado.
-  run("Sincronizando migrations locais", "pnpm", [
-    "exec",
-    "supabase",
-    "migration",
-    "up",
-    "--local",
-    "--include-all",
-  ]);
-
-  const envResult = capture("pnpm", ["exec", "supabase", "status", "-o", "env"]);
+  const envResult = capture(pnpmCommand, ["exec", "supabase", "status", "-o", "env"]);
   if (envResult.error || envResult.status !== 0) {
     throw new Error(
       envResult.error?.message || envResult.stderr || "Falha ao ler o ambiente local do Supabase.",
@@ -194,16 +243,15 @@ async function main() {
 
   if (!apiUrl || !publicKey) {
     throw new Error(
-      "Supabase iniciou, mas API_URL/PUBLISHABLE_KEY não foram encontrados em `supabase status -o env`.",
+      "Supabase iniciou, mas API_URL/PUBLISHABLE_KEY não foram encontrados.",
     );
   }
 
-  await ensureGovernanceRpc(apiUrl, publicKey);
+  await ensurePhase19G(apiUrl, publicKey);
 
   if (!(await portIsAvailable(3000))) {
     throw new Error(
-      "A porta 3000 já está em uso. Encerre o servidor anterior com Ctrl+C " +
-        "(ou finalize o processo que ocupa a porta) e execute `pnpm dev` novamente.",
+      "A porta 3000 já está em uso. Encerre o servidor anterior com Ctrl+C e execute pnpm dev novamente.",
     );
   }
 
@@ -215,13 +263,13 @@ async function main() {
   };
 
   section("ORBIQ WEB");
-  console.log(`[OK] Banco sincronizado em ${apiUrl}`);
-  console.log("[OK] RPCs da Fase 1.9G validadas");
+  console.log(`[OK] Banco local: ${apiUrl}`);
+  console.log("[OK] Fase 1.9G validada");
   console.log("[INFO] Aplicação: http://localhost:3000");
-  console.log("[INFO] Use Ctrl+C para encerrar o servidor.");
+  console.log("[INFO] Use Ctrl+C para encerrar.");
   console.log("");
 
-  const web = execute("pnpm", ["--filter", "web", "dev"], { env: webEnv });
+  const web = execute(pnpmCommand, ["--filter", "web", "dev"], { env: webEnv });
 
   if (web.error) {
     throw web.error;
@@ -235,6 +283,6 @@ main().catch((error) => {
   console.error("[ORBIQ DEV ERROR]");
   console.error(error instanceof Error ? error.message : String(error));
   console.error("");
-  console.error("O terminal do VS Code permanecerá aberto. Corrija o item acima e execute `pnpm dev` novamente.");
+  console.error("Nenhum reset destrutivo foi executado. O terminal permanecerá aberto.");
   process.exitCode = 1;
 });
