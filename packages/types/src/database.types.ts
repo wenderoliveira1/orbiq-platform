@@ -242,6 +242,50 @@ export type Database = {
           },
         ]
       }
+      organization_data_exports: {
+        Row: {
+          byte_size: number | null
+          checksum_sha256: string | null
+          created_at: string
+          downloaded_at: string | null
+          expires_at: string
+          id: string
+          organization_id: string
+          requested_by: string
+          schema_version: number
+        }
+        Insert: {
+          byte_size?: number | null
+          checksum_sha256?: string | null
+          created_at?: string
+          downloaded_at?: string | null
+          expires_at?: string
+          id?: string
+          organization_id: string
+          requested_by: string
+          schema_version?: number
+        }
+        Update: {
+          byte_size?: number | null
+          checksum_sha256?: string | null
+          created_at?: string
+          downloaded_at?: string | null
+          expires_at?: string
+          id?: string
+          organization_id?: string
+          requested_by?: string
+          schema_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_data_exports_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_invites: {
         Row: {
           accepted_at: string | null
@@ -1422,6 +1466,19 @@ export type Database = {
         Args: { target_org_id: string; target_work_order_service_id: string }
         Returns: string
       }
+      consume_organization_data_export: {
+        Args: { target_request_id: string }
+        Returns: {
+          export_byte_size: number
+          export_checksum: string
+          export_created_at: string
+          export_filename: string
+          export_organization_id: string
+          export_organization_name: string
+          export_schema_version: number
+          export_snapshot: string
+        }[]
+      }
       create_additional_organization: {
         Args: {
           organization_city: string
@@ -1443,6 +1500,13 @@ export type Database = {
           organization_slug: string
         }
         Returns: string
+      }
+      create_organization_data_export: {
+        Args: { target_org_id: string }
+        Returns: {
+          export_expires_at: string
+          export_request_id: string
+        }[]
       }
       create_organization_invite: {
         Args: {
@@ -1523,6 +1587,22 @@ export type Database = {
           route: string
           source: string
           total_count: number
+        }[]
+      }
+      get_owned_data_governance_overview: {
+        Args: never
+        Returns: {
+          audit_events_total: number
+          customers_total: number
+          data_records_total: number
+          exports_last_30_days: number
+          last_export_at: string
+          organization_id: string
+          organization_name: string
+          organization_slug: string
+          quotes_total: number
+          vehicles_total: number
+          work_orders_total: number
         }[]
       }
       get_owned_network_activity: {
