@@ -177,8 +177,16 @@ test.describe("Fase 1.9E - governança e auditoria da rede", () => {
     await page.goto("/dashboard/rede/atividade?periodo=90");
 
     await expect(page.getByRole("heading", { name: "Auditoria consolidada da rede" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Governança" })).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("link", { name: "Visão da rede" })).not.toHaveAttribute("aria-current", "page");
+    const mainNavigation = page.getByRole("navigation", {
+      name: "Navegação principal",
+    });
+
+    await expect(
+      mainNavigation.getByRole("link", { name: "Governança", exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      mainNavigation.getByRole("link", { name: "Visão da rede", exact: true }),
+    ).not.toHaveAttribute("aria-current", "page");
 
     await expect(page.getByText(primaryName, { exact: true }).first()).toBeVisible();
     await expect(page.getByText(branchName, { exact: true }).first()).toBeVisible();
