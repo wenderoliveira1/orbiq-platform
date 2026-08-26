@@ -1,5 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const webServerCommand = process.env.CI
+  ? "pnpm --filter web start"
+  : "pnpm --filter web dev";
+
 export default defineConfig({
   testDir: "./tests/autoqa",
   globalSetup: "./tests/autoqa/global.setup.ts",
@@ -27,7 +31,9 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    command: "pnpm --filter web dev",
+    // No CI, o Technical Quality Gate já gerou o build; o AutoQA valida
+    // exatamente o servidor de produção. Localmente, preserva o fluxo rápido.
+    command: webServerCommand,
     url: "http://127.0.0.1:3000/login",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
