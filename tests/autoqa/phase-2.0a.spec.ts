@@ -14,6 +14,7 @@ async function login(page: Page) {
 
 test.describe("Fase 2.0A - prontidão Web e mobile", () => {
   test("expõe manifesto PWA e cabeçalhos de segurança", async ({
+    page,
     request,
   }) => {
     const manifestResponse = await request.get("/manifest.webmanifest");
@@ -50,7 +51,16 @@ test.describe("Fase 2.0A - prontidão Web e mobile", () => {
       ]),
     );
 
-    const dashboardResponse = await request.get("/dashboard");
+    await login(page);
+
+    const dashboardResponse = await page.goto("/dashboard");
+
+    expect(dashboardResponse).not.toBeNull();
+
+    if (!dashboardResponse) {
+      throw new Error("A resposta autenticada do dashboard não foi recebida.");
+    }
+
     const headers = dashboardResponse.headers();
 
     expect(headers["cache-control"]).toContain("no-store");
