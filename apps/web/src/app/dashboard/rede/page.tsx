@@ -345,6 +345,14 @@ export default async function NetworkOverviewPage() {
 
 
           <Link
+            href="/dashboard/rede/atividade"
+            className="orbiq-secondary-button"
+          >
+            Auditoria da rede
+          </Link>
+
+
+          <Link
             href="/dashboard/oficinas"
             className="orbiq-secondary-button"
           >

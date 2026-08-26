@@ -1447,6 +1447,38 @@ export type Database = {
         Args: { target_org_id: string }
         Returns: Json
       }
+      get_owned_network_activity: {
+        Args: {
+          filter_category?: string
+          filter_organization_id?: string
+          filter_period_end?: string
+          filter_period_start?: string
+          filter_query?: string
+          result_limit?: number
+          result_offset?: number
+        }
+        Returns: {
+          action: string
+          actor_type: string
+          actor_user_id: string
+          category: string
+          client_count: number
+          created_at: string
+          customer_name: string
+          entity_id: string
+          entity_type: string
+          event_id: string
+          governance_count: number
+          metadata: Json
+          organization_id: string
+          organization_name: string
+          organizations_with_activity: number
+          quote_id: string
+          quote_protocol: string
+          total_count: number
+          vehicle_plate: string
+        }[]
+      }
       get_owned_organization_overview: {
         Args: { report_month?: string }
         Returns: {
