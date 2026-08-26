@@ -54,6 +54,19 @@ const items = [
   },
   {
     href:
+      "/dashboard/rede/atividade",
+
+    icon:
+      "◈",
+
+    label:
+      "Governança",
+
+    permission:
+      "network.view",
+  },
+  {
+    href:
       "/dashboard/atividade",
 
     icon:
@@ -319,6 +332,15 @@ export function DashboardNav({
               active =
                 pathname ===
                 "/dashboard";
+            }
+            else if (
+              item.href ===
+              "/dashboard/rede"
+            ) {
+
+              active =
+                pathname ===
+                item.href;
             }
             else if (
               item.href ===
