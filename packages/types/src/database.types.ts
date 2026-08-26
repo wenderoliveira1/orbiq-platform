@@ -1590,7 +1590,7 @@ export type Database = {
         }[]
       }
       get_owned_data_governance_overview: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           audit_events_total: number
           customers_total: number
