@@ -1710,10 +1710,7 @@ export type Database = {
         }[]
       }
       resolve_application_incident: {
-        Args: {
-          target_incident_id: string
-          target_resolution_note: string
-        }
+        Args: { target_incident_id: string; target_resolution_note: string }
         Returns: boolean
       }
       revoke_organization_invite: {
