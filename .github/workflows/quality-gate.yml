@@ -4,56 +4,40 @@ on:
   push:
     branches:
       - main
-
   pull_request:
     branches:
       - main
 
-
 permissions:
   contents: read
 
-
 concurrency:
-  group: orbiq-quality-${{ github.ref }}
+  group: orbiq-quality-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
-
 jobs:
-
   quality-gate:
-
     name: Quality Gate
-
-    runs-on:
-      ubuntu-latest
-
+    runs-on: ubuntu-latest
     timeout-minutes: 40
-
-
     steps:
-
       - name: Checkout
-        uses: actions/checkout@v4
-
+        uses: actions/checkout@v5
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 11.22.0
           run_install: false
 
-
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
 
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
 
       - name: Orbiq Quality Gate
         run: node scripts/quality-gate.mjs
