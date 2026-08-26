@@ -40,7 +40,11 @@ test.describe("Fase 2.0A - prontidão Web e mobile", () => {
     expect(manifest.icons).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          purpose: "any maskable",
+          purpose: "any",
+          src: "/icon.svg",
+        }),
+        expect.objectContaining({
+          purpose: "maskable",
           src: "/icon.svg",
         }),
       ]),
