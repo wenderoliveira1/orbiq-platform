@@ -1447,6 +1447,25 @@ export type Database = {
         Args: { target_org_id: string }
         Returns: Json
       }
+      get_owned_organization_overview: {
+        Args: { report_month?: string }
+        Returns: {
+          active_members: number
+          active_work_orders: number
+          approved_amount_month: number
+          approved_quotes_month: number
+          customers_total: number
+          last_quote_at: string
+          open_purchase_orders: number
+          organization_id: string
+          organization_name: string
+          organization_slug: string
+          quotes_month: number
+          rejected_quotes_month: number
+          vehicles_total: number
+          waiting_quotes_month: number
+        }[]
+      }
       has_org_role: {
         Args: { allowed_roles: string[]; target_org_id: string }
         Returns: boolean

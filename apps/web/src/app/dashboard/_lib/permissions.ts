@@ -19,6 +19,7 @@ export type OrbiqRole =
 export const ALL_PERMISSIONS = [
   "dashboard.view",
   "indicators.view",
+  "network.view",
   "audit.view",
   "team.view",
   "team.manage",
@@ -55,6 +56,7 @@ const ROLE_PERMISSIONS:
   admin:
     ALL_PERMISSIONS.filter(
       (permission) =>
+        permission !== "network.view" &&
         permission !== "organizations.manage",
     ),
 
