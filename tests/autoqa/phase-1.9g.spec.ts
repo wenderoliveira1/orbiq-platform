@@ -329,7 +329,10 @@ test.describe("Fase 1.9G - dados, continuidade e LGPD", () => {
 
     await page.goto(`/dashboard/dados/exportar/${primaryExportRequestId}`);
     await expect(page).toHaveURL(/\/dashboard\/dados\?erro=/);
-    await expect(page.getByRole("alert")).toContainText(
+    const exportError = page
+      .getByRole("alert")
+      .filter({ hasText: "Exportação não concluída" });
+    await expect(exportError).toContainText(
       "expirou ou já foi utilizada",
     );
 
