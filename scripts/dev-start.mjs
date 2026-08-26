@@ -169,12 +169,16 @@ async function main() {
 
   console.log("[OK] Supabase local disponível");
 
+  // Bancos locais persistentes podem ter migrations mais novas registradas
+  // enquanto migrations antigas do repositório ainda não foram aplicadas.
+  // --include-all garante que TODO o histórico pendente seja sincronizado.
   run("Sincronizando migrations locais", "pnpm", [
     "exec",
     "supabase",
     "migration",
     "up",
     "--local",
+    "--include-all",
   ]);
 
   const envResult = capture("pnpm", ["exec", "supabase", "status", "-o", "env"]);
