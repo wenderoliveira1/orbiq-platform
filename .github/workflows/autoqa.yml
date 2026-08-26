@@ -4,18 +4,16 @@ on:
   push:
     branches:
       - "qa/**"
-
   pull_request:
     branches:
       - main
-
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: orbiq-autoqa-${{ github.ref }}
+  group: orbiq-autoqa-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -23,22 +21,17 @@ jobs:
     name: AutoQA / Chromium
     runs-on: ubuntu-latest
     timeout-minutes: 45
-
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@v2
         with:
           version: 11.22.0
-          run_install: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
+          runtime: node@22
+          cache: true
+          install: false
 
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile
@@ -84,7 +77,7 @@ jobs:
 
       - name: Upload AutoQA report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: orbiq-autoqa-report-${{ github.run_id }}
           if-no-files-found: warn
