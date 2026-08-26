@@ -1,5 +1,3 @@
-import { NextResponse } from "next/server";
-
 import { requireCurrentPermission } from "../../../_lib/permissions";
 
 type RouteContext = {
@@ -11,21 +9,24 @@ type RouteContext = {
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function dataPage(request: Request, error: string) {
-  return NextResponse.redirect(
-    new URL(
-      `/dashboard/dados?erro=${encodeURIComponent(error)}`,
-      request.url,
-    ),
-    303,
-  );
+function seeOther(location: string) {
+  return new Response(null, {
+    status: 303,
+    headers: {
+      Location: location,
+    },
+  });
 }
 
-export async function GET(request: Request, context: RouteContext) {
+function dataPage(error: string) {
+  return seeOther(`/dashboard/dados?erro=${encodeURIComponent(error)}`);
+}
+
+export async function GET(_request: Request, context: RouteContext) {
   const { requestId } = await context.params;
 
   if (!UUID_PATTERN.test(requestId)) {
-    return dataPage(request, "A autorização de exportação é inválida.");
+    return dataPage("A autorização de exportação é inválida.");
   }
 
   const { supabase } = await requireCurrentPermission("data.export");
@@ -42,13 +43,13 @@ export async function GET(request: Request, context: RouteContext) {
         ? "Esta autorização expirou ou já foi utilizada. Gere uma nova exportação."
         : "A exportação não está disponível para esta conta.";
 
-    return dataPage(request, message);
+    return dataPage(message);
   }
 
   const exported = data?.[0];
 
   if (!exported?.export_snapshot) {
-    return dataPage(request, "O snapshot de dados não pôde ser gerado.");
+    return dataPage("O snapshot de dados não pôde ser gerado.");
   }
 
   const manifest = {
@@ -68,7 +69,7 @@ export async function GET(request: Request, context: RouteContext) {
     "-",
   );
 
-  return new NextResponse(body, {
+  return new Response(body, {
     status: 200,
     headers: {
       "Cache-Control": "private, no-store, max-age=0",
