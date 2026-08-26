@@ -188,20 +188,24 @@ test.describe("Fase 1.9E - governança e auditoria da rede", () => {
       mainNavigation.getByRole("link", { name: "Visão da rede", exact: true }),
     ).not.toHaveAttribute("aria-current", "page");
 
-    await expect(page.getByText(primaryName, { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(branchName, { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(externalName, { exact: true })).toHaveCount(0);
-    await expect(page.getByText("GOV-M-" + suffix, { exact: true })).toBeVisible();
-    await expect(page.getByText("GOV-F-" + suffix, { exact: true })).toBeVisible();
-    await expect(page.getByText("GOV-X-" + suffix, { exact: true })).toHaveCount(0);
+    const activityRegion = page.getByRole("region", {
+      name: "Atividades da rede",
+    });
+
+    await expect(activityRegion.getByText(primaryName, { exact: true }).first()).toBeVisible();
+    await expect(activityRegion.getByText(branchName, { exact: true }).first()).toBeVisible();
+    await expect(activityRegion.getByText(externalName, { exact: true })).toHaveCount(0);
+    await expect(activityRegion.getByText("GOV-M-" + suffix, { exact: true })).toBeVisible();
+    await expect(activityRegion.getByText("GOV-F-" + suffix, { exact: true })).toBeVisible();
+    await expect(activityRegion.getByText("GOV-X-" + suffix, { exact: true })).toHaveCount(0);
 
     await page.getByLabel("Categoria").selectOption("governance");
     await page.getByRole("button", { name: "Aplicar filtros" }).click();
 
     await expect(page).toHaveURL(/tipo=governance/);
-    await expect(page.getByText("Convite de equipe criado", { exact: true })).toBeVisible();
-    await expect(page.getByText("Função da equipe alterada", { exact: true })).toBeVisible();
-    await expect(page.getByText("GOV-M-" + suffix, { exact: true })).toHaveCount(0);
+    await expect(activityRegion.getByText("Convite de equipe criado", { exact: true })).toBeVisible();
+    await expect(activityRegion.getByText("Função da equipe alterada", { exact: true })).toBeVisible();
+    await expect(activityRegion.getByText("GOV-M-" + suffix, { exact: true })).toHaveCount(0);
 
     const session = await signIn(ownerEmail, password);
     const rows = await rpc<NetworkActivityRow[]>(
@@ -269,11 +273,15 @@ test.describe("Fase 1.9E - governança e auditoria da rede", () => {
     await login(page, externalOwnerEmail);
     await page.goto("/dashboard/rede/atividade?periodo=90");
 
-    await expect(page.getByText(externalName, { exact: true }).first()).toBeVisible();
-    await expect(page.getByText(primaryName, { exact: true })).toHaveCount(0);
-    await expect(page.getByText(branchName, { exact: true })).toHaveCount(0);
-    await expect(page.getByText("segredo.externo@example.com", { exact: false })).toBeVisible();
-    await expect(page.getByText("novo.matriz@example.com", { exact: false })).toHaveCount(0);
+    const activityRegion = page.getByRole("region", {
+      name: "Atividades da rede",
+    });
+
+    await expect(activityRegion.getByText(externalName, { exact: true }).first()).toBeVisible();
+    await expect(activityRegion.getByText(primaryName, { exact: true })).toHaveCount(0);
+    await expect(activityRegion.getByText(branchName, { exact: true })).toHaveCount(0);
+    await expect(activityRegion.getByText("segredo.externo@example.com", { exact: false })).toBeVisible();
+    await expect(activityRegion.getByText("novo.matriz@example.com", { exact: false })).toHaveCount(0);
 
     const session = await signIn(externalOwnerEmail, password);
     const rows = await rpc<NetworkActivityRow[]>(

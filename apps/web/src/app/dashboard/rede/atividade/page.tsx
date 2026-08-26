@@ -377,7 +377,10 @@ export default async function NetworkGovernancePage({ searchParams }: PageProps)
         </form>
       </section>
 
-      <section className={styles.timelinePanel}>
+      <section
+        className={styles.timelinePanel}
+        aria-label="Atividades da rede"
+      >
         <div className={styles.panelHeading}>
           <div>
             <span className="orbiq-eyebrow">RASTREABILIDADE</span>
