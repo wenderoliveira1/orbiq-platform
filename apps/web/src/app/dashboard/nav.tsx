@@ -249,6 +249,19 @@ const items = [
   },
   {
     href:
+      "/dashboard/dados",
+
+    icon:
+      "⇩",
+
+    label:
+      "Dados e privacidade",
+
+    permission:
+      "data.export",
+  },
+  {
+    href:
       "/dashboard/configuracoes",
 
     icon:

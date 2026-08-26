@@ -1,0 +1,341 @@
+.page {
+  display: grid;
+  gap: 16px;
+}
+
+.hero {
+  min-height: 148px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(227, 6, 19, 0.1), transparent 34%),
+    linear-gradient(135deg, var(--orbiq-surface), var(--orbiq-surface-soft));
+  box-shadow: var(--orbiq-shadow);
+}
+
+.hero h1,
+.assurance h2,
+.sectionHeading h2,
+.operationCard h3 {
+  margin: 0;
+}
+
+.hero h1 {
+  margin-top: 6px;
+  font-size: clamp(28px, 3vw, 40px);
+  letter-spacing: -0.045em;
+}
+
+.hero p {
+  max-width: 690px;
+  margin: 8px 0 0;
+  color: var(--orbiq-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.ownerBadge,
+.recordBadge {
+  flex: 0 0 auto;
+  border: 1px solid rgba(227, 6, 19, 0.22);
+  border-radius: 999px;
+  background: rgba(227, 6, 19, 0.06);
+  color: var(--orbiq-accent);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.ownerBadge {
+  padding: 8px 11px;
+}
+
+.errorBanner {
+  padding: 13px 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(185, 28, 28, 0.2);
+  border-radius: 14px;
+  background: var(--orbiq-danger-bg);
+  color: var(--orbiq-danger);
+}
+
+.errorBanner strong {
+  flex: 0 0 auto;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.errorBanner span {
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.summaryGrid article {
+  min-height: 112px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 16px;
+  background: var(--orbiq-surface);
+  box-shadow: var(--orbiq-shadow);
+}
+
+.summaryGrid span,
+.operationFooter span {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.summaryGrid strong {
+  font-size: 27px;
+  letter-spacing: -0.04em;
+}
+
+.summaryGrid small {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.assurance,
+.operations {
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 18px;
+  background: var(--orbiq-surface);
+  box-shadow: var(--orbiq-shadow);
+}
+
+.assuranceHeading,
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.assurance h2,
+.sectionHeading h2 {
+  margin-top: 5px;
+  font-size: 19px;
+}
+
+.assuranceGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.assuranceGrid article {
+  min-width: 0;
+  padding: 14px;
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 14px;
+  background: var(--orbiq-surface-soft);
+}
+
+.assuranceGrid article > span {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(227, 6, 19, 0.08);
+  color: var(--orbiq-accent);
+  font-size: 7px;
+  font-weight: 900;
+}
+
+.assuranceGrid div {
+  display: grid;
+  gap: 5px;
+}
+
+.assuranceGrid strong {
+  font-size: 9px;
+}
+
+.assuranceGrid p {
+  margin: 0;
+  color: var(--orbiq-muted);
+  font-size: 7px;
+  line-height: 1.55;
+}
+
+.sectionHeading p {
+  margin: 0;
+  color: var(--orbiq-muted);
+  font-size: 8px;
+}
+
+.operationGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.operationCard {
+  min-width: 0;
+  padding: 17px;
+  display: grid;
+  gap: 15px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 16px;
+  background: var(--orbiq-surface-soft);
+}
+
+.operationHeader,
+.operationFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.operationHeader > div,
+.operationFooter > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.operationHeader h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+}
+
+.operationHeader div > span {
+  overflow: hidden;
+  color: var(--orbiq-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 7px;
+}
+
+.recordBadge {
+  padding: 6px 8px;
+}
+
+.metrics {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.metrics div {
+  min-width: 0;
+  padding: 9px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 10px;
+  background: var(--orbiq-surface);
+}
+
+.metrics dt {
+  overflow: hidden;
+  color: var(--orbiq-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 6px;
+}
+
+.metrics dd {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.operationFooter {
+  padding-top: 13px;
+  border-top: 1px solid var(--orbiq-border);
+}
+
+.operationFooter strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 8px;
+}
+
+.privacyNote {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(21, 128, 61, 0.18);
+  border-radius: 14px;
+  background: var(--orbiq-success-bg);
+  color: var(--orbiq-success);
+}
+
+.privacyNote strong {
+  flex: 0 0 auto;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+
+.privacyNote span {
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+@media (max-width: 1120px) {
+  .assuranceGrid,
+  .operationGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .hero,
+  .assuranceHeading,
+  .sectionHeading,
+  .operationFooter,
+  .privacyNote {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .summaryGrid,
+  .assuranceGrid,
+  .operationGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .operationFooter form,
+  .operationFooter button {
+    width: 100%;
+  }
+}

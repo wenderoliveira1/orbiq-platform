@@ -35,6 +35,7 @@ export const ALL_PERMISSIONS = [
   "suppliers.manage",
   "settings.manage",
   "organizations.manage",
+  "data.export",
 ] as const;
 
 
@@ -57,7 +58,8 @@ const ROLE_PERMISSIONS:
     ALL_PERMISSIONS.filter(
       (permission) =>
         permission !== "network.view" &&
-        permission !== "organizations.manage",
+        permission !== "organizations.manage" &&
+        permission !== "data.export",
     ),
 
   manager: [
