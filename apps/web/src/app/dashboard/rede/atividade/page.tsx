@@ -128,6 +128,13 @@ function actionInfo(action: string, data: AuditMetadata) {
       description: from && to ? `${from} → ${to}` : "O acesso de um membro foi atualizado.",
       icon: "↻",
     },
+    "reliability.incident_resolved": {
+      title: "Incidente resolvido",
+      description: stringValue(data.fingerprint)
+        ? `A ocorrência ${stringValue(data.fingerprint)} foi analisada e encerrada.`
+        : "Uma ocorrência técnica foi analisada e encerrada.",
+      icon: "✓",
+    },
     "quote.created": {
       title: "Orçamento criado",
       description: "Um novo atendimento entrou no Orbiq.",

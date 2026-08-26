@@ -67,6 +67,19 @@ const items = [
   },
   {
     href:
+      "/dashboard/confiabilidade",
+
+    icon:
+      "⊙",
+
+    label:
+      "Confiabilidade",
+
+    permission:
+      "network.view",
+  },
+  {
+    href:
       "/dashboard/atividade",
 
     icon:
