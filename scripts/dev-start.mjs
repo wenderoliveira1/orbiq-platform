@@ -4,7 +4,7 @@ import net from "node:net";
 import { resolve } from "node:path";
 
 const windows = process.platform === "win32";
-const pnpmCommand = windows ? "pnpm.cmd" : "pnpm";
+const pnpmCommand = windows ? process.env.ComSpec ?? "cmd.exe" : "pnpm";
 const dockerCommand = windows ? "docker.exe" : "docker";
 const dbContainer = "supabase_db_orbiq-platform";
 const phaseMigration = resolve(
@@ -13,6 +13,10 @@ const phaseMigration = resolve(
   "migrations",
   "20260826200000_data_continuity.sql",
 );
+
+function pnpmArgs(args) {
+  return windows ? ["/d", "/s", "/c", "pnpm", ...args] : args;
+}
 
 function section(title) {
   console.log("");
@@ -28,7 +32,11 @@ function execute(
 ) {
   return spawnSync(command, args, {
     cwd: process.cwd(),
-    stdio: capture ? "pipe" : input === undefined ? "inherit" : ["pipe", "inherit", "inherit"],
+    stdio: capture
+      ? "pipe"
+      : input === undefined
+        ? "inherit"
+        : ["pipe", "inherit", "inherit"],
     encoding: "utf8",
     shell: false,
     env,
@@ -143,7 +151,8 @@ function applyPhase19GDirectly() {
   const result = psql(sql);
 
   if (result.error || result.status !== 0) {
-    const detail = result.error?.message || result.stderr || result.stdout || "erro SQL desconhecido";
+    const detail =
+      result.error?.message || result.stderr || result.stdout || "erro SQL desconhecido";
     throw new Error(`Falha ao aplicar a migration da Fase 1.9G. ${detail}`);
   }
 
@@ -215,11 +224,21 @@ async function main() {
   console.log(`[OK] Node.js ${process.versions.node}`);
   console.log("[INFO] Inicialização segura do ambiente local.");
 
-  let status = capture(pnpmCommand, ["exec", "supabase", "status"]);
+  let status = capture(
+    pnpmCommand,
+    pnpmArgs(["exec", "supabase", "status"]),
+  );
 
   if (status.status !== 0) {
-    run("Supabase Start", pnpmCommand, ["exec", "supabase", "start"]);
-    status = capture(pnpmCommand, ["exec", "supabase", "status"]);
+    run(
+      "Supabase Start",
+      pnpmCommand,
+      pnpmArgs(["exec", "supabase", "start"]),
+    );
+    status = capture(
+      pnpmCommand,
+      pnpmArgs(["exec", "supabase", "status"]),
+    );
   }
 
   if (status.error || status.status !== 0) {
@@ -230,10 +249,16 @@ async function main() {
 
   console.log("[OK] Supabase local disponível");
 
-  const envResult = capture(pnpmCommand, ["exec", "supabase", "status", "-o", "env"]);
+  const envResult = capture(
+    pnpmCommand,
+    pnpmArgs(["exec", "supabase", "status", "-o", "env"]),
+  );
+
   if (envResult.error || envResult.status !== 0) {
     throw new Error(
-      envResult.error?.message || envResult.stderr || "Falha ao ler o ambiente local do Supabase.",
+      envResult.error?.message ||
+        envResult.stderr ||
+        "Falha ao ler o ambiente local do Supabase.",
     );
   }
 
@@ -269,7 +294,11 @@ async function main() {
   console.log("[INFO] Use Ctrl+C para encerrar.");
   console.log("");
 
-  const web = execute(pnpmCommand, ["--filter", "web", "dev"], { env: webEnv });
+  const web = execute(
+    pnpmCommand,
+    pnpmArgs(["--filter", "web", "dev"]),
+    { env: webEnv },
+  );
 
   if (web.error) {
     throw web.error;
