@@ -9,6 +9,59 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      application_incidents: {
+        Row: {
+          fingerprint: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          occurrences: number
+          organization_id: string
+          reporter_user_id: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          route: string
+          source: string
+        }
+        Insert: {
+          fingerprint: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          occurrences?: number
+          organization_id: string
+          reporter_user_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          route: string
+          source: string
+        }
+        Update: {
+          fingerprint?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          occurrences?: number
+          organization_id?: string
+          reporter_user_id?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          route?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_incidents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -1447,6 +1500,31 @@ export type Database = {
         Args: { target_org_id: string }
         Returns: Json
       }
+      get_owned_application_incidents: {
+        Args: {
+          filter_organization_id?: string
+          filter_query?: string
+          filter_status?: string
+          result_limit?: number
+          result_offset?: number
+        }
+        Returns: {
+          fingerprint: string
+          first_seen_at: string
+          incident_id: string
+          last_seen_at: string
+          occurrences: number
+          organization_id: string
+          organization_name: string
+          reporter_user_id: string
+          resolution_note: string
+          resolved_at: string
+          resolved_by: string
+          route: string
+          source: string
+          total_count: number
+        }[]
+      }
       get_owned_network_activity: {
         Args: {
           filter_category?: string
@@ -1618,6 +1696,22 @@ export type Database = {
       reopen_quote_commercial: {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: undefined
+      }
+      report_application_incident: {
+        Args: {
+          target_fingerprint: string
+          target_org_id: string
+          target_route: string
+          target_source: string
+        }
+        Returns: {
+          incident_id: string
+          occurrence_count: number
+        }[]
+      }
+      resolve_application_incident: {
+        Args: { target_incident_id: string; target_resolution_note: string }
+        Returns: boolean
       }
       revoke_organization_invite: {
         Args: { target_invite_id: string; target_org_id: string }

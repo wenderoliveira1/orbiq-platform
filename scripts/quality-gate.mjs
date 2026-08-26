@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 
@@ -190,9 +190,22 @@ const committedTypes = readFileSync(
 );
 
 if (normalize(generatedTypes) !== normalize(committedTypes)) {
+  const generatedTypesPath = resolve(root, ".database.types.generated.ts");
+  writeFileSync(generatedTypesPath, generatedTypes, "utf8");
+
+  const typeDiff = capture("git", [
+    "diff",
+    "--no-index",
+    "--",
+    "packages/types/src/database.types.ts",
+    ".database.types.generated.ts",
+  ]);
+
   console.error("");
   console.error("DATABASE TYPES DESATUALIZADOS.");
   console.error("O banco local e database.types.ts nao correspondem.");
+  process.stderr.write(typeDiff.stdout || typeDiff.stderr);
+  unlinkSync(generatedTypesPath);
   process.exit(1);
 }
 console.log("[OK] Database Types sincronizados");
