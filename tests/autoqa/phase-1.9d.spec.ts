@@ -877,9 +877,12 @@ test.describe(
 
 
         await expect(
-          page.getByText(
-            externalName,
+          page.getByRole(
+            "heading",
             {
+              name:
+                externalName,
+
               exact:
                 true,
             },
