@@ -1,0 +1,369 @@
+.page {
+  display: grid;
+  gap: 16px;
+}
+
+.hero {
+  min-height: 132px;
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      135deg,
+      var(--orbiq-surface) 0%,
+      var(--orbiq-surface-soft) 100%
+    );
+  box-shadow: var(--orbiq-shadow);
+}
+
+.heroMain {
+  display: grid;
+  gap: 6px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(28px, 3vw, 40px);
+  letter-spacing: -0.045em;
+}
+
+.hero p {
+  max-width: 660px;
+  margin: 0;
+  color: var(--orbiq-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.heroAside {
+  min-width: 190px;
+  display: grid;
+  justify-items: end;
+  gap: 9px;
+}
+
+.period {
+  padding: 8px 11px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 999px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-muted);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.summaryCard {
+  min-height: 116px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 16px;
+  background: var(--orbiq-surface);
+  box-shadow: var(--orbiq-shadow);
+}
+
+.summaryCard span {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.summaryCard strong {
+  font-size: 26px;
+  letter-spacing: -0.035em;
+}
+
+.summaryCard small {
+  color: var(--orbiq-muted);
+  font-size: 7px;
+}
+
+.summaryHighlight {
+  border-color: rgba(227, 6, 19, 0.25);
+  background:
+    linear-gradient(
+      145deg,
+      var(--orbiq-surface) 0%,
+      rgba(227, 6, 19, 0.045) 100%
+    );
+}
+
+.networkHeading {
+  padding: 8px 2px 0;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.networkHeading h2 {
+  margin: 5px 0 0;
+  font-size: 19px;
+}
+
+.networkHeading p {
+  margin: 0;
+  color: var(--orbiq-muted);
+  font-size: 8px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.card {
+  min-width: 0;
+  padding: 18px;
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 18px;
+  background: var(--orbiq-surface);
+  box-shadow: var(--orbiq-shadow);
+}
+
+.cardActive {
+  border-color: rgba(227, 6, 19, 0.38);
+  box-shadow:
+    0 0 0 2px rgba(227, 6, 19, 0.05),
+    var(--orbiq-shadow);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.cardTitle {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.cardTitle h3 {
+  overflow: hidden;
+  margin: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+}
+
+.cardTitle span {
+  overflow: hidden;
+  color: var(--orbiq-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 8px;
+}
+
+.activeBadge {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid rgba(227, 6, 19, 0.2);
+  border-radius: 999px;
+  background: rgba(227, 6, 19, 0.055);
+  color: var(--orbiq-accent);
+  font-size: 7px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.metric {
+  min-width: 0;
+  padding: 11px;
+  display: grid;
+  gap: 5px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 12px;
+  background: var(--orbiq-surface-soft);
+}
+
+.metric span {
+  overflow: hidden;
+  color: var(--orbiq-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 6px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.metric strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.detail {
+  display: grid;
+  gap: 3px;
+}
+
+.detail span {
+  color: var(--orbiq-muted);
+  font-size: 6px;
+}
+
+.detail strong {
+  font-size: 9px;
+}
+
+.cardFooter {
+  min-height: 43px;
+  padding-top: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-top: 1px solid var(--orbiq-border);
+}
+
+.lastActivity {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.lastActivity span {
+  color: var(--orbiq-muted);
+  font-size: 6px;
+}
+
+.lastActivity strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 8px;
+}
+
+.openButton {
+  min-height: 38px;
+  padding: 0 12px;
+  flex: 0 0 auto;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 10px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-text);
+  font-size: 8px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.openButton:hover:not(:disabled) {
+  border-color: var(--orbiq-border-strong);
+  background: var(--orbiq-surface-soft);
+}
+
+.openButton:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.activeButton {
+  cursor: default !important;
+  border-color: rgba(21, 128, 61, 0.2);
+  background: var(--orbiq-success-bg);
+  color: var(--orbiq-success);
+  opacity: 1 !important;
+}
+
+.action {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+}
+
+.actionError {
+  max-width: 210px;
+  color: var(--orbiq-danger);
+  font-size: 7px;
+  text-align: right;
+}
+
+@media (max-width: 1120px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .heroAside {
+    min-width: 0;
+    justify-items: start;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .networkHeading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .metrics,
+  .details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cardFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .action {
+    justify-items: stretch;
+  }
+
+  .openButton {
+    width: 100%;
+  }
+
+  .actionError {
+    max-width: none;
+    text-align: left;
+  }
+}
