@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import net from "node:net";
 
 const windows = process.platform === "win32";
+const dbContainer = "supabase_db_orbiq-platform";
 
 function section(title) {
   console.log("");
@@ -74,11 +75,84 @@ function portIsAvailable(port) {
   });
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function reloadPostgrestSchema() {
+  const result = capture("docker", [
+    "exec",
+    dbContainer,
+    "psql",
+    "-U",
+    "postgres",
+    "-d",
+    "postgres",
+    "-v",
+    "ON_ERROR_STOP=1",
+    "-c",
+    "notify pgrst, 'reload schema';",
+  ]);
+
+  if (result.error || result.status !== 0) {
+    const detail = result.error?.message || result.stderr || result.stdout;
+    throw new Error(
+      `Não foi possível solicitar reload do schema do PostgREST. ${detail}`,
+    );
+  }
+}
+
+async function governanceRpcIsVisible(apiUrl, publicKey) {
+  const response = await fetch(
+    `${apiUrl}/rest/v1/rpc/get_owned_data_governance_overview`,
+    {
+      method: "POST",
+      headers: {
+        apikey: publicKey,
+        Authorization: `Bearer ${publicKey}`,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+    },
+  );
+
+  const body = await response.text();
+
+  return !(
+    response.status === 404 &&
+    /PGRST202|schema cache|Could not find the function/i.test(body)
+  );
+}
+
+async function ensureGovernanceRpc(apiUrl, publicKey) {
+  section("Validando RPCs da Fase 1.9G");
+
+  reloadPostgrestSchema();
+
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    await sleep(attempt === 1 ? 700 : 1200);
+
+    if (await governanceRpcIsVisible(apiUrl, publicKey)) {
+      console.log("[OK] RPC get_owned_data_governance_overview visível no PostgREST");
+      return;
+    }
+
+    console.log(`[INFO] Aguardando atualização do schema cache (${attempt}/5)...`);
+    reloadPostgrestSchema();
+  }
+
+  throw new Error(
+    "O banco recebeu as migrations, mas o PostgREST ainda não expôs " +
+      "get_owned_data_governance_overview. Execute `pnpm exec supabase stop`, " +
+      "depois `pnpm exec supabase start` e rode `pnpm dev` novamente.",
+  );
+}
+
 async function main() {
   section("ORBIQ LOCAL DEVELOPMENT");
 
   console.log(`[OK] Node.js ${process.versions.node}`);
-  console.log("[INFO] Preparando Supabase e sincronizando migrations antes do Next.js.");
+  console.log("[INFO] Preparando Supabase, migrations e schema cache antes do Next.js.");
 
   let status = capture("pnpm", ["exec", "supabase", "status"]);
 
@@ -95,9 +169,6 @@ async function main() {
 
   console.log("[OK] Supabase local disponível");
 
-  // `supabase start` preserva o banco quando ele já existe. Ao trocar de branch,
-  // migrations novas podem ficar pendentes. Aplicá-las aqui evita o web app
-  // consultar RPCs que ainda não existem no schema local/PostgREST.
   run("Sincronizando migrations locais", "pnpm", [
     "exec",
     "supabase",
@@ -123,9 +194,12 @@ async function main() {
     );
   }
 
+  await ensureGovernanceRpc(apiUrl, publicKey);
+
   if (!(await portIsAvailable(3000))) {
     throw new Error(
-      "A porta 3000 já está em uso. Se existe outro Orbiq aberto, encerre o servidor antigo com Ctrl+C e execute `pnpm dev` novamente.",
+      "A porta 3000 já está em uso. Encerre o servidor anterior com Ctrl+C " +
+        "(ou finalize o processo que ocupa a porta) e execute `pnpm dev` novamente.",
     );
   }
 
@@ -138,6 +212,7 @@ async function main() {
 
   section("ORBIQ WEB");
   console.log(`[OK] Banco sincronizado em ${apiUrl}`);
+  console.log("[OK] RPCs da Fase 1.9G validadas");
   console.log("[INFO] Aplicação: http://localhost:3000");
   console.log("[INFO] Use Ctrl+C para encerrar o servidor.");
   console.log("");
@@ -156,6 +231,6 @@ main().catch((error) => {
   console.error("[ORBIQ DEV ERROR]");
   console.error(error instanceof Error ? error.message : String(error));
   console.error("");
-  console.error("O terminal foi mantido aberto pelo VS Code. Corrija o item acima e execute `pnpm dev` novamente.");
+  console.error("O terminal do VS Code permanecerá aberto. Corrija o item acima e execute `pnpm dev` novamente.");
   process.exitCode = 1;
 });
