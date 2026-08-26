@@ -221,7 +221,7 @@ async function login(
   await expect(
     page,
   ).toHaveURL(
-    //dashboard/,
+    /\/dashboard/,
   );
 }
 
