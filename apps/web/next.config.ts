@@ -1,4 +1,8 @@
+import { fileURLToPath } from "node:url";
+
 import type { NextConfig } from "next";
+
+const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 const securityHeaders = [
   {
@@ -37,6 +41,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
+  output: "standalone",
+  outputFileTracingRoot: repositoryRoot,
   poweredByHeader: false,
   async headers() {
     return [
