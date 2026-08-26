@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 import {
-  getCurrentContext,
-} from "../_lib/current-organization";
+  requireCurrentPermission,
+} from "../_lib/permissions";
 
 import {
   OpenOrganizationButton,
@@ -169,7 +169,9 @@ export default async function NetworkOverviewPage() {
     supabase,
     organization,
   } =
-    await getCurrentContext();
+    await requireCurrentPermission(
+      "network.view",
+    );
 
 
   const now =
