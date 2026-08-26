@@ -31,6 +31,10 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 
 Nenhuma chave `sb_secret_...` ou `service_role` pode receber o prefixo `NEXT_PUBLIC_`.
 
+Use `apps/web/environment.example` somente como referência de nomes. Cadastre os
+valores reais no ambiente da plataforma e mantenha qualquer arquivo `.env*` fora
+do Git; o Quality Gate bloqueia esses arquivos por política de segurança.
+
 ## Sequência de publicação
 
 1. criar o projeto Supabase na organização aprovada e na região escolhida;
