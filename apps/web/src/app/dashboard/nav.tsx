@@ -41,6 +41,19 @@ const items = [
   },
   {
     href:
+      "/dashboard/rede",
+
+    icon:
+      "◆",
+
+    label:
+      "Visão da rede",
+
+    permission:
+      "network.view",
+  },
+  {
+    href:
       "/dashboard/atividade",
 
     icon:
