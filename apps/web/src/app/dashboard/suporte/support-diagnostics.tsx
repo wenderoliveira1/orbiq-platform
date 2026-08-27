@@ -293,7 +293,9 @@ export function SupportDiagnostics() {
   }, []);
 
   useEffect(() => {
-    void runDiagnostics();
+    const initialRun = window.setTimeout(() => {
+      void runDiagnostics();
+    }, 0);
 
     const handleConnectivity = () => {
       void runDiagnostics();
@@ -303,6 +305,7 @@ export function SupportDiagnostics() {
     window.addEventListener("offline", handleConnectivity);
 
     return () => {
+      window.clearTimeout(initialRun);
       window.removeEventListener("online", handleConnectivity);
       window.removeEventListener("offline", handleConnectivity);
     };
