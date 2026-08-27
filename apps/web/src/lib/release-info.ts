@@ -1,3 +1,5 @@
+import webPackage from "../../package.json";
+
 export type OrbiqReleaseChannel =
   | "local"
   | "ci"
@@ -12,7 +14,7 @@ export type OrbiqReleaseInfo = {
   version: string;
 };
 
-const APP_VERSION = "0.1.0";
+const APP_VERSION = webPackage.version;
 const SAFE_RELEASE_PATTERN = /^[a-zA-Z0-9._-]{1,64}$/;
 const SAFE_COMMIT_PATTERN = /^[0-9a-f]{7,64}$/i;
 
