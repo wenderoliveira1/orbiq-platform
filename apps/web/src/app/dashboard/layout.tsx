@@ -78,6 +78,13 @@ export default async function DashboardLayout({
             </div>
           </div>
 
+          <Link
+            href="/instalar"
+            className="orbiq-ghost-button full-width"
+          >
+            Instalar aplicativo
+          </Link>
+
           <form action={signOutAction}>
             <button
               type="submit"

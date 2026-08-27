@@ -1,6 +1,14 @@
 const CACHE_PREFIX = "orbiq-";
-const CACHE_NAME = `${CACHE_PREFIX}public-shell-v1`;
-const PUBLIC_SHELL = ["/offline", "/icon.svg", "/manifest.webmanifest"];
+const CACHE_NAME = `${CACHE_PREFIX}public-shell-v2`;
+const PUBLIC_SHELL = [
+  "/offline",
+  "/icon.svg",
+  "/icons/orbiq-192.png",
+  "/icons/orbiq-512.png",
+  "/icons/orbiq-apple-touch-icon.png",
+  "/icons/orbiq-maskable-512.png",
+  "/manifest.webmanifest",
+];
 const PUBLIC_PATHS = new Set(PUBLIC_SHELL);
 const CONNECTIVITY_MESSAGE = "ORBIQ_CONNECTIVITY";
 

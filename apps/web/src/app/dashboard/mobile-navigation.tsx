@@ -279,6 +279,11 @@ export function MobileNavigation({
             </nav>
 
             <footer className={styles.drawerFooter}>
+              <Link href="/instalar" className={styles.install}>
+                <span aria-hidden="true">⇩</span>
+                <strong>Instalar aplicativo</strong>
+              </Link>
+
               <div className={styles.user}>
                 <span className={styles.avatar} aria-hidden="true">
                   {(userEmail[0] ?? "U").toUpperCase()}

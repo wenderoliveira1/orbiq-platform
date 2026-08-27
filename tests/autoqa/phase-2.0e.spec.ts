@@ -79,7 +79,15 @@ test.describe("Fase 2.0E - resiliência de conectividade", () => {
     });
 
     expect(cachedPaths).toEqual(
-      ["/icon.svg", "/manifest.webmanifest", "/offline"].sort(),
+      [
+        "/icon.svg",
+        "/icons/orbiq-192.png",
+        "/icons/orbiq-512.png",
+        "/icons/orbiq-apple-touch-icon.png",
+        "/icons/orbiq-maskable-512.png",
+        "/manifest.webmanifest",
+        "/offline",
+      ].sort(),
     );
     expect(cachedPaths).not.toContain("/dashboard");
 

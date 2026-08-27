@@ -12,6 +12,7 @@ O service worker utiliza uma allowlist fechada:
 
 - `/offline`;
 - `/icon.svg`;
+- ícones PNG públicos de instalação;
 - `/manifest.webmanifest`.
 
 Navegações continuam network-first e suas respostas nunca são gravadas. Métodos
