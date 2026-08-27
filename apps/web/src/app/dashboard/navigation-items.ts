@@ -160,6 +160,13 @@ export const navigationItems: readonly NavigationItem[] = [
     label: "Configurações",
     permission: "settings.manage",
   },
+  {
+    group: "Administração",
+    href: "/dashboard/suporte",
+    icon: "?",
+    label: "Suporte técnico",
+    permission: "dashboard.view",
+  },
 ];
 
 export function isNavigationItemActive(pathname: string, href: string) {
