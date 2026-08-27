@@ -2,6 +2,8 @@ import { cpSync, existsSync, rmSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
+import { parsePublicEnvironment } from "../packages/config/src/index.mjs";
+
 const repositoryRoot = process.cwd();
 const webRoot = resolve(repositoryRoot, "apps", "web");
 const standaloneRoot = resolve(webRoot, ".next", "standalone");
@@ -40,6 +42,9 @@ for (const { source, target } of assets) {
 console.log(`[OK] Artefato standalone preparado em ${serverRoot}`);
 
 if (process.argv.includes("--start")) {
+  parsePublicEnvironment(process.env);
+  console.log("[OK] Contrato de ambiente público validado");
+
   const child = spawn(process.execPath, [serverFile], {
     env: {
       ...process.env,

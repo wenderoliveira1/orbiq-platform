@@ -1,34 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
+import { getPublicEnvironment } from "@/lib/public-environment";
+
 import { PwaRegistration } from "./pwa-registration";
 
 import "./globals.css";
 
-function metadataBase() {
-  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  const vercelUrl =
-    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() ??
-    process.env.VERCEL_URL?.trim();
-  const value = configuredUrl || (vercelUrl ? `https://${vercelUrl}` : "");
-
-  if (!value) {
-    return undefined;
-  }
-
-  try {
-    return new URL(value);
-  } catch {
-    return undefined;
-  }
-}
+const publicEnvironment = getPublicEnvironment();
 
 export const metadata: Metadata = {
   applicationName: "Orbiq",
   description:
     "Plataforma profissional de operações automotivas, orçamentos e gestão de oficinas.",
   manifest: "/manifest.webmanifest",
-  metadataBase: metadataBase(),
+  metadataBase: new URL(publicEnvironment.appUrl),
   robots: {
     follow: false,
     index: false,

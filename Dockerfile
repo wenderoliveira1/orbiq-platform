@@ -41,8 +41,15 @@ FROM node:22.23.2-alpine AS runner
 
 WORKDIR /app
 
+ARG NEXT_PUBLIC_APP_URL=http://127.0.0.1:3000
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+
 ENV HOSTNAME="0.0.0.0"
 ENV NODE_ENV="production"
+ENV NEXT_PUBLIC_APP_URL="$NEXT_PUBLIC_APP_URL"
+ENV NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL"
+ENV NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
 ENV PORT="3000"
 
 RUN addgroup --system --gid 1001 nodejs \
@@ -55,6 +62,6 @@ USER nextjs
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget -q -O /dev/null http://127.0.0.1:3000/api/health || exit 1
+  CMD wget -q -O /dev/null http://127.0.0.1:3000/api/ready || exit 1
 
 CMD ["node", "apps/web/server.js"]
