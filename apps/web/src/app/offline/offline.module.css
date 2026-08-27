@@ -1,0 +1,157 @@
+.page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding:
+    calc(24px + env(safe-area-inset-top))
+    18px
+    calc(24px + env(safe-area-inset-bottom));
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 0%, #ffffff 0%, #f5f7fa 46%, #eef1f5 100%);
+  color: #111827;
+}
+
+.card {
+  width: min(100%, 500px);
+  padding: clamp(26px, 7vw, 42px);
+  display: grid;
+  gap: 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.1);
+}
+
+.brand {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: #e30613;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.eyebrow {
+  margin-top: 8px;
+  color: #e30613;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.card h1 {
+  margin: 0;
+  font-size: clamp(31px, 8vw, 46px);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.card > p {
+  margin: 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.notice {
+  margin: 5px 0;
+  padding: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  border: 1px solid #bbf7d0;
+  border-radius: 15px;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.notice > span:first-child {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #dcfce7;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.notice > span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.notice strong {
+  font-size: 12px;
+}
+
+.notice small {
+  color: #3f7554;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.card form {
+  margin-top: 5px;
+}
+
+.card button {
+  width: 100%;
+  min-height: 50px;
+  border: 0;
+  border-radius: 14px;
+  background: #111827;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.card button:focus-visible {
+  outline: 3px solid rgba(227, 6, 19, 0.34);
+  outline-offset: 3px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .page {
+    background:
+      radial-gradient(circle at 50% 0%, #182032 0%, #090d18 58%, #050811 100%);
+    color: #f8fafc;
+  }
+
+  .card {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.93);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+  }
+
+  .card > p {
+    color: #cbd5e1;
+  }
+
+  .notice {
+    border-color: rgba(74, 222, 128, 0.24);
+    background: rgba(22, 101, 52, 0.2);
+    color: #bbf7d0;
+  }
+
+  .notice > span:first-child {
+    background: rgba(74, 222, 128, 0.16);
+  }
+
+  .notice small {
+    color: #86c99e;
+  }
+
+  .card button {
+    background: #f8fafc;
+    color: #111827;
+  }
+}

@@ -55,6 +55,17 @@ usuário não privilegiado e os endpoints:
 
 Ambos retornam respostas mínimas sem segredos e com cache desabilitado.
 
+## PWA e conectividade
+
+O build de produção registra um service worker de escopo raiz. Ele oferece uma
+tela pública quando uma navegação completa acontece sem rede e mantém um aviso
+de conectividade na interface já aberta.
+
+Por segurança, o cache offline contém exclusivamente `/offline`, `/icon.svg` e
+`/manifest.webmanifest`. Dashboard, APIs, respostas Supabase, dados de clientes,
+orçamentos e exportações nunca entram no Cache Storage. Em desenvolvimento, o
+registro é removido para não interferir no HMR.
+
 ## Qualidade
 
 Toda promoção passa por pull request, Quality Gate e AutoQA. A `main` não

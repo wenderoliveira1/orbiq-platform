@@ -8,10 +8,30 @@ export function PwaRegistration() {
       return;
     }
 
+    if (process.env.NODE_ENV !== "production") {
+      void navigator.serviceWorker
+        .getRegistration("/")
+        .then((registration) => {
+          if (registration?.active?.scriptURL.endsWith("/sw.js")) {
+            return registration.unregister();
+          }
+        })
+        .catch(() => {
+          // O ambiente de desenvolvimento continua sem depender do registro.
+        });
+
+      return;
+    }
+
     const register = () => {
-      navigator.serviceWorker.register("/sw.js").catch(() => {
-        // A aplicação continua totalmente funcional sem o service worker.
-      });
+      void navigator.serviceWorker
+        .register("/sw.js", {
+          scope: "/",
+          updateViaCache: "none",
+        })
+        .catch(() => {
+          // Registro progressivo: a aplicação online continua funcional.
+        });
     };
 
     if (document.readyState === "complete") {

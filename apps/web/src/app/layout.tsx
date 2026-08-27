@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { getPublicEnvironment } from "@/lib/public-environment";
 
+import { ConnectivityStatus } from "./connectivity-status";
 import { PwaRegistration } from "./pwa-registration";
 
 import "./globals.css";
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
       <body>
+        <ConnectivityStatus />
         {children}
         <PwaRegistration />
       </body>
