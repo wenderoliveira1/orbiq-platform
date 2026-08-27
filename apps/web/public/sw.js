@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "orbiq-";
-const CACHE_NAME = `${CACHE_PREFIX}public-shell-v2`;
+const CACHE_NAME = `${CACHE_PREFIX}public-shell-v3`;
 const PUBLIC_SHELL = [
   "/offline",
   "/icon.svg",
@@ -11,6 +11,7 @@ const PUBLIC_SHELL = [
 ];
 const PUBLIC_PATHS = new Set(PUBLIC_SHELL);
 const CONNECTIVITY_MESSAGE = "ORBIQ_CONNECTIVITY";
+const SKIP_WAITING_MESSAGE = "ORBIQ_SKIP_WAITING";
 
 let offlineNavigationPending = false;
 
@@ -27,7 +28,6 @@ globalThis.addEventListener("install", (event) => {
             }),
         ),
       );
-      await globalThis.skipWaiting();
     })(),
   );
 });
@@ -47,6 +47,11 @@ globalThis.addEventListener("activate", (event) => {
 });
 
 globalThis.addEventListener("message", (event) => {
+  if (event.data?.type === SKIP_WAITING_MESSAGE) {
+    event.waitUntil(globalThis.skipWaiting());
+    return;
+  }
+
   if (
     event.data?.type !== CONNECTIVITY_MESSAGE ||
     typeof event.data.online !== "boolean"
