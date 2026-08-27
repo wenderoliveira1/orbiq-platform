@@ -9,11 +9,17 @@ const windows = process.platform === "win32";
 const pnpmCommand = windows ? process.env.ComSpec ?? "cmd.exe" : "pnpm";
 const dockerCommand = windows ? "docker.exe" : "docker";
 const dbContainer = "supabase_db_orbiq-platform";
-const phaseMigration = resolve(
+const phase19GMigration = resolve(
   process.cwd(),
   "supabase",
   "migrations",
   "20260826200000_data_continuity.sql",
+);
+const phase20IMigration = resolve(
+  process.cwd(),
+  "supabase",
+  "migrations",
+  "20260827133500_private_export_delivery.sql",
 );
 
 function pnpmArgs(args) {
@@ -122,7 +128,7 @@ function psql(sql, { captureOutput = false } = {}) {
   );
 }
 
-function phaseObjectsExistInDatabase() {
+function phase19GObjectsExistInDatabase() {
   const result = psql(
     `select\n` +
       `  to_regclass('public.organization_data_exports') is not null\n` +
@@ -141,6 +147,39 @@ function phaseObjectsExistInDatabase() {
   return /\bt\b/.test(result.stdout ?? "");
 }
 
+function phase20IObjectsExistInDatabase() {
+  const result = psql(
+    `select\n` +
+      `  exists (\n` +
+      `    select 1\n` +
+      `    from storage.buckets\n` +
+      `    where id = 'organization-data-exports'\n` +
+      `      and public = false\n` +
+      `      and file_size_limit = 57671680\n` +
+      `  )\n` +
+      `  and (\n` +
+      `    select count(*)\n` +
+      `    from pg_policies\n` +
+      `    where schemaname = 'storage'\n` +
+      `      and tablename = 'objects'\n` +
+      `      and policyname in (\n` +
+      `        'orbiq_data_exports_insert_owner',\n` +
+      `        'orbiq_data_exports_select_owner',\n` +
+      `        'orbiq_data_exports_delete_owner'\n` +
+      `      )\n` +
+      `  ) = 3\n` +
+      `  as ready;\n`,
+    { captureOutput: true },
+  );
+
+  if (result.error || result.status !== 0) {
+    const detail = result.error?.message || result.stderr || result.stdout;
+    throw new Error(`Falha ao consultar o Storage local. ${detail}`);
+  }
+
+  return /\bt\b/.test(result.stdout ?? "");
+}
+
 function applyPhase19GDirectly() {
   section("Aplicando schema da Fase 1.9G");
   console.log(
@@ -149,7 +188,7 @@ function applyPhase19GDirectly() {
       "o bootstrap instalará somente a migration da Fase 1.9G.",
   );
 
-  const sql = readFileSync(phaseMigration, "utf8");
+  const sql = readFileSync(phase19GMigration, "utf8");
   const result = psql(sql);
 
   if (result.error || result.status !== 0) {
@@ -159,6 +198,25 @@ function applyPhase19GDirectly() {
   }
 
   console.log("[OK] Schema da Fase 1.9G aplicado sem replay de migrations antigas");
+}
+
+function applyPhase20IDirectly() {
+  section("Aplicando Storage da Fase 2.0I");
+  console.log(
+    "[INFO] Instalando somente o bucket privado e as policies da Fase 2.0I, " +
+      "sem resetar o Supabase e sem reaplicar o histórico antigo.",
+  );
+
+  const sql = readFileSync(phase20IMigration, "utf8");
+  const result = psql(sql);
+
+  if (result.error || result.status !== 0) {
+    const detail =
+      result.error?.message || result.stderr || result.stdout || "erro SQL desconhecido";
+    throw new Error(`Falha ao aplicar a migration da Fase 2.0I. ${detail}`);
+  }
+
+  console.log("[OK] Storage privado da Fase 2.0I aplicado sem reset destrutivo");
 }
 
 function reloadPostgrestSchema() {
@@ -195,7 +253,7 @@ async function governanceRpcIsVisible(apiUrl, publicKey) {
 async function ensurePhase19G(apiUrl, publicKey) {
   section("Validando banco da Fase 1.9G");
 
-  if (!phaseObjectsExistInDatabase()) {
+  if (!phase19GObjectsExistInDatabase()) {
     applyPhase19GDirectly();
   } else {
     console.log("[OK] Objetos da Fase 1.9G já existem no PostgreSQL");
@@ -219,6 +277,16 @@ async function ensurePhase19G(apiUrl, publicKey) {
     "A Fase 1.9G existe no PostgreSQL, mas o PostgREST ainda não publicou a RPC. " +
       "Reinicie o Supabase local e execute pnpm dev novamente.",
   );
+}
+
+function ensurePhase20I() {
+  section("Validando Storage da Fase 2.0I");
+
+  if (!phase20IObjectsExistInDatabase()) {
+    applyPhase20IDirectly();
+  } else {
+    console.log("[OK] Bucket privado e policies da Fase 2.0I já estão ativos");
+  }
 }
 
 async function main() {
@@ -275,6 +343,7 @@ async function main() {
   }
 
   await ensurePhase19G(apiUrl, publicKey);
+  ensurePhase20I();
 
   if (!(await portIsAvailable(3000))) {
     throw new Error(
@@ -297,6 +366,7 @@ async function main() {
   console.log(`[OK] Banco local: ${apiUrl}`);
   console.log("[OK] Contrato de ambiente público validado");
   console.log("[OK] Fase 1.9G validada");
+  console.log("[OK] Fase 2.0I validada");
   console.log("[INFO] Aplicação: http://localhost:3000");
   console.log("[INFO] Use Ctrl+C para encerrar.");
   console.log("");
