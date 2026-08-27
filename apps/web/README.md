@@ -64,7 +64,8 @@ de conectividade na interface já aberta.
 Por segurança, o cache offline contém exclusivamente `/offline`, `/icon.svg` e
 `/manifest.webmanifest`. Dashboard, APIs, respostas Supabase, dados de clientes,
 orçamentos e exportações nunca entram no Cache Storage. Em desenvolvimento, o
-registro é removido para não interferir no HMR.
+registro é removido para não interferir no HMR. O shell público também fica fora
+do proxy de renovação da sessão, mantendo a recuperação independente do Auth.
 
 ## Qualidade
 

@@ -24,6 +24,7 @@ exportações e tokens não entram no Cache Storage.
 - instalação atômica: o worker só ativa quando todo o shell público está salvo;
 - versão explícita de cache e remoção apenas de caches antigos do próprio Orbiq;
 - controle imediato das páginas abertas, sem dependência externa;
+- shell público fora do proxy de sessão e independente do Supabase Auth;
 - script servido com `no-store`, MIME JavaScript, CSP restrita e escopo raiz;
 - registro somente no build de produção; desenvolvimento remove o registro para
   preservar o HMR.
