@@ -96,6 +96,33 @@ e-mail, nome da oficina, clientes, veículos, placas, orçamentos, URLs internas
 corpos de resposta, chaves, tokens ou stack traces. Para o primeiro atendimento,
 compartilhe somente o bloco identificado como **Diagnóstico seguro**.
 
+## Exportações privadas de dados
+
+A portabilidade owner-only continua gerando no PostgreSQL o snapshot sanitizado,
+com SHA-256 e limite lógico de 50 MiB. A entrega, porém, não usa mais o corpo da
+resposta de uma Route do Next.js.
+
+O navegador autenticado:
+
+1. consome a autorização de uso único pelo RPC existente;
+2. valida localmente o SHA-256 do snapshot;
+3. envia o JSON diretamente ao bucket privado `organization-data-exports`;
+4. cria uma URL assinada válida por 60 segundos;
+5. recebe o Blob diretamente do Supabase Storage;
+6. dispara o download local e remove o objeto temporário.
+
+O bucket aceita somente `application/json`, permanece privado e limita o artefato
+a 55 MiB para acomodar o manifesto de integridade em torno do snapshot de até
+50 MiB. INSERT e SELECT exigem o proprietário autenticado e uma exportação
+consumida nos últimos 15 minutos. DELETE permanece disponível ao mesmo
+proprietário para recuperação de limpeza. Não existe policy de UPDATE/upsert.
+
+Essa arquitetura elimina a dependência de limites de payload da futura
+hospedagem Web sem exigir `service_role`, Function privilegiada, Vercel Pro ou
+qualquer serviço adicional. Se a aba for interrompida depois do upload, a rota
+de entrega consegue retomar o objeto privado dentro da janela curta de
+recuperação.
+
 ## Qualidade
 
 Toda promoção passa por pull request, Quality Gate e AutoQA. A `main` não
