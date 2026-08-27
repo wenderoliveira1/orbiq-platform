@@ -84,6 +84,18 @@ As verificações de nova versão acontecem ao iniciar, recuperar conectividade,
 retornar à aba e periodicamente. Nenhum desses eventos força reload ou grava
 dados autenticados em cache.
 
+## Diagnóstico e suporte
+
+A rota autenticada `/dashboard/suporte` executa verificações locais de saúde,
+prontidão, manifesto, conectividade, service worker e modo de instalação. O
+objetivo é permitir uma primeira triagem técnica sem depender de observabilidade
+externa ou compartilhar conteúdo de negócio.
+
+O relatório copiável da página é deliberadamente sanitizado. Ele não inclui
+e-mail, nome da oficina, clientes, veículos, placas, orçamentos, URLs internas,
+corpos de resposta, chaves, tokens ou stack traces. Para o primeiro atendimento,
+compartilhe somente o bloco identificado como **Diagnóstico seguro**.
+
 ## Qualidade
 
 Toda promoção passa por pull request, Quality Gate e AutoQA. A `main` não
