@@ -61,11 +61,17 @@ O build de produção registra um service worker de escopo raiz. Ele oferece uma
 tela pública quando uma navegação completa acontece sem rede e mantém um aviso
 de conectividade na interface já aberta.
 
-Por segurança, o cache offline contém exclusivamente `/offline`, `/icon.svg` e
-`/manifest.webmanifest`. Dashboard, APIs, respostas Supabase, dados de clientes,
-orçamentos e exportações nunca entram no Cache Storage. Em desenvolvimento, o
-registro é removido para não interferir no HMR. O shell público também fica fora
-do proxy de renovação da sessão, mantendo a recuperação independente do Auth.
+Por segurança, o cache offline contém exclusivamente a tela `/offline`, o
+manifesto e os ícones públicos de instalação. Dashboard, APIs, respostas
+Supabase, dados de clientes, orçamentos e exportações nunca entram no Cache
+Storage. Em desenvolvimento, o registro é removido para não interferir no HMR.
+O shell público também fica fora do proxy de renovação da sessão, mantendo a
+recuperação independente do Auth.
+
+A rota `/instalar` traz orientações específicas para iPhone/iPad, Android e
+desktop.
+Em ambiente externo, a instalação depende de HTTPS; `localhost` e `127.0.0.1`
+são aceitos pelos navegadores para testes locais.
 
 ## Qualidade
 

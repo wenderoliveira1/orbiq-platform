@@ -42,11 +42,13 @@ test.describe("Fase 2.0A - prontidão Web e mobile", () => {
       expect.arrayContaining([
         expect.objectContaining({
           purpose: "any",
-          src: "/icon.svg",
+          sizes: "192x192",
+          src: "/icons/orbiq-192.png",
         }),
         expect.objectContaining({
           purpose: "maskable",
-          src: "/icon.svg",
+          sizes: "512x512",
+          src: "/icons/orbiq-maskable-512.png",
         }),
       ]),
     );

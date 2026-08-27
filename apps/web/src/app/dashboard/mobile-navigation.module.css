@@ -319,6 +319,7 @@
   font-size: 10px;
 }
 
+.install,
 .signOut {
   width: 100%;
   min-height: 44px;
@@ -332,10 +333,30 @@
   font-weight: 800;
 }
 
+.install {
+  padding: 0 13px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  text-decoration: none;
+}
+
+.install > span {
+  font-size: 16px;
+}
+
+.install:hover,
+.install:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .brandMark:focus-visible,
 .menuTrigger:focus-visible,
 .dockItem:focus-visible,
 .closeButton:focus-visible,
+.install:focus-visible,
 .signOut:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--orbiq-accent) 45%, #fff);
   outline-offset: 2px;

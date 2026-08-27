@@ -11,11 +11,21 @@ import "./globals.css";
 const publicEnvironment = getPublicEnvironment();
 
 export const metadata: Metadata = {
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Orbiq",
+  },
   applicationName: "Orbiq",
   description:
     "Plataforma profissional de operações automotivas, orçamentos e gestão de oficinas.",
   manifest: "/manifest.webmanifest",
   metadataBase: new URL(publicEnvironment.appUrl),
+  other: {
+    // Next 16 emits the standards-based mobile-web-app-capable tag. Keep the
+    // Apple-prefixed variant as a compatibility signal for older Safari/iOS.
+    "apple-mobile-web-app-capable": "yes",
+  },
   robots: {
     follow: false,
     index: false,
