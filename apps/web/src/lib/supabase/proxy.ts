@@ -1,33 +1,36 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+import { getPublicEnvironment } from "@/lib/public-environment";
 
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request })
+  let response = NextResponse.next({ request });
+  const { supabasePublishableKey, supabaseUrl } = getPublicEnvironment();
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    supabaseUrl,
+    supabasePublishableKey,
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value)
-          })
+            request.cookies.set(name, value);
+          });
 
-          response = NextResponse.next({ request })
+          response = NextResponse.next({ request });
 
           cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
+            response.cookies.set(name, value, options);
+          });
         },
       },
-    }
-  )
+    },
+  );
 
-  await supabase.auth.getClaims()
+  await supabase.auth.getClaims();
 
-  return response
+  return response;
 }

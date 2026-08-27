@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import net from "node:net";
 import { resolve } from "node:path";
 
+import { parsePublicEnvironment } from "../packages/config/src/index.mjs";
+
 const windows = process.platform === "win32";
 const pnpmCommand = windows ? process.env.ComSpec ?? "cmd.exe" : "pnpm";
 const dockerCommand = windows ? "docker.exe" : "docker";
@@ -282,13 +284,18 @@ async function main() {
 
   const webEnv = {
     ...process.env,
+    NEXT_PUBLIC_APP_URL:
+      process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000",
     NEXT_PUBLIC_SUPABASE_URL: apiUrl,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publicKey,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: publicKey,
   };
 
+  parsePublicEnvironment(webEnv);
+
   section("ORBIQ WEB");
   console.log(`[OK] Banco local: ${apiUrl}`);
+  console.log("[OK] Contrato de ambiente público validado");
   console.log("[OK] Fase 1.9G validada");
   console.log("[INFO] Aplicação: http://localhost:3000");
   console.log("[INFO] Use Ctrl+C para encerrar.");

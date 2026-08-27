@@ -2,6 +2,8 @@ import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 
+import { parsePublicEnvironment } from "../packages/config/src/index.mjs";
+
 const root = process.cwd();
 const windows = process.platform === "win32";
 
@@ -67,7 +69,7 @@ function normalize(value) {
 section("ORBIQ QUALITY GATE");
 
 const nodeMajor = Number(process.versions.node.split(".")[0]);
-if (!Number.isFinite(nodeMajor) || nodeMajor < 20) {
+if (!Number.isFinite(nodeMajor) || nodeMajor < 22) {
   console.error(`Node.js invalido: ${process.versions.node}`);
   process.exit(1);
 }
@@ -213,6 +215,10 @@ console.log("[OK] Database Types sincronizados");
 const envOutput = capture("pnpm", ["exec", "supabase", "status", "-o", "env"]);
 const buildEnv = { ...process.env };
 
+if (!buildEnv.NEXT_PUBLIC_APP_URL?.trim()) {
+  buildEnv.NEXT_PUBLIC_APP_URL = "http://127.0.0.1:3000";
+}
+
 if (envOutput.status === 0) {
   const values = {};
 
@@ -238,6 +244,18 @@ if (envOutput.status === 0) {
   }
 }
 
+try {
+  parsePublicEnvironment(buildEnv);
+  console.log("[OK] Contrato de ambiente público validado");
+} catch (error) {
+  console.error(
+    error instanceof Error
+      ? error.message
+      : "Falha ao validar o contrato de ambiente público.",
+  );
+  process.exit(1);
+}
+
 run("Next.js Production Build", "pnpm", ["--filter", "web", "build"], {
   env: buildEnv,
 });
@@ -251,4 +269,5 @@ console.log("[OK] TypeScript");
 console.log("[OK] Supabase");
 console.log("[OK] PostgreSQL Lint");
 console.log("[OK] Database Types");
+console.log("[OK] Environment Contract");
 console.log("[OK] Next.js Build");

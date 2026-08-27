@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Orbiq Web
 
-## Getting Started
+Interface Web profissional do Orbiq, construída com Next.js, React e
+TypeScript sobre o backend Supabase multiempresa.
 
-First, run the development server:
+## Execução local
+
+Na raiz do repositório:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install --frozen-lockfile
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+O bootstrap inicia o Supabase local, verifica o schema, injeta somente a chave
+pública e abre o Web em `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Use `pnpm dev:web` apenas quando o Supabase e as três variáveis públicas já
+estiverem disponíveis no processo.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Contrato de ambiente
 
-## Learn More
+Variáveis obrigatórias:
 
-To learn more about Next.js, take a look at the following resources:
+```text
+NEXT_PUBLIC_APP_URL
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Os valores `NEXT_PUBLIC_*` entram no bundle durante `next build`. Portanto,
+cada ambiente deve gerar seu próprio artefato com os valores correspondentes.
+O parser compartilhado em `@orbiq/config`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- exige URLs absolutas sem credenciais, caminhos ou query strings;
+- aceita `sb_publishable_...` e a chave `anon` JWT legada;
+- recusa `sb_secret_...`, `service_role` e formatos desconhecidos;
+- nunca registra o valor das chaves nos logs.
 
-## Deploy on Vercel
+O arquivo `environment.example` contém somente nomes e exemplos fictícios.
+Arquivos `.env*` reais não podem ser versionados.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Build e runtime portável
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm build:web
+pnpm start:standalone
+```
+
+O mesmo artefato é exercitado pelo AutoQA. O contêiner opcional usa Node.js 22,
+usuário não privilegiado e os endpoints:
+
+- `GET /api/health`: processo Web ativo;
+- `GET /api/ready`: contrato de configuração válido.
+
+Ambos retornam respostas mínimas sem segredos e com cache desabilitado.
+
+## Qualidade
+
+Toda promoção passa por pull request, Quality Gate e AutoQA. A `main` não
+recebe edição direta e nenhuma publicação externa é necessária para desenvolver
+ou validar o aplicativo localmente.
