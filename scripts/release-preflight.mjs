@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import process from "node:process";
 
 import { parsePublicEnvironment } from "../packages/config/src/index.mjs";
@@ -24,6 +25,71 @@ function normalizeBaseUrl(value) {
 
 function isLocal(url) {
   return LOCAL_HOSTS.has(url.hostname);
+}
+
+function parseEnvOutput(output) {
+  const values = {};
+
+  for (const rawLine of String(output ?? "").split(/\r?\n/)) {
+    const match = rawLine.trim().match(/^([A-Z0-9_]+)=(.*)$/);
+    if (!match) continue;
+
+    let value = match[2].trim();
+    if (value.startsWith('"') && value.endsWith('"')) {
+      value = value.slice(1, -1);
+    }
+    values[match[1]] = value;
+  }
+
+  return values;
+}
+
+function resolveEnvironment() {
+  const required = [
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  ];
+
+  if (required.every((name) => process.env[name]?.trim())) {
+    return parsePublicEnvironment(process.env);
+  }
+
+  const windows = process.platform === "win32";
+  const command = windows ? process.env.ComSpec ?? "cmd.exe" : "pnpm";
+  const args = windows
+    ? ["/d", "/s", "/c", "pnpm", "exec", "supabase", "status", "-o", "env"]
+    : ["exec", "supabase", "status", "-o", "env"];
+
+  const result = spawnSync(command, args, {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    shell: false,
+    env: process.env,
+  });
+
+  if (result.error || result.status !== 0) {
+    throw new Error(
+      "Configuração pública ausente e o Supabase local não pôde ser consultado. Inicie o Orbiq com `pnpm dev` e tente novamente.",
+    );
+  }
+
+  const local = parseEnvOutput(result.stdout);
+  const publicKey = local.PUBLISHABLE_KEY ?? local.ANON_KEY;
+
+  if (!local.API_URL || !publicKey) {
+    throw new Error(
+      "O Supabase local está ativo, mas API_URL/PUBLISHABLE_KEY não foram encontrados.",
+    );
+  }
+
+  return parsePublicEnvironment({
+    ...process.env,
+    NEXT_PUBLIC_APP_URL:
+      process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000",
+    NEXT_PUBLIC_SUPABASE_URL: local.API_URL,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publicKey,
+  });
 }
 
 async function request(baseUrl, path) {
@@ -153,7 +219,7 @@ async function checkPublicShell(baseUrl) {
 }
 
 async function main() {
-  const environment = parsePublicEnvironment(process.env);
+  const environment = resolveEnvironment();
   const baseUrl = normalizeBaseUrl(environment.appUrl);
 
   console.log("============================================================");
