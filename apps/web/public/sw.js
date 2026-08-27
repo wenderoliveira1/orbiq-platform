@@ -2,6 +2,9 @@ const CACHE_PREFIX = "orbiq-";
 const CACHE_NAME = `${CACHE_PREFIX}public-shell-v1`;
 const PUBLIC_SHELL = ["/offline", "/icon.svg", "/manifest.webmanifest"];
 const PUBLIC_PATHS = new Set(PUBLIC_SHELL);
+const CONNECTIVITY_MESSAGE = "ORBIQ_CONNECTIVITY";
+
+let offlineNavigationPending = false;
 
 globalThis.addEventListener("install", (event) => {
   event.waitUntil(
@@ -35,6 +38,17 @@ globalThis.addEventListener("activate", (event) => {
   );
 });
 
+globalThis.addEventListener("message", (event) => {
+  if (
+    event.data?.type !== CONNECTIVITY_MESSAGE ||
+    typeof event.data.online !== "boolean"
+  ) {
+    return;
+  }
+
+  offlineNavigationPending = !event.data.online;
+});
+
 async function offlineResponse() {
   const cached = await globalThis.caches.match("/offline");
 
@@ -61,6 +75,12 @@ globalThis.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
+    if (offlineNavigationPending) {
+      offlineNavigationPending = false;
+      event.respondWith(offlineResponse());
+      return;
+    }
+
     event.respondWith(
       globalThis.fetch(request).catch(() => offlineResponse()),
     );

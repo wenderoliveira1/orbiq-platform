@@ -4,13 +4,36 @@ import { useSyncExternalStore } from "react";
 
 import styles from "./connectivity-status.module.css";
 
+const CONNECTIVITY_MESSAGE = "ORBIQ_CONNECTIVITY";
+
+function reportConnectivity() {
+  navigator.serviceWorker?.controller?.postMessage({
+    online: navigator.onLine,
+    type: CONNECTIVITY_MESSAGE,
+  });
+}
+
 function subscribe(callback: () => void) {
-  window.addEventListener("online", callback);
-  window.addEventListener("offline", callback);
+  const handleConnectivityChange = () => {
+    reportConnectivity();
+    callback();
+  };
+
+  window.addEventListener("online", handleConnectivityChange);
+  window.addEventListener("offline", handleConnectivityChange);
+  navigator.serviceWorker?.addEventListener(
+    "controllerchange",
+    reportConnectivity,
+  );
+  reportConnectivity();
 
   return () => {
-    window.removeEventListener("online", callback);
-    window.removeEventListener("offline", callback);
+    window.removeEventListener("online", handleConnectivityChange);
+    window.removeEventListener("offline", handleConnectivityChange);
+    navigator.serviceWorker?.removeEventListener(
+      "controllerchange",
+      reportConnectivity,
+    );
   };
 }
 

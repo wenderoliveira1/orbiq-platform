@@ -32,9 +32,12 @@ exportações e tokens não entram no Cache Storage.
 ## Experiência
 
 Uma interface aberta exibe um aviso não bloqueante quando o dispositivo perde a
-rede. Em uma navegação ou recarga completa offline, a tela explica o estado,
-declara a política de proteção de dados e permite tentar novamente após a
-reconexão. Safe areas, modo escuro, foco visível e impressão foram considerados.
+rede e comunica esse estado ao worker. A próxima navegação conhecida como
+offline recebe o fallback imediatamente; o sinal é consumido para nunca prender
+uma tentativa posterior de reconexão. Falhas reais de `fetch` continuam usando o
+mesmo fallback. A tela explica o estado, declara a política de proteção de dados
+e permite tentar novamente. Safe areas, modo escuro, foco visível e impressão
+foram considerados.
 
 ## Decisão sobre Next.js experimental
 
