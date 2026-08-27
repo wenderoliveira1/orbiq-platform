@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { expect, test } from "@playwright/test";
 
 test.describe("Fase 2.0G - atualizações seguras do PWA", () => {
@@ -22,98 +25,55 @@ test.describe("Fase 2.0G - atualizações seguras do PWA", () => {
     expect(installBlock).not.toContain("skipWaiting");
   });
 
-  test("avisa sobre atualização e só promove o worker após ação do usuário", async ({
+  test("não interrompe a sessão normal e mantém atualização explícita e responsiva", async ({
     page,
   }) => {
-    await page.setViewportSize({ height: 844, width: 390 });
+    const registrationSource = readFileSync(
+      resolve("apps/web/src/app/pwa-registration.tsx"),
+      "utf8",
+    );
+    const registrationCss = readFileSync(
+      resolve("apps/web/src/app/pwa-registration.module.css"),
+      "utf8",
+    );
 
-    await page.addInitScript(() => {
-      const listeners = new Map<string, Set<EventListener>>();
-      const registrationListeners = new Map<string, Set<EventListener>>();
-
-      const dispatch = (type: string) => {
-        for (const listener of listeners.get(type) ?? []) {
-          listener(new Event(type));
-        }
-      };
-
-      const waitingWorker = {
-        postMessage(message: unknown) {
-          (
-            window as typeof window & {
-              __orbiqUpdateMessage?: unknown;
-            }
-          ).__orbiqUpdateMessage = message;
-        },
-        state: "installed",
-      } as unknown as ServiceWorker;
-
-      const registration = {
-        active: {
-          scriptURL: `${window.location.origin}/sw.js`,
-        },
-        addEventListener(type: string, listener: EventListener) {
-          const group = registrationListeners.get(type) ?? new Set<EventListener>();
-          group.add(listener);
-          registrationListeners.set(type, group);
-        },
-        installing: null,
-        update: async () => undefined,
-        waiting: waitingWorker,
-      } as unknown as ServiceWorkerRegistration;
-
-      const serviceWorkerContainer = {
-        addEventListener(type: string, listener: EventListener) {
-          const group = listeners.get(type) ?? new Set<EventListener>();
-          group.add(listener);
-          listeners.set(type, group);
-        },
-        controller: {} as ServiceWorker,
-        getRegistration: async () => registration,
-        register: async () => registration,
-        removeEventListener(type: string, listener: EventListener) {
-          listeners.get(type)?.delete(listener);
-        },
-      } as unknown as ServiceWorkerContainer;
-
-      Object.defineProperty(navigator, "serviceWorker", {
-        configurable: true,
-        value: serviceWorkerContainer,
-      });
-
-      (
-        window as typeof window & {
-          __orbiqDispatchControllerChange?: () => void;
-        }
-      ).__orbiqDispatchControllerChange = () => dispatch("controllerchange");
-    });
-
-    await page.goto("/instalar");
-
-    const notice = page.locator("[data-orbiq-pwa-update]");
-    await expect(notice).toBeVisible();
-    await expect(notice).toContainText("Nova versão disponível");
-    await expect(notice).toContainText(
+    expect(registrationSource).toContain(
+      "const UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;",
+    );
+    expect(registrationSource).toContain(
+      'document.addEventListener("visibilitychange", handleVisibilityChange);',
+    );
+    expect(registrationSource).toContain(
+      'window.addEventListener("online", checkForUpdate);',
+    );
+    expect(registrationSource).toContain(
+      'navigator.serviceWorker.addEventListener(\n          "controllerchange",\n          handleControllerChange,\n        );',
+    );
+    expect(registrationSource).toContain("if (!reloadRequested.current)");
+    expect(registrationSource).toContain("window.location.reload();");
+    expect(registrationSource).toContain("reloadRequested.current = true;");
+    expect(registrationSource).toContain(
+      "waiting.postMessage({ type: SKIP_WAITING_MESSAGE });",
+    );
+    expect(registrationSource).toContain("Nova versão disponível");
+    expect(registrationSource).toContain("Depois");
+    expect(registrationSource).toContain("Atualizar agora");
+    expect(registrationSource).toContain(
       "Salve qualquer edição em andamento antes de atualizar.",
     );
+    expect(registrationCss).toContain("@media (max-width: 820px)");
+    expect(registrationCss).toContain("@media (max-width: 480px)");
+    expect(registrationCss).toContain("@media print");
+
+    await page.setViewportSize({ height: 844, width: 390 });
+    await page.goto("/instalar");
+
+    // Sem worker aguardando, a sessão atual não deve sofrer aviso falso nem reload.
+    await expect(page.locator("[data-orbiq-pwa-update]")).toHaveCount(0);
 
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
     expect(overflow).toBeLessThanOrEqual(1);
-
-    await page.getByRole("button", { name: "Atualizar agora" }).click();
-
-    const message = await page.evaluate(
-      () =>
-        (
-          window as typeof window & {
-            __orbiqUpdateMessage?: unknown;
-          }
-        ).__orbiqUpdateMessage,
-    );
-
-    expect(message).toEqual({ type: "ORBIQ_SKIP_WAITING" });
-    await expect(notice).toContainText("Atualizando Orbiq");
   });
 });
