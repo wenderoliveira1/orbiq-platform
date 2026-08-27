@@ -72,11 +72,18 @@ test.describe("Fase 2.0A - prontidão Web e mobile", () => {
     expect(headers["x-powered-by"]).toBeUndefined();
   });
 
-  test("mantém a navegação completa utilizável em viewport mobile", async ({
+  test("mantém a navegação completa acessível em viewport mobile", async ({
     page,
   }) => {
     await page.setViewportSize({ height: 844, width: 390 });
     await login(page);
+
+    const menuTrigger = page.getByRole("button", {
+      name: "Abrir menu principal",
+    });
+
+    await expect(menuTrigger).toBeVisible();
+    await menuTrigger.click();
 
     const navigation = page.getByRole("navigation", {
       name: "Navegação principal",
@@ -86,19 +93,6 @@ test.describe("Fase 2.0A - prontidão Web e mobile", () => {
     });
 
     await expect(navigation).toBeVisible();
-
-    const navigationMetrics = await navigation.evaluate((element) => ({
-      clientWidth: element.clientWidth,
-      overflowX: getComputedStyle(element).overflowX,
-      scrollWidth: element.scrollWidth,
-    }));
-
-    expect(navigationMetrics.overflowX).toBe("auto");
-    expect(navigationMetrics.scrollWidth).toBeGreaterThan(
-      navigationMetrics.clientWidth,
-    );
-
-    await configuration.scrollIntoViewIfNeeded();
     await expect(configuration).toBeVisible();
     await configuration.click();
     await expect(page).toHaveURL(/\/dashboard\/configuracoes$/);

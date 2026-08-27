@@ -12,10 +12,12 @@ import {
   signOutAction,
   switchOrganizationAction,
 } from "./actions";
+import { MobileNavigation } from "./mobile-navigation";
 import { DashboardNav } from "./nav";
 import { OrganizationSwitcher } from "./organization-switcher";
 
 import "./dashboard.css";
+import "./mobile-navigation-shell.css";
 
 export default async function DashboardLayout({
   children,
@@ -30,6 +32,11 @@ export default async function DashboardLayout({
   } = await getCurrentContext();
 
   const permissions = permissionsForRole(membership.role);
+  const organizationOptions = availableOrganizations.map((item) => ({
+    id: item.id,
+    name: item.name,
+    role: item.role,
+  }));
 
   return (
     <div className="orbiq-shell">
@@ -51,11 +58,7 @@ export default async function DashboardLayout({
 
         <div className="orbiq-workshop">
           <OrganizationSwitcher
-            organizations={availableOrganizations.map((item) => ({
-              id: item.id,
-              name: item.name,
-              role: item.role,
-            }))}
+            organizations={organizationOptions}
             currentOrganizationId={organization.id}
             action={switchOrganizationAction}
           />
@@ -87,20 +90,13 @@ export default async function DashboardLayout({
       </aside>
 
       <main className="orbiq-main">
-        <header className="orbiq-mobile-header">
-          <Link
-            href="/dashboard"
-            className="orbiq-brand-mark"
-            aria-label="Orbiq"
-          >
-            O
-          </Link>
-
-          <div>
-            <strong>Orbiq</strong>
-            <span>{organization.name}</span>
-          </div>
-        </header>
+        <MobileNavigation
+          organizations={organizationOptions}
+          currentOrganizationId={organization.id}
+          currentOrganizationName={organization.name}
+          permissions={permissions}
+          userEmail={user.email ?? "Usuário Orbiq"}
+        />
 
         <div className="orbiq-content">{children}</div>
       </main>
