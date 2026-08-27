@@ -62,6 +62,18 @@ Para iniciar somente o Next.js, sem preparar o backend:
 pnpm dev:web
 ```
 
+## Preflight de publicação — Fase 2.0J
+
+Com o Orbiq em execução, abra um segundo terminal na raiz e rode:
+
+```bash
+pnpm release:preflight
+```
+
+O preflight valida o destino configurado em `NEXT_PUBLIC_APP_URL` sem imprimir chaves ou dados de negócio. Ele verifica health check, readiness, manifesto PWA, service worker, shell público e cabeçalhos de segurança. Ambientes externos são recusados se não usarem HTTPS.
+
+Esse comando é propositalmente independente do provedor de hospedagem. Enquanto o projeto continuar local ele valida `localhost`; quando a publicação Web for contratada, o mesmo gate poderá apontar para o domínio final antes da promoção de uma release.
+
 ## Qualidade
 
 O projeto possui Quality Gate, Playwright/AutoQA, migrations versionadas e tipos gerados a partir do PostgreSQL/Supabase.
