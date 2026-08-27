@@ -69,9 +69,20 @@ O shell público também fica fora do proxy de renovação da sessão, mantendo 
 recuperação independente do Auth.
 
 A rota `/instalar` traz orientações específicas para iPhone/iPad, Android e
-desktop.
-Em ambiente externo, a instalação depende de HTTPS; `localhost` e `127.0.0.1`
-são aceitos pelos navegadores para testes locais.
+desktop. Em ambiente externo, a instalação depende de HTTPS; `localhost` e
+`127.0.0.1` são aceitos pelos navegadores para testes locais.
+
+### Atualizações instaladas
+
+Uma nova versão do service worker não assume a sessão silenciosamente. Ela fica
+em espera e o Orbiq exibe um aviso com as opções **Depois** e **Atualizar agora**.
+A aplicação recomenda salvar qualquer edição antes da atualização e só recarrega
+a página depois de uma confirmação explícita do usuário e da troca efetiva do
+controller.
+
+As verificações de nova versão acontecem ao iniciar, recuperar conectividade,
+retornar à aba e periodicamente. Nenhum desses eventos força reload ou grava
+dados autenticados em cache.
 
 ## Qualidade
 

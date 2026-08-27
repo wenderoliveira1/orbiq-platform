@@ -1,0 +1,136 @@
+.notice {
+  position: fixed;
+  right: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 320;
+  width: min(calc(100vw - 36px), 440px);
+  min-height: 72px;
+  padding: 13px 14px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: #0f172a;
+  color: #f8fafc;
+  box-shadow: 0 22px 56px rgba(2, 6, 23, 0.34);
+}
+
+.mark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(227, 6, 19, 0.16);
+  color: #ffb4ba;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.copy strong {
+  font-size: 12px;
+}
+
+.copy small {
+  color: #cbd5e1;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.actions button {
+  min-height: 38px;
+  padding: 0 11px;
+  border-radius: 11px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.later {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.update {
+  border: 1px solid #e30613;
+  background: #e30613;
+  color: #ffffff;
+}
+
+.actions button:hover {
+  filter: brightness(1.06);
+}
+
+.actions button:focus-visible {
+  outline: 3px solid rgba(248, 250, 252, 0.34);
+  outline-offset: 2px;
+}
+
+.progress {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.24);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: orbiq-update-spin 0.8s linear infinite;
+}
+
+@keyframes orbiq-update-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 820px) {
+  .notice {
+    right: 12px;
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .progress {
+    justify-self: end;
+  }
+}
+
+@media (max-width: 480px) {
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress {
+    animation-duration: 1.6s;
+  }
+}
+
+@media print {
+  .notice {
+    display: none !important;
+  }
+}
