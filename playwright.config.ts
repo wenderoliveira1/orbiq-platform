@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const webServerCommand = process.env.CI
-  ? "pnpm --filter web start"
+  ? "pnpm start:standalone"
   : "pnpm --filter web dev";
 
 export default defineConfig({
@@ -31,10 +31,9 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer: {
-    // No CI, o Technical Quality Gate já gerou o build; o AutoQA valida
-    // exatamente o servidor de produção. Localmente, preserva o fluxo rápido.
+    // O CI valida o pacote mínimo e portável; o desenvolvimento local mantém HMR.
     command: webServerCommand,
-    url: "http://127.0.0.1:3000/login",
+    url: "http://127.0.0.1:3000/api/health",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

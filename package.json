@@ -8,6 +8,8 @@
     "dev:web": "pnpm --filter web dev",
     "recover:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-recover.ps1",
     "build:web": "pnpm --filter web build",
+    "prepare:standalone": "node scripts/standalone.mjs",
+    "start:standalone": "node scripts/standalone.mjs --start",
     "lint:web": "pnpm --filter web lint",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
