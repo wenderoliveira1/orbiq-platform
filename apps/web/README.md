@@ -51,9 +51,10 @@ O mesmo artefato é exercitado pelo AutoQA. O contêiner opcional usa Node.js 22
 usuário não privilegiado e os endpoints:
 
 - `GET /api/health`: processo Web ativo;
-- `GET /api/ready`: contrato de configuração válido.
+- `GET /api/ready`: contrato de configuração válido;
+- `GET /api/release`: identidade sanitizada da release em execução.
 
-Ambos retornam respostas mínimas sem segredos e com cache desabilitado.
+Todos retornam respostas mínimas sem segredos e com cache desabilitado.
 
 ## PWA e conectividade
 
@@ -87,14 +88,36 @@ dados autenticados em cache.
 ## Diagnóstico e suporte
 
 A rota autenticada `/dashboard/suporte` executa verificações locais de saúde,
-prontidão, manifesto, conectividade, service worker e modo de instalação. O
-objetivo é permitir uma primeira triagem técnica sem depender de observabilidade
-externa ou compartilhar conteúdo de negócio.
+prontidão, identidade da release, manifesto, conectividade, service worker e
+modo de instalação. O objetivo é permitir uma primeira triagem técnica sem
+depender de observabilidade externa ou compartilhar conteúdo de negócio.
 
 O relatório copiável da página é deliberadamente sanitizado. Ele não inclui
 e-mail, nome da oficina, clientes, veículos, placas, orçamentos, URLs internas,
 corpos de resposta, chaves, tokens ou stack traces. Para o primeiro atendimento,
 compartilhe somente o bloco identificado como **Diagnóstico seguro**.
+
+## Identidade de release e rollback
+
+A Fase 2.0J introduz uma identidade segura para cada artefato em execução. O
+endpoint `/api/release` publica somente `service`, `version`, `release`, `commit`
+curto e `channel`. Valores arbitrários de ambiente não são refletidos na resposta.
+
+A origem do commit segue, nesta ordem:
+
+1. `ORBIQ_RELEASE_SHA`, quando definido explicitamente;
+2. `VERCEL_GIT_COMMIT_SHA`, em uma futura implantação Vercel;
+3. `GITHUB_SHA`, durante CI;
+4. `local`, quando nenhum SHA confiável estiver disponível.
+
+`ORBIQ_RELEASE_ID` é opcional e só é aceito se contiver caracteres seguros e no
+máximo 64 posições. O canal é classificado como `production`, `preview`, `ci` ou
+`local`. Esses dados também entram no **Diagnóstico seguro**, permitindo saber
+exatamente qual versão apresentou um problema e voltar para um artefato anterior
+sem pedir dados da oficina ao usuário.
+
+Nenhuma chave, URL interna, token ou variável privilegiada é exposta por esse
+contrato.
 
 ## Exportações privadas de dados
 
