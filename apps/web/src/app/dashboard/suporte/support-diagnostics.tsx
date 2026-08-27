@@ -13,10 +13,19 @@ type DiagnosticCheck = {
   detail: string;
 };
 
+type ReleaseSnapshot = {
+  channel: "local" | "ci" | "preview" | "production";
+  commit: string;
+  release: string;
+  service: "orbiq-web";
+  version: string;
+};
+
 type ClientSnapshot = {
   environment: "local" | "remote";
   mode: "installed" | "browser";
   online: boolean;
+  release: ReleaseSnapshot | null;
   serviceWorker: "controlled" | "registered" | "missing" | "unsupported";
   viewport: string;
 };
@@ -31,6 +40,12 @@ const INITIAL_CHECKS: DiagnosticCheck[] = [
   {
     key: "ready",
     label: "Configuração pública",
+    status: "checking",
+    detail: "Aguardando verificação.",
+  },
+  {
+    key: "release",
+    label: "Identidade da versão",
     status: "checking",
     detail: "Aguardando verificação.",
   },
@@ -164,6 +179,49 @@ function isManifestPayload(value: unknown) {
   );
 }
 
+function isReleaseSnapshot(value: unknown): value is ReleaseSnapshot {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const release = value as Partial<ReleaseSnapshot>;
+  const validChannel = ["local", "ci", "preview", "production"].includes(
+    String(release.channel ?? ""),
+  );
+
+  return (
+    release.service === "orbiq-web" &&
+    validChannel &&
+    typeof release.version === "string" &&
+    /^[0-9]+\.[0-9]+\.[0-9]+$/.test(release.version) &&
+    typeof release.release === "string" &&
+    /^[a-zA-Z0-9._-]{1,64}$/.test(release.release) &&
+    typeof release.commit === "string" &&
+    (release.commit === "local" || /^[0-9a-f]{7,12}$/.test(release.commit))
+  );
+}
+
+async function readReleaseSnapshot(): Promise<ReleaseSnapshot | null> {
+  try {
+    const response = await fetch("/api/release", {
+      cache: "no-store",
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const payload: unknown = await response.json();
+    return isReleaseSnapshot(payload) ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
 export function SupportDiagnostics() {
   const [checks, setChecks] = useState<DiagnosticCheck[]>(INITIAL_CHECKS);
   const [lastRunAt, setLastRunAt] = useState<string | null>(null);
@@ -186,9 +244,10 @@ export function SupportDiagnostics() {
     const mode = readDisplayMode();
     const online = navigator.onLine;
 
-    const [webOk, readyOk, manifestOk, serviceWorker] = await Promise.all([
+    const [webOk, readyOk, release, manifestOk, serviceWorker] = await Promise.all([
       checkEndpoint("/api/health"),
       checkEndpoint("/api/ready"),
+      readReleaseSnapshot(),
       checkEndpoint("/manifest.webmanifest", {
         contentType: "application/manifest+json",
         validateJson: isManifestPayload,
@@ -201,6 +260,7 @@ export function SupportDiagnostics() {
       environment,
       mode,
       online,
+      release,
       serviceWorker,
       viewport,
     };
@@ -263,6 +323,14 @@ export function SupportDiagnostics() {
           : "A prontidão de ambiente precisa de verificação técnica.",
       ),
       getEndpointCheck(
+        "release",
+        "Identidade da versão",
+        Boolean(release),
+        release
+          ? `Versão ${release.version} · ${release.release} · canal ${release.channel}.`
+          : "A aplicação respondeu, mas não publicou uma identidade de versão válida.",
+      ),
+      getEndpointCheck(
         "manifest",
         "Instalação PWA",
         manifestOk,
@@ -317,6 +385,10 @@ export function SupportDiagnostics() {
       `gerado_em=${lastRunAt ?? "ainda_nao_concluido"}`,
       "rota=/dashboard/suporte",
       `ambiente=${snapshot?.environment ?? "verificando"}`,
+      `release=${snapshot?.release?.release ?? "verificando"}`,
+      `versao=${snapshot?.release?.version ?? "verificando"}`,
+      `commit=${snapshot?.release?.commit ?? "verificando"}`,
+      `canal=${snapshot?.release?.channel ?? "verificando"}`,
       `conexao=${snapshot ? (snapshot.online ? "online" : "offline") : "verificando"}`,
       `modo=${snapshot?.mode ?? "verificando"}`,
       `viewport=${snapshot?.viewport ?? "verificando"}`,
