@@ -10,6 +10,7 @@
     "build:web": "pnpm --filter web build",
     "prepare:standalone": "node scripts/standalone.mjs",
     "start:standalone": "node scripts/standalone.mjs --start",
+    "release:drill": "node scripts/release-drill.mjs",
     "lint:web": "pnpm --filter web lint",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
