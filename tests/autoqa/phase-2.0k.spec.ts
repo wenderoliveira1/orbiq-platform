@@ -16,11 +16,20 @@ test.describe("Fase 2.0K - drill de release e rollback readiness", () => {
     expect(ready.status()).toBe(200);
     expect(release.status()).toBe(200);
 
-    await expect(health.json()).resolves.toMatchObject({
+    const healthBody = (await health.json()) as {
+      service?: string;
+      status?: string;
+    };
+    const readyBody = (await ready.json()) as {
+      service?: string;
+      status?: string;
+    };
+
+    expect(healthBody).toMatchObject({
       service: "orbiq-web",
       status: "healthy",
     });
-    await expect(ready.json()).resolves.toMatchObject({
+    expect(readyBody).toMatchObject({
       service: "orbiq-web",
       status: "ready",
     });
