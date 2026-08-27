@@ -17,6 +17,7 @@ import { DashboardNav } from "./nav";
 import { OrganizationSwitcher } from "./organization-switcher";
 
 import "./dashboard.css";
+import "./mobile-navigation-shell.css";
 
 export default async function DashboardLayout({
   children,
