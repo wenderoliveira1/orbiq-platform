@@ -16,6 +16,13 @@ pnpm dev
 
 O desenvolvimento mantém `next dev`, HMR e o Supabase local.
 
+## Compatibilidade do runtime
+
+O Web está fixado em Next.js 16.3.3. Essa versão corrige a resolução dos
+helpers ESM no pacote standalone sob Node.js 22 e incorpora as correções de
+segurança da linha 16.3.x. Não rebaixar para 16.3.1: qualquer alteração desse
+runtime deve atualizar o lockfile e repetir o Quality Gate e o AutoQA.
+
 ## Paridade com produção
 
 Com as variáveis públicas do Supabase local disponíveis no processo:
