@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 import { parsePublicEnvironment } from "../packages/config/src/index.mjs";
 
@@ -35,10 +35,7 @@ function run(title, command, args, options = {}) {
   section(title);
   const result = execute(command, args, options);
 
-  if (result.error) {
-    throw new Error(`${title}: ${result.error.message}`);
-  }
-
+  if (result.error) throw new Error(`${title}: ${result.error.message}`);
   if (result.status !== 0) {
     if (options.capture && result.stdout) process.stdout.write(result.stdout);
     if (options.capture && result.stderr) process.stderr.write(result.stderr);
@@ -51,26 +48,45 @@ function run(title, command, args, options = {}) {
 
 function parseEnv(output) {
   const values = {};
-
   for (const rawLine of output.split(/\r?\n/)) {
     const match = rawLine.trim().match(/^([A-Z0-9_]+)=(.*)$/);
     if (!match) continue;
-
     let value = match[2].trim();
-    if (value.startsWith('"') && value.endsWith('"')) {
-      value = value.slice(1, -1);
-    }
+    if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
     values[match[1]] = value;
   }
-
   return values;
+}
+
+function supabaseEnvironment() {
+  let status = execute(
+    pnpmCommand,
+    pnpmArgs(["exec", "supabase", "status", "-o", "env"]),
+    { capture: true },
+  );
+
+  if (status.error || status.status !== 0) {
+    run("Supabase Start", pnpmCommand, pnpmArgs(["exec", "supabase", "start"]));
+    status = execute(
+      pnpmCommand,
+      pnpmArgs(["exec", "supabase", "status", "-o", "env"]),
+      { capture: true },
+    );
+  }
+
+  if (status.error || status.status !== 0) {
+    throw new Error(
+      "Supabase local indisponível. Confirme que o Docker Desktop está aberto e tente novamente.",
+    );
+  }
+
+  return parseEnv(status.stdout ?? "");
 }
 
 function resolveStandaloneServer() {
   const standaloneRoot = resolve(root, "apps", "web", ".next", "standalone");
   const nested = resolve(standaloneRoot, "apps", "web", "server.js");
   const flat = resolve(standaloneRoot, "server.js");
-
   if (existsSync(nested)) return nested;
   if (existsSync(flat)) return flat;
   throw new Error("server.js standalone não foi encontrado após o build.");
@@ -78,7 +94,6 @@ function resolveStandaloneServer() {
 
 async function waitForServer(timeoutMs = 30_000) {
   const startedAt = Date.now();
-
   while (Date.now() - startedAt < timeoutMs) {
     try {
       const response = await fetch(`${baseUrl}/api/health`, { cache: "no-store" });
@@ -86,21 +101,15 @@ async function waitForServer(timeoutMs = 30_000) {
     } catch {
       // O processo ainda está subindo.
     }
-
     await new Promise((resolveWait) => setTimeout(resolveWait, 500));
   }
-
   throw new Error(`O artefato não ficou saudável em ${timeoutMs / 1000}s.`);
 }
 
 async function readJson(path) {
   const response = await fetch(`${baseUrl}${path}`, { cache: "no-store" });
   const body = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(`${path} retornou HTTP ${response.status}.`);
-  }
-
+  if (!response.ok) throw new Error(`${path} retornou HTTP ${response.status}.`);
   return { body, headers: response.headers };
 }
 
@@ -108,20 +117,29 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-async function main() {
-  section("ORBIQ RELEASE DRILL");
-  console.log("[INFO] Verificação local do mesmo artefato standalone usado na preparação Web.");
-  console.log("[INFO] Nenhum deploy externo ou reset destrutivo será executado.");
+async function stopChild(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
 
-  const status = execute(pnpmCommand, pnpmArgs(["exec", "supabase", "status", "-o", "env"]), {
-    capture: true,
+  child.kill("SIGTERM");
+  const exited = await new Promise((resolveExit) => {
+    const timeout = setTimeout(() => resolveExit(false), 5_000);
+    child.once("exit", () => {
+      clearTimeout(timeout);
+      resolveExit(true);
+    });
   });
 
-  if (status.error || status.status !== 0) {
-    throw new Error("Supabase local indisponível. Abra o Docker Desktop e execute pnpm dev uma vez antes do drill.");
+  if (!exited && child.exitCode === null && child.signalCode === null) {
+    child.kill("SIGKILL");
   }
+}
 
-  const values = parseEnv(status.stdout ?? "");
+async function main() {
+  section("ORBIQ RELEASE DRILL");
+  console.log("[INFO] Verificação local do artefato standalone usado na preparação Web.");
+  console.log("[INFO] Nenhum deploy externo ou reset destrutivo será executado.");
+
+  const values = supabaseEnvironment();
   const apiUrl = values.API_URL;
   const publicKey = values.PUBLISHABLE_KEY ?? values.ANON_KEY;
   assert(apiUrl && publicKey, "API_URL/PUBLISHABLE_KEY do Supabase local não foram encontrados.");
@@ -153,7 +171,7 @@ async function main() {
   console.log(`[INFO] ${baseUrl}`);
 
   const child = spawn(process.execPath, [serverFile], {
-    cwd: resolve(serverFile, ".."),
+    cwd: dirname(serverFile),
     env,
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -165,7 +183,6 @@ async function main() {
 
   try {
     await waitForServer();
-
     const health = await readJson("/api/health");
     const ready = await readJson("/api/ready");
     const release = await readJson("/api/release");
@@ -185,16 +202,7 @@ async function main() {
     console.log(`[OK] commit: ${release.body.commit}`);
     console.log("[OK] Artefato standalone verificável e rastreável");
   } finally {
-    child.kill("SIGTERM");
-    await new Promise((resolveExit) => {
-      const timeout = setTimeout(resolveExit, 5_000);
-      child.once("exit", () => {
-        clearTimeout(timeout);
-        resolveExit();
-      });
-    });
-
-    if (!child.killed) child.kill("SIGKILL");
+    await stopChild(child);
   }
 
   if (stderr.trim()) {
