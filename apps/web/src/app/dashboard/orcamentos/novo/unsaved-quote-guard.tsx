@@ -19,6 +19,20 @@ export function UnsavedQuoteGuard() {
       dirty = true;
     };
 
+    const markDirtyFromButton = (event: MouseEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const button = target.closest<HTMLButtonElement>('button[type="button"]');
+
+      if (button && form.contains(button) && !button.disabled) {
+        dirty = true;
+      }
+    };
+
     const markSubmitted = () => {
       dirty = false;
     };
@@ -69,6 +83,7 @@ export function UnsavedQuoteGuard() {
 
     form.addEventListener("input", markDirty);
     form.addEventListener("change", markDirty);
+    form.addEventListener("click", markDirtyFromButton);
     form.addEventListener("submit", markSubmitted);
     window.addEventListener("beforeunload", handleBeforeUnload);
     document.addEventListener("click", handleDocumentClick, true);
@@ -76,6 +91,7 @@ export function UnsavedQuoteGuard() {
     return () => {
       form.removeEventListener("input", markDirty);
       form.removeEventListener("change", markDirty);
+      form.removeEventListener("click", markDirtyFromButton);
       form.removeEventListener("submit", markSubmitted);
       window.removeEventListener("beforeunload", handleBeforeUnload);
       document.removeEventListener("click", handleDocumentClick, true);
