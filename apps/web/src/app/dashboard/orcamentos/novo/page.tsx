@@ -6,6 +6,10 @@ import {
   QuoteBuilder,
 } from "./quote-builder";
 
+import {
+  UnsavedQuoteGuard,
+} from "./unsaved-quote-guard";
+
 
 type SearchParams =
   Promise<{
@@ -123,22 +127,26 @@ export default async function NewQuotePage({
 
 
   return (
-    <QuoteBuilder
-      customers={
-        customersResult.data ??
-        []
-      }
-      vehicles={
-        vehiclesResult.data ??
-        []
-      }
-      laborServices={
-        laborResult.data ??
-        []
-      }
-      errorMessage={
-        query.error
-      }
-    />
+    <>
+      <UnsavedQuoteGuard />
+
+      <QuoteBuilder
+        customers={
+          customersResult.data ??
+          []
+        }
+        vehicles={
+          vehiclesResult.data ??
+          []
+        }
+        laborServices={
+          laborResult.data ??
+          []
+        }
+        errorMessage={
+          query.error
+        }
+      />
+    </>
   );
 }
