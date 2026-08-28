@@ -16,22 +16,24 @@ export function SubmitReliabilityGuard() {
       return;
     }
 
+    const guardedForm = form;
+    const guardedButton = submitButton;
     let locked = false;
-    let disabledBeforeSubmit = submitButton.disabled;
+    let disabledBeforeSubmit = guardedButton.disabled;
 
     function setPending(pending: boolean) {
       locked = pending;
 
       if (pending) {
-        disabledBeforeSubmit = submitButton.disabled;
-        submitButton.disabled = true;
-        submitButton.textContent = PENDING_LABEL;
+        disabledBeforeSubmit = guardedButton.disabled;
+        guardedButton.disabled = true;
+        guardedButton.textContent = PENDING_LABEL;
       } else {
-        submitButton.disabled = disabledBeforeSubmit;
-        submitButton.textContent = ORIGINAL_LABEL;
+        guardedButton.disabled = disabledBeforeSubmit;
+        guardedButton.textContent = ORIGINAL_LABEL;
       }
 
-      submitButton.setAttribute("aria-busy", pending ? "true" : "false");
+      guardedButton.setAttribute("aria-busy", pending ? "true" : "false");
     }
 
     function handleSubmit(event: SubmitEvent) {
@@ -41,7 +43,7 @@ export function SubmitReliabilityGuard() {
         return;
       }
 
-      if (!form.checkValidity()) {
+      if (!guardedForm.checkValidity()) {
         return;
       }
 
@@ -52,16 +54,16 @@ export function SubmitReliabilityGuard() {
       if (locked) {
         setPending(false);
       } else {
-        submitButton.setAttribute("aria-busy", "false");
+        guardedButton.setAttribute("aria-busy", "false");
       }
     }
 
-    submitButton.setAttribute("aria-busy", "false");
-    form.addEventListener("submit", handleSubmit, true);
+    guardedButton.setAttribute("aria-busy", "false");
+    guardedForm.addEventListener("submit", handleSubmit, true);
     window.addEventListener("pageshow", handlePageShow);
 
     return () => {
-      form.removeEventListener("submit", handleSubmit, true);
+      guardedForm.removeEventListener("submit", handleSubmit, true);
       window.removeEventListener("pageshow", handlePageShow);
     };
   }, []);
