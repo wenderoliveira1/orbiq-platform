@@ -19,7 +19,7 @@ test.describe("Fase 2.0L - preflight de publicação", () => {
     const result = runPreflight();
     const output = `${result.stdout}\n${result.stderr}`;
 
-    expect(result.status).toBe(0);
+    expect(result.status, output).toBe(0);
     expect(output).toContain("ORBIQ PUBLICATION PREFLIGHT — FASE 2.0L");
     expect(output).toContain("[OK] Health check");
     expect(output).toContain("[OK] Readiness");
@@ -38,7 +38,7 @@ test.describe("Fase 2.0L - preflight de publicação", () => {
     });
     const output = `${result.stdout}\n${result.stderr}`;
 
-    expect(result.status).toBe(1);
+    expect(result.status, output).toBe(1);
     expect(output).toContain("Ambiente externo precisa usar HTTPS");
     expect(output).not.toContain(
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "valor-impossivel",
