@@ -48,7 +48,7 @@ test.describe("Fase 2.0N - proteção do orçamento em edição", () => {
     await expect(page).toHaveURL("/dashboard/clientes");
   });
 
-  test("mantém proteção nativa para fechar ou recarregar a aba", async () => {
+  test("mantém proteção nativa e cobre ações feitas por botões", async () => {
     const source = await readFile(
       "apps/web/src/app/dashboard/orcamentos/novo/unsaved-quote-guard.tsx",
       "utf8",
@@ -56,6 +56,8 @@ test.describe("Fase 2.0N - proteção do orçamento em edição", () => {
 
     expect(source).toContain('window.addEventListener("beforeunload"');
     expect(source).toContain('document.addEventListener("click", handleDocumentClick, true)');
+    expect(source).toContain('form.addEventListener("click", markDirtyFromButton)');
+    expect(source).toContain('button[type="button"]');
     expect(source).toContain('form.addEventListener("submit", markSubmitted)');
     expect(source).not.toContain("error.message");
   });
