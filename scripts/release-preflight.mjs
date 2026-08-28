@@ -168,8 +168,12 @@ async function checkRelease(baseUrl) {
 async function checkManifest(baseUrl) {
   const response = await request(baseUrl, "/manifest.webmanifest");
   const body = await requireJson(response, "Manifesto PWA");
-  if (body?.start_url !== "/" || body?.scope !== "/") {
-    throw new Error("Manifesto PWA precisa usar start_url e scope na raiz.");
+
+  if (body?.start_url !== "/dashboard" || body?.scope !== "/" || body?.id !== "/dashboard") {
+    throw new Error("Manifesto PWA precisa iniciar no dashboard, manter scope raiz e identidade estável.");
+  }
+  if (body?.display !== "standalone") {
+    throw new Error("Manifesto PWA precisa operar em modo standalone.");
   }
   if (!Array.isArray(body?.icons) || body.icons.length < 2) {
     throw new Error("Manifesto PWA não possui o conjunto mínimo de ícones.");
