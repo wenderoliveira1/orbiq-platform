@@ -17,12 +17,21 @@ export function SubmitReliabilityGuard() {
     }
 
     let locked = false;
+    let disabledBeforeSubmit = submitButton.disabled;
 
     function setPending(pending: boolean) {
       locked = pending;
-      submitButton.disabled = pending || !form.checkValidity();
+
+      if (pending) {
+        disabledBeforeSubmit = submitButton.disabled;
+        submitButton.disabled = true;
+        submitButton.textContent = PENDING_LABEL;
+      } else {
+        submitButton.disabled = disabledBeforeSubmit;
+        submitButton.textContent = ORIGINAL_LABEL;
+      }
+
       submitButton.setAttribute("aria-busy", pending ? "true" : "false");
-      submitButton.textContent = pending ? PENDING_LABEL : ORIGINAL_LABEL;
     }
 
     function handleSubmit(event: SubmitEvent) {
@@ -40,9 +49,14 @@ export function SubmitReliabilityGuard() {
     }
 
     function handlePageShow() {
-      setPending(false);
+      if (locked) {
+        setPending(false);
+      } else {
+        submitButton.setAttribute("aria-busy", "false");
+      }
     }
 
+    submitButton.setAttribute("aria-busy", "false");
     form.addEventListener("submit", handleSubmit, true);
     window.addEventListener("pageshow", handlePageShow);
 
