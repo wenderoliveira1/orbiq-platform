@@ -7,6 +7,10 @@ import {
 } from "./quote-builder";
 
 import {
+  SubmitReliabilityGuard,
+} from "./submit-reliability-guard";
+
+import {
   UnsavedQuoteGuard,
 } from "./unsaved-quote-guard";
 
@@ -129,6 +133,7 @@ export default async function NewQuotePage({
   return (
     <>
       <UnsavedQuoteGuard />
+      <SubmitReliabilityGuard />
 
       <QuoteBuilder
         customers={
