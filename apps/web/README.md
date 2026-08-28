@@ -56,6 +56,25 @@ usuário não privilegiado e os endpoints:
 
 Todos retornam respostas mínimas sem segredos e com cache desabilitado.
 
+### Drill local de release
+
+Antes de uma futura publicação externa, execute:
+
+```bash
+pnpm release:drill
+```
+
+O comando inicia o Supabase local se necessário, gera um build de produção com
+o SHA atual, prepara e sobe o artefato standalone isoladamente na porta `3100`,
+e valida `/api/health`, `/api/ready` e `/api/release`. O commit publicado pelo
+artefato precisa coincidir com o `HEAD` do Git e o identificador da release precisa
+coincidir com o identificador criado pelo próprio drill.
+
+O drill não publica na Web, não modifica a `main`, não executa `db reset` e não
+usa chaves privilegiadas. O objetivo é provar, antes do deploy, que existe um
+artefato reproduzível, saudável, pronto e rastreável — pré-requisito para um
+rollback seguro quando a hospedagem de produção for ativada.
+
 ## PWA e conectividade
 
 O build de produção registra um service worker de escopo raiz. Ele oferece uma
