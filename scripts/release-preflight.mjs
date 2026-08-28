@@ -115,8 +115,8 @@ async function requireJson(response, label) {
   requireHeader(
     response,
     "content-type",
-    (value) => value.toLowerCase().includes("application/json"),
-    `${label} precisa responder JSON`,
+    (value) => /application\/json|\+json/i.test(value),
+    `${label} precisa responder um tipo JSON`,
   );
 
   return response.json();
