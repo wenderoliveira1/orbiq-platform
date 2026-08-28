@@ -40,7 +40,7 @@ test.describe("Fase 2.0O - confiabilidade do envio de orçamento", () => {
     expect(source).toContain("if (locked)");
     expect(source).toContain("event.preventDefault()");
     expect(source).toContain("event.stopImmediatePropagation()");
-    expect(source).toContain('submitButton.setAttribute("aria-busy"');
+    expect(source).toContain('guardedButton.setAttribute("aria-busy"');
     expect(source).toContain("Salvando orçamento...");
     expect(source).toContain('window.addEventListener("pageshow"');
     expect(source).not.toContain("localStorage");
