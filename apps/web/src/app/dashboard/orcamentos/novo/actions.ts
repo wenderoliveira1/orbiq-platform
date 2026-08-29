@@ -7,6 +7,9 @@ import { getCurrentContext } from "../../_lib/current-organization";
 import type { QuoteErrorCode } from "./quote-errors";
 import { isUuid, parseQuotePayload } from "./quote-payload";
 
+const MAX_SERVICES_JSON_CHARS = 128_000;
+const MAX_ITEMS_JSON_CHARS = 512_000;
+
 function text(value: FormDataEntryValue | null): string {
   return String(value ?? "").trim();
 }
@@ -42,6 +45,12 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
   if (!vehicleId || !isUuid(vehicleId)) return failure("vehicle_required");
   if (mileage === null) return failure("mileage_required");
   if (notes.length > 4_000) return failure("payload_invalid");
+  if (
+    servicesRaw.length > MAX_SERVICES_JSON_CHARS ||
+    itemsRaw.length > MAX_ITEMS_JSON_CHARS
+  ) {
+    return failure("payload_invalid");
+  }
 
   const payload = parseQuotePayload(servicesRaw, itemsRaw, priorityRaw);
   if (!payload) return failure("payload_invalid");
