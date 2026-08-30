@@ -7,11 +7,15 @@ import { getCurrentContext } from "../../_lib/current-organization";
 import type { QuoteErrorCode } from "./quote-errors";
 import { isUuid, parseQuotePayload } from "./quote-payload";
 
+const MAX_ID_CHARS = 64;
+const MAX_PRIORITY_CHARS = 32;
+const MAX_MILEAGE_CHARS = 32;
+const MAX_NOTES_CHARS = 4_000;
 const MAX_SERVICES_JSON_CHARS = 128_000;
 const MAX_ITEMS_JSON_CHARS = 512_000;
 
-function text(value: FormDataEntryValue | null): string {
-  return String(value ?? "").trim();
+function rawText(value: FormDataEntryValue | null): string {
+  return typeof value === "string" ? value : "";
 }
 
 function parseMileage(raw: string): number | null {
@@ -33,24 +37,37 @@ function failure(code: QuoteErrorCode): never {
 export async function createQuoteV2Action(formData: FormData): Promise<never> {
   const { supabase, organization } = await getCurrentContext();
 
-  const customerId = text(formData.get("customer_id"));
-  const vehicleId = text(formData.get("vehicle_id"));
-  const priorityRaw = text(formData.get("priority")) || "normal";
-  const mileage = parseMileage(text(formData.get("mileage")));
-  const notes = text(formData.get("notes"));
-  const servicesRaw = text(formData.get("services_json"));
-  const itemsRaw = text(formData.get("items_json"));
+  const customerIdRaw = rawText(formData.get("customer_id"));
+  const vehicleIdRaw = rawText(formData.get("vehicle_id"));
+  const priorityInput = rawText(formData.get("priority"));
+  const mileageRaw = rawText(formData.get("mileage"));
+  const notesRaw = rawText(formData.get("notes"));
+  const servicesInput = rawText(formData.get("services_json"));
+  const itemsInput = rawText(formData.get("items_json"));
+
+  if (
+    customerIdRaw.length > MAX_ID_CHARS ||
+    vehicleIdRaw.length > MAX_ID_CHARS ||
+    priorityInput.length > MAX_PRIORITY_CHARS ||
+    mileageRaw.length > MAX_MILEAGE_CHARS ||
+    notesRaw.length > MAX_NOTES_CHARS ||
+    servicesInput.length > MAX_SERVICES_JSON_CHARS ||
+    itemsInput.length > MAX_ITEMS_JSON_CHARS
+  ) {
+    return failure("payload_invalid");
+  }
+
+  const customerId = customerIdRaw.trim();
+  const vehicleId = vehicleIdRaw.trim();
+  const priorityRaw = priorityInput.trim() || "normal";
+  const mileage = parseMileage(mileageRaw.trim());
+  const notes = notesRaw.trim();
+  const servicesRaw = servicesInput.trim();
+  const itemsRaw = itemsInput.trim();
 
   if (!customerId || !isUuid(customerId)) return failure("customer_required");
   if (!vehicleId || !isUuid(vehicleId)) return failure("vehicle_required");
   if (mileage === null) return failure("mileage_required");
-  if (notes.length > 4_000) return failure("payload_invalid");
-  if (
-    servicesRaw.length > MAX_SERVICES_JSON_CHARS ||
-    itemsRaw.length > MAX_ITEMS_JSON_CHARS
-  ) {
-    return failure("payload_invalid");
-  }
 
   const payload = parseQuotePayload(servicesRaw, itemsRaw, priorityRaw);
   if (!payload) return failure("payload_invalid");

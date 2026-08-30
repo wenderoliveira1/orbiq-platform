@@ -11,11 +11,11 @@ test.describe("Fase 2.0T - orçamento com orçamento bruto de payload", () => {
 
     expect(actions).toContain("const MAX_SERVICES_JSON_CHARS = 128_000");
     expect(actions).toContain("const MAX_ITEMS_JSON_CHARS = 512_000");
-    expect(actions).toContain("servicesRaw.length > MAX_SERVICES_JSON_CHARS");
-    expect(actions).toContain("itemsRaw.length > MAX_ITEMS_JSON_CHARS");
+    expect(actions).toContain("servicesInput.length > MAX_SERVICES_JSON_CHARS");
+    expect(actions).toContain("itemsInput.length > MAX_ITEMS_JSON_CHARS");
 
     const rawBudgetCheck = actions.indexOf(
-      "servicesRaw.length > MAX_SERVICES_JSON_CHARS",
+      "servicesInput.length > MAX_SERVICES_JSON_CHARS",
     );
     const structuredParse = actions.indexOf(
       "parseQuotePayload(servicesRaw, itemsRaw, priorityRaw)",

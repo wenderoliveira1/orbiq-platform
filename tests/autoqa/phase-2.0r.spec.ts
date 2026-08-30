@@ -18,7 +18,8 @@ test.describe("Fase 2.0R - validação defensiva do novo orçamento", () => {
     expect(actions).toContain("target_priority: payload.priority");
     expect(actions).toContain("services: payload.services");
     expect(actions).toContain("items: payload.items");
-    expect(actions).toContain("notes.length > 4_000");
+    expect(actions).toContain("const MAX_NOTES_CHARS = 4_000");
+    expect(actions).toContain("notesRaw.length > MAX_NOTES_CHARS");
     expect(actions).toContain("value > 9_999_999");
     expect(actions).not.toContain("services = JSON.parse");
     expect(actions).not.toContain("target_priority: priorityRaw");
