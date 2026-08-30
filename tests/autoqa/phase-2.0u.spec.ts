@@ -13,7 +13,8 @@ test.describe("Fase 2.0U - orçamento bruto de campos escalares", () => {
     expect(actions).toContain("const MAX_PRIORITY_CHARS = 32");
     expect(actions).toContain("const MAX_MILEAGE_CHARS = 32");
     expect(actions).toContain("const MAX_NOTES_CHARS = 4_000");
-    expect(actions).toContain('typeof value === "string" ? value : ""');
+    expect(actions).toContain("formData.getAll(name)");
+    expect(actions).toContain('typeof values[0] !== "string"');
 
     const rawBudgetCheck = actions.indexOf(
       "customerIdRaw.length > MAX_ID_CHARS",

@@ -14,8 +14,18 @@ const MAX_NOTES_CHARS = 4_000;
 const MAX_SERVICES_JSON_CHARS = 128_000;
 const MAX_ITEMS_JSON_CHARS = 512_000;
 
-function rawText(value: FormDataEntryValue | null): string {
-  return typeof value === "string" ? value : "";
+function failure(code: QuoteErrorCode): never {
+  redirect(`/dashboard/orcamentos/novo?error=${code}`);
+}
+
+function singleRawText(formData: FormData, name: string): string {
+  const values = formData.getAll(name);
+
+  if (values.length !== 1 || typeof values[0] !== "string") {
+    return failure("payload_invalid");
+  }
+
+  return values[0];
 }
 
 function parseMileage(raw: string): number | null {
@@ -30,20 +40,16 @@ function parseMileage(raw: string): number | null {
   return Math.trunc(value);
 }
 
-function failure(code: QuoteErrorCode): never {
-  redirect(`/dashboard/orcamentos/novo?error=${code}`);
-}
-
 export async function createQuoteV2Action(formData: FormData): Promise<never> {
   const { supabase, organization } = await getCurrentContext();
 
-  const customerIdRaw = rawText(formData.get("customer_id"));
-  const vehicleIdRaw = rawText(formData.get("vehicle_id"));
-  const priorityInput = rawText(formData.get("priority"));
-  const mileageRaw = rawText(formData.get("mileage"));
-  const notesRaw = rawText(formData.get("notes"));
-  const servicesInput = rawText(formData.get("services_json"));
-  const itemsInput = rawText(formData.get("items_json"));
+  const customerIdRaw = singleRawText(formData, "customer_id");
+  const vehicleIdRaw = singleRawText(formData, "vehicle_id");
+  const priorityInput = singleRawText(formData, "priority");
+  const mileageRaw = singleRawText(formData, "mileage");
+  const notesRaw = singleRawText(formData, "notes");
+  const servicesInput = singleRawText(formData, "services_json");
+  const itemsInput = singleRawText(formData, "items_json");
 
   if (
     customerIdRaw.length > MAX_ID_CHARS ||
