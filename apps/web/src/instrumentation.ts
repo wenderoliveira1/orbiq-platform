@@ -1,6 +1,7 @@
 import type { Instrumentation } from "next";
 
 import { getPublicEnvironment } from "@/lib/public-environment";
+import { classifyServerRequestError } from "@/lib/server-request-observability";
 
 export function register() {
   getPublicEnvironment();
@@ -11,21 +12,14 @@ export const onRequestError: Instrumentation.onRequestError = (
   _request,
   context,
 ) => {
-  const digest =
-    typeof error === "object" &&
-    error !== null &&
-    "digest" in error &&
-    typeof error.digest === "string"
-      ? error.digest
-      : null;
+  const telemetry = classifyServerRequestError(error);
+  const log = telemetry.level === "info" ? console.info : console.error;
 
-  const errorName = error instanceof Error ? error.name : typeof error;
-
-  console.error(
+  log(
     JSON.stringify({
-      digest,
-      errorName,
-      event: "orbiq.server.request_error",
+      digest: telemetry.digest,
+      errorName: telemetry.errorName,
+      event: telemetry.event,
       routePath: context.routePath,
       routeType: context.routeType,
       routerKind: context.routerKind,
