@@ -75,12 +75,24 @@ const INITIAL_CHECKS: DiagnosticCheck[] = [
   },
 ];
 
+const INCIDENT_REFERENCE_PATTERN =
+  /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|(?:next|client)_[A-Za-z0-9:_-]{8,116})$/i;
+
 const STATUS_LABELS: Record<CheckStatus, string> = {
   attention: "Atenção",
   checking: "Verificando",
   error: "Falha",
   ok: "Operacional",
 };
+
+function readSupportReference() {
+  const fragment = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : "";
+  const reference = new URLSearchParams(fragment).get("referencia")?.trim() ?? "";
+
+  return INCIDENT_REFERENCE_PATTERN.test(reference) ? reference : null;
+}
 
 function readDisplayMode() {
   const iosStandalone = Boolean(
@@ -229,6 +241,7 @@ export function SupportDiagnostics() {
   const [copyState, setCopyState] = useState<"idle" | "copied" | "error">(
     "idle",
   );
+  const [supportReference, setSupportReference] = useState<string | null>(null);
 
   const runDiagnostics = useCallback(async () => {
     setChecks(
@@ -361,6 +374,10 @@ export function SupportDiagnostics() {
   }, []);
 
   useEffect(() => {
+    setSupportReference(readSupportReference());
+  }, []);
+
+  useEffect(() => {
     const initialRun = window.setTimeout(() => {
       void runDiagnostics();
     }, 0);
@@ -384,6 +401,7 @@ export function SupportDiagnostics() {
       "ORBIQ — DIAGNÓSTICO SEGURO",
       `gerado_em=${lastRunAt ?? "ainda_nao_concluido"}`,
       "rota=/dashboard/suporte",
+      `referencia_incidente=${supportReference ?? "nao_disponivel"}`,
       `ambiente=${snapshot?.environment ?? "verificando"}`,
       `release=${snapshot?.release?.release ?? "verificando"}`,
       `versao=${snapshot?.release?.version ?? "verificando"}`,
@@ -397,7 +415,7 @@ export function SupportDiagnostics() {
     ];
 
     return lines.join("\n");
-  }, [checks, lastRunAt, snapshot]);
+  }, [checks, lastRunAt, snapshot, supportReference]);
 
   const okCount = checks.filter((check) => check.status === "ok").length;
   const attentionCount = checks.filter(
@@ -491,6 +509,12 @@ export function SupportDiagnostics() {
         <pre className={styles.report} data-orbiq-safe-report>
           {safeReport}
         </pre>
+
+        {supportReference ? (
+          <p className={styles.referenceNotice} role="status">
+            Referência de recuperação incluída no relatório seguro.
+          </p>
+        ) : null}
 
         <p className={styles.copyStatus} role="status" aria-live="polite">
           {copyState === "copied"
