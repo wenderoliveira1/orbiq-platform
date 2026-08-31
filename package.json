@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev-start.mjs",
     "dev:web": "pnpm --filter web dev",
+    "prepare:local": "node scripts/dev-start.mjs --prepare-only",
     "recover:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-recover.ps1",
     "build:web": "pnpm --filter web build",
     "prepare:standalone": "node scripts/standalone.mjs",

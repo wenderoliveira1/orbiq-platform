@@ -14,7 +14,19 @@ pnpm supabase:start
 pnpm dev
 ```
 
-O desenvolvimento mantém `next dev`, HMR e o Supabase local.
+O desenvolvimento mantém `next dev`, HMR e o Supabase local. Antes de iniciar
+o Web, `pnpm dev` reconcilia os contratos incrementais de banco exigidos pela
+versão atual e confirma as RPCs críticas no schema cache do PostgREST.
+
+Quando for necessário reparar apenas o backend local sem iniciar outro servidor
+Web, use:
+
+```bash
+pnpm prepare:local
+```
+
+Esse comando não executa `db reset`, não apaga dados e não reaplica migrations
+que já estão completas.
 
 ## Compatibilidade do runtime
 
