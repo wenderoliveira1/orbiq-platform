@@ -12,6 +12,9 @@ on:
 permissions:
   contents: read
 
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
 concurrency:
   group: orbiq-autoqa-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
