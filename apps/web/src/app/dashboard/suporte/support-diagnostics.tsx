@@ -374,7 +374,11 @@ export function SupportDiagnostics() {
   }, []);
 
   useEffect(() => {
-    setSupportReference(readSupportReference());
+    const referenceTimer = window.setTimeout(() => {
+      setSupportReference(readSupportReference());
+    }, 0);
+
+    return () => window.clearTimeout(referenceTimer);
   }, []);
 
   useEffect(() => {
