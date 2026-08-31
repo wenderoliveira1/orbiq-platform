@@ -24,6 +24,6 @@ test.describe("Fase 2.0W - logs de CI sem credenciais locais", () => {
     expect(source).toContain("if (options.sensitive)");
     expect(source).toContain("if (options.capture && result.stdout)");
     expect(source).toContain("if (options.capture && result.stderr)");
-    expect(source).toContain('run("Gerando Database Types"');
+    expect(source).toMatch(/run\(\s*"Gerando Database Types"[\s\S]*?\{\s*capture:\s*true\s*\}/);
   });
 });
