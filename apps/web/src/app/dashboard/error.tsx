@@ -69,7 +69,10 @@ export default function DashboardError({ error, reset }: ErrorPageProps) {
           <Link href="/dashboard" className={styles.secondaryAction}>
             Ir para a visão geral
           </Link>
-          <Link href="/dashboard/suporte" className={styles.secondaryAction}>
+          <Link
+            href={`/dashboard/suporte#referencia=${encodeURIComponent(incidentId ?? fingerprint)}`}
+            className={styles.secondaryAction}
+          >
             Abrir suporte técnico
           </Link>
         </div>

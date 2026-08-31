@@ -11,7 +11,9 @@ test.describe("Fase 2.0AA - recuperação profissional do dashboard", () => {
     expect(source).toContain('source: "dashboard_error"');
     expect(source).toContain("onClick={reset}");
     expect(source).toContain('href="/dashboard"');
-    expect(source).toContain('href="/dashboard/suporte"');
+    expect(source).toContain(
+      'href={`/dashboard/suporte#referencia=${encodeURIComponent(incidentId ?? fingerprint)}`}',
+    );
     expect(source).not.toContain("{error.message}");
     expect(source).not.toContain("{error.stack}");
   });
