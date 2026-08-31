@@ -18,7 +18,7 @@ function incidentFingerprint(error: ErrorPageProps["error"]) {
     return `next_${digest}`;
   }
 
-  const input = `${error.name}:${error.message}`;
+  const input = [error.name, error.message].join(":");
   let hash = 2166136261;
 
   for (let index = 0; index < input.length; index += 1) {
