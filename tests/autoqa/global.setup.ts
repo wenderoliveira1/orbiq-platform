@@ -45,14 +45,14 @@ function readLinkTimings(tokens: string[]): Map<string, LinkTiming> {
     const expiresEpoch = Number(expiresEpochRaw);
 
     if (!token || !Number.isFinite(createdEpoch) || !Number.isFinite(expiresEpoch)) {
-      throw new Error(`Linha de validade inválida no AutoQA: ${line}`);
+      throw new Error("Linha de validade inválida no AutoQA.");
     }
 
     const days = (expiresEpoch - createdEpoch) / 86_400;
 
     if (days < 9.9 || days > 10.1) {
       throw new Error(
-        `Trigger de validade da 1.8B falhou. Token ${token.slice(0, 8)}... = ${days.toFixed(3)} dias`,
+        `Trigger de validade da 1.8B falhou: duração ${days.toFixed(3)} dias.`,
       );
     }
 
@@ -315,8 +315,7 @@ export default async function globalSetup() {
   await writeFile(statePath, JSON.stringify(state, null, 2), "utf8");
 
   console.log("[AUTOQA] Ambiente PostgreSQL isolado criado com sucesso.");
-  console.log(`[AUTOQA] Oficina sintética: ${organizationId}`);
-  console.log(`[AUTOQA] Usuário sintético: ${email}`);
+  console.log("[AUTOQA] Identificadores sintéticos mantidos somente no estado local do teste.");
   console.log("[AUTOQA] Links criados pelo RPC real e validados em 10 dias.");
   console.log("[AUTOQA] Nenhum dado de produção foi utilizado.");
 }
