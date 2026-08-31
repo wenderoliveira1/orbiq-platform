@@ -148,6 +148,13 @@
   overflow-wrap: anywhere;
 }
 
+.referenceNotice {
+  margin: 0;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .copyStatus {
   min-height: 20px;
   margin: 0;
