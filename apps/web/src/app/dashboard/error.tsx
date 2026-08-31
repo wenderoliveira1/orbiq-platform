@@ -58,7 +58,8 @@ export default function DashboardError({ error, reset }: ErrorPageProps) {
         <span className={styles.eyebrow}>RECUPERAÇÃO SEGURA</span>
         <h1>Não foi possível concluir esta tela.</h1>
         <p>
-          A ocorrência foi registrada de forma protegida. Tente novamente ou volte à visão geral para continuar trabalhando.
+          A ocorrência foi registrada de forma protegida. Tente novamente ou
+          volte à visão geral para continuar trabalhando.
         </p>
 
         <div className={styles.actions}>
@@ -67,6 +68,9 @@ export default function DashboardError({ error, reset }: ErrorPageProps) {
           </button>
           <Link href="/dashboard" className={styles.secondaryAction}>
             Ir para a visão geral
+          </Link>
+          <Link href="/dashboard/suporte" className={styles.secondaryAction}>
+            Abrir suporte técnico
           </Link>
         </div>
 
