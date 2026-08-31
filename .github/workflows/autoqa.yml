@@ -63,6 +63,14 @@ jobs:
             exit 1
           fi
 
+          if [ -n "${PUBLISHABLE_KEY:-}" ]; then
+            echo "::add-mask::$PUBLISHABLE_KEY"
+          fi
+          if [ -n "${ANON_KEY:-}" ]; then
+            echo "::add-mask::$ANON_KEY"
+          fi
+          echo "::add-mask::$PUBLIC_KEY"
+
           {
             echo "NEXT_PUBLIC_APP_URL=$APP_URL"
             echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
