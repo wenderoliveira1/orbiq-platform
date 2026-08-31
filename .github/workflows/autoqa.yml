@@ -19,14 +19,14 @@ concurrency:
 jobs:
   autoqa:
     name: AutoQA / Chromium
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Setup pnpm and Node.js
-        uses: pnpm/setup@v2
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2
         with:
           version: 11.22.0
           runtime: node@22
@@ -79,7 +79,7 @@ jobs:
 
       - name: Upload AutoQA report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: orbiq-autoqa-report-${{ github.run_id }}
           if-no-files-found: warn
