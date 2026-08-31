@@ -34,11 +34,15 @@ function run(name, command, args, options = {}) {
   }
 
   if (result.status !== 0) {
-    if (options.capture && result.stdout) {
-      process.stdout.write(result.stdout);
-    }
-    if (options.capture && result.stderr) {
-      process.stderr.write(result.stderr);
+    if (options.sensitive) {
+      console.error("Saída do comando suprimida por conter credenciais locais de desenvolvimento.");
+    } else {
+      if (options.capture && result.stdout) {
+        process.stdout.write(result.stdout);
+      }
+      if (options.capture && result.stderr) {
+        process.stderr.write(result.stderr);
+      }
     }
 
     console.error("");
@@ -146,13 +150,16 @@ run("TypeScript", "pnpm", [
 let supabaseStatus = capture("pnpm", ["exec", "supabase", "status"]);
 if (supabaseStatus.status !== 0) {
   console.log("Supabase desligado. Iniciando...");
-  run("Supabase Start", "pnpm", ["exec", "supabase", "start"]);
+  run("Supabase Start", "pnpm", ["exec", "supabase", "start"], {
+    capture: true,
+    sensitive: true,
+  });
   supabaseStatus = capture("pnpm", ["exec", "supabase", "status"]);
 }
 
 if (supabaseStatus.error || supabaseStatus.status !== 0) {
   console.error("Supabase local indisponivel.");
-  console.error(supabaseStatus.error?.message ?? supabaseStatus.stderr);
+  console.error("Detalhes do status foram suprimidos para evitar exposição de credenciais locais.");
   process.exit(1);
 }
 console.log("[OK] Supabase local");
