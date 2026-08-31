@@ -9,18 +9,126 @@ const windows = process.platform === "win32";
 const pnpmCommand = windows ? process.env.ComSpec ?? "cmd.exe" : "pnpm";
 const dockerCommand = windows ? "docker.exe" : "docker";
 const dbContainer = "supabase_db_orbiq-platform";
-const phase19GMigration = resolve(
-  process.cwd(),
-  "supabase",
-  "migrations",
-  "20260826200000_data_continuity.sql",
-);
-const phase20IMigration = resolve(
-  process.cwd(),
-  "supabase",
-  "migrations",
-  "20260827133500_private_export_delivery.sql",
-);
+const prepareOnly = process.argv.includes("--prepare-only");
+
+const schemaPhases = [
+  {
+    id: "1.9D",
+    label: "visão consolidada da rede",
+    migration: "20260826090000_owned_organization_overview.sql",
+    probeSql:
+      "select to_regprocedure('public.get_owned_organization_overview(date)') is not null as ready;",
+  },
+  {
+    id: "1.9E",
+    label: "governança da rede",
+    migration: "20260826120000_network_governance.sql",
+    probeSql:
+      "select to_regprocedure('public.get_owned_network_activity(uuid,text,timestamptz,timestamptz,text,integer,integer)') is not null as ready;",
+  },
+  {
+    id: "1.9F",
+    label: "confiabilidade da aplicação",
+    migration: "20260826170000_application_reliability.sql",
+    probeSql:
+      `select\n` +
+      `  to_regclass('public.application_incidents') is not null\n` +
+      `  and to_regprocedure('public.report_application_incident(uuid,text,text,text)') is not null\n` +
+      `  and to_regprocedure('public.get_owned_application_incidents(uuid,text,text,integer,integer)') is not null\n` +
+      `  and to_regprocedure('public.resolve_application_incident(uuid,text)') is not null\n` +
+      `  as ready;`,
+  },
+  {
+    id: "1.9G",
+    label: "continuidade e governança de dados",
+    migration: "20260826200000_data_continuity.sql",
+    probeSql:
+      `select\n` +
+      `  to_regclass('public.organization_data_exports') is not null\n` +
+      `  and to_regprocedure('public.get_owned_data_governance_overview()') is not null\n` +
+      `  and to_regprocedure('public.create_organization_data_export(uuid)') is not null\n` +
+      `  and to_regprocedure('public.consume_organization_data_export(uuid)') is not null\n` +
+      `  as ready;`,
+  },
+  {
+    id: "2.0I",
+    label: "entrega privada de exportações",
+    migration: "20260827133500_private_export_delivery.sql",
+    probeSql:
+      `select\n` +
+      `  exists (\n` +
+      `    select 1\n` +
+      `    from storage.buckets\n` +
+      `    where id = 'organization-data-exports'\n` +
+      `      and public = false\n` +
+      `      and file_size_limit = 57671680\n` +
+      `  )\n` +
+      `  and (\n` +
+      `    select count(*)\n` +
+      `    from pg_policies\n` +
+      `    where schemaname = 'storage'\n` +
+      `      and tablename = 'objects'\n` +
+      `      and policyname in (\n` +
+      `        'orbiq_data_exports_insert_owner',\n` +
+      `        'orbiq_data_exports_select_owner',\n` +
+      `        'orbiq_data_exports_delete_owner'\n` +
+      `      )\n` +
+      `  ) = 3\n` +
+      `  as ready;`,
+  },
+  {
+    id: "2.0S",
+    label: "limites defensivos de escrita",
+    migration: "20260829105000_quote_write_bounds.sql",
+    probeSql:
+      `select count(*) = 12 as ready\n` +
+      `from pg_constraint as constraint_row\n` +
+      `inner join pg_namespace as namespace_row\n` +
+      `  on namespace_row.oid = constraint_row.connamespace\n` +
+      `where namespace_row.nspname = 'public'\n` +
+      `  and constraint_row.conname in (\n` +
+      `    'quotes_mileage_upper_bound',\n` +
+      `    'quotes_notes_length_bound',\n` +
+      `    'quote_services_category_length_bound',\n` +
+      `    'quote_services_description_length_bound',\n` +
+      `    'quote_services_labor_amount_upper_bound',\n` +
+      `    'quote_items_category_length_bound',\n` +
+      `    'quote_items_description_length_bound',\n` +
+      `    'quote_items_quantity_upper_bound',\n` +
+      `    'quote_items_unit_length_bound',\n` +
+      `    'quote_items_side_length_bound',\n` +
+      `    'quote_items_specification_length_bound',\n` +
+      `    'quote_items_notes_length_bound'\n` +
+      `  );`,
+  },
+].map((phase) => ({
+  ...phase,
+  migrationPath: resolve(
+    process.cwd(),
+    "supabase",
+    "migrations",
+    phase.migration,
+  ),
+}));
+
+const requiredPostgrestRpcs = [
+  {
+    body: { report_month: null },
+    name: "get_owned_organization_overview",
+  },
+  {
+    body: {},
+    name: "get_owned_network_activity",
+  },
+  {
+    body: {},
+    name: "get_owned_application_incidents",
+  },
+  {
+    body: {},
+    name: "get_owned_data_governance_overview",
+  },
+];
 
 function pnpmArgs(args) {
   return windows ? ["/d", "/s", "/c", "pnpm", ...args] : args;
@@ -116,6 +224,7 @@ function psql(sql, { captureOutput = false } = {}) {
       "postgres",
       "-d",
       "postgres",
+      "-X",
       "-v",
       "ON_ERROR_STOP=1",
       "-f",
@@ -128,95 +237,33 @@ function psql(sql, { captureOutput = false } = {}) {
   );
 }
 
-function phase19GObjectsExistInDatabase() {
-  const result = psql(
-    `select\n` +
-      `  to_regclass('public.organization_data_exports') is not null\n` +
-      `  and to_regprocedure('public.get_owned_data_governance_overview()') is not null\n` +
-      `  and to_regprocedure('public.create_organization_data_export(uuid)') is not null\n` +
-      `  and to_regprocedure('public.consume_organization_data_export(uuid)') is not null\n` +
-      `  as ready;\n`,
-    { captureOutput: true },
-  );
+function schemaPhaseIsReady(phase) {
+  const result = psql(`${phase.probeSql.trim()}\n`, { captureOutput: true });
 
   if (result.error || result.status !== 0) {
     const detail = result.error?.message || result.stderr || result.stdout;
-    throw new Error(`Falha ao consultar o banco local. ${detail}`);
+    throw new Error(`Falha ao validar a Fase ${phase.id}. ${detail}`);
   }
 
   return /\bt\b/.test(result.stdout ?? "");
 }
 
-function phase20IObjectsExistInDatabase() {
-  const result = psql(
-    `select\n` +
-      `  exists (\n` +
-      `    select 1\n` +
-      `    from storage.buckets\n` +
-      `    where id = 'organization-data-exports'\n` +
-      `      and public = false\n` +
-      `      and file_size_limit = 57671680\n` +
-      `  )\n` +
-      `  and (\n` +
-      `    select count(*)\n` +
-      `    from pg_policies\n` +
-      `    where schemaname = 'storage'\n` +
-      `      and tablename = 'objects'\n` +
-      `      and policyname in (\n` +
-      `        'orbiq_data_exports_insert_owner',\n` +
-      `        'orbiq_data_exports_select_owner',\n` +
-      `        'orbiq_data_exports_delete_owner'\n` +
-      `      )\n` +
-      `  ) = 3\n` +
-      `  as ready;\n`,
-    { captureOutput: true },
-  );
-
-  if (result.error || result.status !== 0) {
-    const detail = result.error?.message || result.stderr || result.stdout;
-    throw new Error(`Falha ao consultar o Storage local. ${detail}`);
-  }
-
-  return /\bt\b/.test(result.stdout ?? "");
-}
-
-function applyPhase19GDirectly() {
-  section("Aplicando schema da Fase 1.9G");
+function applySchemaPhase(phase) {
+  section(`Reconciliando Fase ${phase.id}`);
   console.log(
-    "[INFO] O banco local possui lacunas antigas no histórico de migrations. " +
-      "Para não reaplicar migrations antigas sobre um schema já existente, " +
-      "o bootstrap instalará somente a migration da Fase 1.9G.",
+    `[INFO] Instalando ${phase.label} sem resetar o Supabase local.`,
   );
 
-  const sql = readFileSync(phase19GMigration, "utf8");
-  const result = psql(sql);
+  const migration = readFileSync(phase.migrationPath, "utf8");
+  const result = psql(`begin;\n${migration.trim()}\ncommit;\n`);
 
   if (result.error || result.status !== 0) {
     const detail =
       result.error?.message || result.stderr || result.stdout || "erro SQL desconhecido";
-    throw new Error(`Falha ao aplicar a migration da Fase 1.9G. ${detail}`);
+    throw new Error(`Falha ao aplicar a Fase ${phase.id}. ${detail}`);
   }
 
-  console.log("[OK] Schema da Fase 1.9G aplicado sem replay de migrations antigas");
-}
-
-function applyPhase20IDirectly() {
-  section("Aplicando Storage da Fase 2.0I");
-  console.log(
-    "[INFO] Instalando somente o bucket privado e as policies da Fase 2.0I, " +
-      "sem resetar o Supabase e sem reaplicar o histórico antigo.",
-  );
-
-  const sql = readFileSync(phase20IMigration, "utf8");
-  const result = psql(sql);
-
-  if (result.error || result.status !== 0) {
-    const detail =
-      result.error?.message || result.stderr || result.stdout || "erro SQL desconhecido";
-    throw new Error(`Falha ao aplicar a migration da Fase 2.0I. ${detail}`);
-  }
-
-  console.log("[OK] Storage privado da Fase 2.0I aplicado sem reset destrutivo");
+  console.log(`[OK] Fase ${phase.id} reconciliada de forma incremental`);
 }
 
 function reloadPostgrestSchema() {
@@ -228,19 +275,26 @@ function reloadPostgrestSchema() {
   }
 }
 
-async function governanceRpcIsVisible(apiUrl, publicKey) {
-  const response = await fetch(
-    `${apiUrl}/rest/v1/rpc/get_owned_data_governance_overview`,
-    {
+async function rpcIsVisible(apiUrl, publicKey, rpc) {
+  let response;
+
+  try {
+    response = await fetch(`${apiUrl}/rest/v1/rpc/${rpc.name}`, {
       method: "POST",
       headers: {
         apikey: publicKey,
         Authorization: `Bearer ${publicKey}`,
         "Content-Type": "application/json",
       },
-      body: "{}",
-    },
-  );
+      body: JSON.stringify(rpc.body),
+    });
+  } catch (error) {
+    throw new Error(
+      `Não foi possível consultar a RPC ${rpc.name}. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
 
   const body = await response.text();
 
@@ -250,42 +304,70 @@ async function governanceRpcIsVisible(apiUrl, publicKey) {
   );
 }
 
-async function ensurePhase19G(apiUrl, publicKey) {
-  section("Validando banco da Fase 1.9G");
+async function missingPostgrestRpcs(apiUrl, publicKey) {
+  const visibility = await Promise.all(
+    requiredPostgrestRpcs.map(async (rpc) => ({
+      name: rpc.name,
+      visible: await rpcIsVisible(apiUrl, publicKey, rpc),
+    })),
+  );
 
-  if (!phase19GObjectsExistInDatabase()) {
-    applyPhase19GDirectly();
-  } else {
-    console.log("[OK] Objetos da Fase 1.9G já existem no PostgreSQL");
-  }
+  return visibility.filter((rpc) => !rpc.visible).map((rpc) => rpc.name);
+}
 
+async function ensurePostgrestSchema(apiUrl, publicKey) {
   reloadPostgrestSchema();
 
   for (let attempt = 1; attempt <= 6; attempt += 1) {
     await sleep(attempt === 1 ? 800 : 1200);
+    const missing = await missingPostgrestRpcs(apiUrl, publicKey);
 
-    if (await governanceRpcIsVisible(apiUrl, publicKey)) {
-      console.log("[OK] RPC get_owned_data_governance_overview disponível no PostgREST");
+    if (missing.length === 0) {
+      console.log(
+        `[OK] ${requiredPostgrestRpcs.length} RPCs obrigatórias publicadas no PostgREST`,
+      );
       return;
     }
 
-    console.log(`[INFO] Atualizando schema cache do PostgREST (${attempt}/6)...`);
+    console.log(
+      `[INFO] Atualizando schema cache do PostgREST (${attempt}/6): ${missing.join(", ")}`,
+    );
     reloadPostgrestSchema();
   }
 
+  const missing = await missingPostgrestRpcs(apiUrl, publicKey);
   throw new Error(
-    "A Fase 1.9G existe no PostgreSQL, mas o PostgREST ainda não publicou a RPC. " +
-      "Reinicie o Supabase local e execute pnpm dev novamente.",
+    `O PostgreSQL foi reconciliado, mas o PostgREST não publicou: ${missing.join(", ")}. ` +
+      "Reinicie o Supabase local e execute pnpm prepare:local novamente.",
   );
 }
 
-function ensurePhase20I() {
-  section("Validando Storage da Fase 2.0I");
+async function ensureLocalSchema(apiUrl, publicKey) {
+  section("VALIDANDO CONTRATOS DO BANCO LOCAL");
+  const applied = [];
 
-  if (!phase20IObjectsExistInDatabase()) {
-    applyPhase20IDirectly();
+  for (const phase of schemaPhases) {
+    if (schemaPhaseIsReady(phase)) {
+      console.log(`[OK] Fase ${phase.id}: ${phase.label}`);
+      continue;
+    }
+
+    applySchemaPhase(phase);
+    applied.push(phase.id);
+
+    if (!schemaPhaseIsReady(phase)) {
+      throw new Error(
+        `A Fase ${phase.id} terminou sem instalar todos os objetos obrigatórios.`,
+      );
+    }
+  }
+
+  await ensurePostgrestSchema(apiUrl, publicKey);
+
+  if (applied.length > 0) {
+    console.log(`[OK] Banco local atualizado: ${applied.join(", ")}`);
   } else {
-    console.log("[OK] Bucket privado e policies da Fase 2.0I já estão ativos");
+    console.log("[OK] Banco local já estava alinhado com a aplicação");
   }
 }
 
@@ -342,8 +424,14 @@ async function main() {
     );
   }
 
-  await ensurePhase19G(apiUrl, publicKey);
-  ensurePhase20I();
+  await ensureLocalSchema(apiUrl, publicKey);
+
+  if (prepareOnly) {
+    section("ORBIQ LOCAL PREPARADO");
+    console.log("[OK] PostgreSQL, Storage e schema cache estão alinhados");
+    console.log("[INFO] Nenhum dado local foi apagado e o servidor Web não foi iniciado.");
+    return;
+  }
 
   if (!(await portIsAvailable(3000))) {
     throw new Error(
@@ -365,8 +453,7 @@ async function main() {
   section("ORBIQ WEB");
   console.log(`[OK] Banco local: ${apiUrl}`);
   console.log("[OK] Contrato de ambiente público validado");
-  console.log("[OK] Fase 1.9G validada");
-  console.log("[OK] Fase 2.0I validada");
+  console.log("[OK] Contratos locais 1.9D–2.0S validados");
   console.log("[INFO] Aplicação: http://localhost:3000");
   console.log("[INFO] Use Ctrl+C para encerrar.");
   console.log("");
@@ -388,7 +475,5 @@ main().catch((error) => {
   console.error("");
   console.error("[ORBIQ DEV ERROR]");
   console.error(error instanceof Error ? error.message : String(error));
-  console.error("");
-  console.error("Nenhum reset destrutivo foi executado. O terminal permanecerá aberto.");
   process.exitCode = 1;
 });
