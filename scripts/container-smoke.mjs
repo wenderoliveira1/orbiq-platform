@@ -124,6 +124,19 @@ try {
       "--detach",
       "--name",
       containerName,
+      "--read-only",
+      "--tmpfs",
+      "/tmp:rw,noexec,nosuid,size=64m",
+      "--cap-drop",
+      "ALL",
+      "--security-opt",
+      "no-new-privileges=true",
+      "--memory",
+      "512m",
+      "--pids-limit",
+      "128",
+      "--cpus",
+      "1.0",
       "--network",
       "host",
       imageTag,
@@ -132,8 +145,51 @@ try {
   );
   containerStarted = true;
 
+  const hostConfig = JSON.parse(
+    captured("docker", [
+      "inspect",
+      "--format",
+      "{{json .HostConfig}}",
+      containerName,
+    ]),
+  );
+
+  if (hostConfig.ReadonlyRootfs !== true) {
+    throw new Error("Production container root filesystem must be read-only");
+  }
+
+  if (!hostConfig.CapDrop?.includes("ALL")) {
+    throw new Error("Production container must drop all Linux capabilities");
+  }
+
+  if (!hostConfig.SecurityOpt?.includes("no-new-privileges=true")) {
+    throw new Error("Production container must prevent privilege escalation");
+  }
+
+  if (hostConfig.Memory !== 512 * 1024 * 1024) {
+    throw new Error("Production container memory limit must be 512 MiB");
+  }
+
+  if (hostConfig.PidsLimit !== 128) {
+    throw new Error("Production container PID limit must be 128");
+  }
+
+  if (hostConfig.NanoCpus !== 1_000_000_000) {
+    throw new Error("Production container CPU limit must be 1 core");
+  }
+
+  const temporaryFilesystem = hostConfig.Tmpfs?.["/tmp"] ?? "";
+  if (
+    !temporaryFilesystem.includes("noexec") ||
+    !temporaryFilesystem.includes("nosuid")
+  ) {
+    throw new Error("Production container /tmp must be an isolated tmpfs");
+  }
+
   await waitForReadiness();
-  console.log("Production container build and readiness verified.");
+  console.log(
+    "Hardened production container build, isolation and readiness verified.",
+  );
 } finally {
   if (containerStarted) {
     execute("docker", ["rm", "--force", containerName], {
