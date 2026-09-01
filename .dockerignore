@@ -4,6 +4,14 @@
 **/node_modules
 .env
 .env.*
+**/.env
+**/.env.*
+.autoqa
 playwright-report
 test-results
+coverage
+**/coverage
 supabase/.temp
+supabase/.branches
+*.log
+**/*.log
