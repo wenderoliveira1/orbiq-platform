@@ -61,6 +61,9 @@ jobs:
       - name: Verify CI log hygiene
         run: node scripts/verify-ci-log-hygiene.mjs
 
+      - name: Verify container runtime contract
+        run: node scripts/verify-container-runtime.mjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
