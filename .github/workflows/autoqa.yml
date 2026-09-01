@@ -59,6 +59,9 @@ jobs:
       - name: Verify AutoQA artifact privacy
         run: node scripts/verify-autoqa-artifact-privacy.mjs
 
+      - name: Verify CI log hygiene
+        run: node scripts/verify-ci-log-hygiene.mjs
+
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile
 
