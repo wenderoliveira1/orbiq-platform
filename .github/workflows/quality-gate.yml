@@ -67,6 +67,9 @@ jobs:
       - name: Verify Docker build-context privacy
         run: node scripts/verify-docker-context-privacy.mjs
 
+      - name: Verify reproducible Docker build
+        run: node scripts/verify-docker-build-contract.mjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
