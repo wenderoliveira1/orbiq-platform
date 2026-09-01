@@ -47,6 +47,9 @@ jobs:
       - name: Verify repository toolchain consistency
         run: node scripts/verify-toolchain-consistency.mjs
 
+      - name: Verify immutable CI actions
+        run: node scripts/verify-ci-action-pins.mjs
+
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile
 
