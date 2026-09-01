@@ -187,8 +187,47 @@ try {
   }
 
   await waitForReadiness();
+
+  const stopStartedAt = Date.now();
+  execute("docker", ["stop", "--time", "10", containerName], {
+    capture: true,
+  });
+  const stopElapsedMs = Date.now() - stopStartedAt;
+
+  const stoppedState = JSON.parse(
+    captured("docker", [
+      "inspect",
+      "--format",
+      "{{json .State}}",
+      containerName,
+    ]),
+  );
+
+  if (stoppedState.Status !== "exited") {
+    throw new Error(
+      `Production container did not stop cleanly (state: ${stoppedState.Status})`,
+    );
+  }
+
+  const expectedExitCodes = new Set([0, 143]);
+  if (!expectedExitCodes.has(stoppedState.ExitCode)) {
+    throw new Error(
+      `Production container exited with unexpected code ${stoppedState.ExitCode}`,
+    );
+  }
+
+  if (stoppedState.OOMKilled === true) {
+    throw new Error("Production container was OOM-killed during lifecycle smoke");
+  }
+
+  if (stopElapsedMs > 12_000) {
+    throw new Error(
+      `Production container exceeded graceful shutdown budget (${stopElapsedMs} ms)`,
+    );
+  }
+
   console.log(
-    "Hardened production container build, isolation and readiness verified.",
+    `Hardened production container readiness and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
   );
 } finally {
   if (containerStarted) {
