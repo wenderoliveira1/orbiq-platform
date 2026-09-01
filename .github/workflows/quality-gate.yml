@@ -46,5 +46,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify Supabase CLI contract
+        shell: bash
+        run: test "$(pnpm exec supabase --version)" = "2.115.0"
+
       - name: Orbiq Quality Gate
         run: node scripts/quality-gate.mjs
