@@ -55,7 +55,11 @@ jobs:
         run: node scripts/quality-gate.mjs
 
       - name: Install Playwright test runner
-        run: pnpm add -Dw @playwright/test@1.55.0
+        run: pnpm add -Dw --ignore-workspace-root-check --no-save @playwright/test@1.55.0
+
+      - name: Verify Playwright contract
+        shell: bash
+        run: test "$(pnpm exec playwright --version)" = "Version 1.55.0"
 
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
