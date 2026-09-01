@@ -65,6 +65,9 @@ jobs:
       - name: Verify container runtime contract
         run: node scripts/verify-container-runtime.mjs
 
+      - name: Verify Docker build-context privacy
+        run: node scripts/verify-docker-context-privacy.mjs
+
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile
 
