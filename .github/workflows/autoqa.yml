@@ -44,6 +44,9 @@ jobs:
           test "$(node --version)" = "v22.23.2"
           test "$(pnpm --version)" = "11.22.0"
 
+      - name: Verify repository toolchain consistency
+        run: node scripts/verify-toolchain-consistency.mjs
+
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile
 
