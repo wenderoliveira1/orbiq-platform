@@ -52,6 +52,9 @@ jobs:
       - name: Verify CI resource bounds
         run: node scripts/verify-ci-resource-bounds.mjs
 
+      - name: Verify CI trigger contract
+        run: node scripts/verify-ci-trigger-contract.mjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
