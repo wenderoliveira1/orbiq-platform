@@ -82,3 +82,6 @@ jobs:
 
       - name: Orbiq Quality Gate
         run: node scripts/quality-gate.mjs
+
+      - name: Production container smoke test
+        run: node scripts/container-smoke.mjs
