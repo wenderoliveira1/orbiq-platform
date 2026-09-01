@@ -70,6 +70,9 @@ jobs:
       - name: Verify reproducible Docker build
         run: node scripts/verify-docker-build-contract.mjs
 
+      - name: Verify container public configuration
+        run: node scripts/verify-container-public-config.mjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
