@@ -56,6 +56,9 @@ jobs:
       - name: Verify CI trigger contract
         run: node scripts/verify-ci-trigger-contract.mjs
 
+      - name: Verify AutoQA artifact privacy
+        run: node scripts/verify-autoqa-artifact-privacy.mjs
+
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile
 
@@ -128,6 +131,8 @@ jobs:
           name: orbiq-autoqa-report-${{ github.run_id }}
           if-no-files-found: warn
           retention-days: 14
+          include-hidden-files: false
+          overwrite: false
           path: |
             playwright-report
             test-results
