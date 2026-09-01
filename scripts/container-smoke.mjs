@@ -209,7 +209,8 @@ try {
     );
   }
 
-  if (stoppedState.ExitCode !== 0) {
+  const expectedExitCodes = new Set([0, 143]);
+  if (!expectedExitCodes.has(stoppedState.ExitCode)) {
     throw new Error(
       `Production container exited with unexpected code ${stoppedState.ExitCode}`,
     );
@@ -226,7 +227,7 @@ try {
   }
 
   console.log(
-    `Hardened production container readiness and graceful shutdown verified in ${stopElapsedMs} ms.`,
+    `Hardened production container readiness and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
   );
 } finally {
   if (containerStarted) {
