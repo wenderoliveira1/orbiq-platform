@@ -50,6 +50,9 @@ jobs:
       - name: Verify immutable CI actions
         run: node scripts/verify-ci-action-pins.mjs
 
+      - name: Verify CI resource bounds
+        run: node scripts/verify-ci-resource-bounds.mjs
+
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile
 
