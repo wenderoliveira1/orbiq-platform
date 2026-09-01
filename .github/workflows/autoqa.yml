@@ -84,6 +84,9 @@ jobs:
       - name: Technical Quality Gate
         run: node scripts/quality-gate.mjs
 
+      - name: Production container smoke test
+        run: node scripts/container-smoke.mjs
+
       - name: Install Playwright test runner
         shell: bash
         run: |

@@ -1,0 +1,151 @@
+import { spawnSync } from "node:child_process";
+
+const root = process.cwd();
+const imageTag = `orbiq-ci:${(process.env.GITHUB_SHA ?? "local")
+  .slice(0, 12)
+  .toLowerCase()}`;
+const containerName = `orbiq-ci-${process.pid}`;
+const syntheticPublishableKey =
+  "sb_publishable_ci_smoke_test_00000000000000000000";
+
+let imageBuilt = false;
+let containerStarted = false;
+
+function execute(command, args, { capture = false, allowFailure = false } = {}) {
+  const result = spawnSync(command, args, {
+    cwd: root,
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      DOCKER_BUILDKIT: "1",
+    },
+    stdio: capture ? "pipe" : "inherit",
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (!allowFailure && result.status !== 0) {
+    throw new Error(`${command} failed with status ${result.status ?? "unknown"}`);
+  }
+
+  return result;
+}
+
+function captured(command, args) {
+  return execute(command, args, { capture: true }).stdout.trim();
+}
+
+async function waitForReadiness() {
+  for (let attempt = 1; attempt <= 45; attempt += 1) {
+    try {
+      const response = await fetch("http://127.0.0.1:3000/api/ready", {
+        cache: "no-store",
+      });
+      const body = await response.json();
+
+      if (
+        response.ok &&
+        body?.service === "orbiq-web" &&
+        body?.status === "ready"
+      ) {
+        return;
+      }
+    } catch {
+      // The standalone server can still be starting.
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+  }
+
+  const state = captured("docker", [
+    "inspect",
+    "--format",
+    "{{.State.Status}}",
+    containerName,
+  ]);
+
+  throw new Error(
+    `Production container did not become ready within 45 seconds (state: ${state})`,
+  );
+}
+
+try {
+  const dockerVersion = captured("docker", [
+    "version",
+    "--format",
+    "{{.Server.Version}}",
+  ]);
+  console.log(`Docker server ${dockerVersion} available.`);
+
+  execute("docker", [
+    "build",
+    "--build-arg",
+    "NEXT_PUBLIC_APP_URL=http://127.0.0.1:3000",
+    "--build-arg",
+    "NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321",
+    "--build-arg",
+    `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${syntheticPublishableKey}`,
+    "--tag",
+    imageTag,
+    ".",
+  ]);
+  imageBuilt = true;
+
+  const runtimeUser = captured("docker", [
+    "image",
+    "inspect",
+    "--format",
+    "{{.Config.User}}",
+    imageTag,
+  ]);
+  if (runtimeUser !== "nextjs") {
+    throw new Error(`Production image runs as unexpected user: ${runtimeUser}`);
+  }
+
+  const runtimeCommand = captured("docker", [
+    "image",
+    "inspect",
+    "--format",
+    "{{json .Config.Cmd}}",
+    imageTag,
+  ]);
+  if (runtimeCommand !== '["node","apps/web/server.js"]') {
+    throw new Error(
+      `Production image has unexpected startup command: ${runtimeCommand}`,
+    );
+  }
+
+  execute(
+    "docker",
+    [
+      "run",
+      "--detach",
+      "--name",
+      containerName,
+      "--network",
+      "host",
+      imageTag,
+    ],
+    { capture: true },
+  );
+  containerStarted = true;
+
+  await waitForReadiness();
+  console.log("Production container build and readiness verified.");
+} finally {
+  if (containerStarted) {
+    execute("docker", ["rm", "--force", containerName], {
+      capture: true,
+      allowFailure: true,
+    });
+  }
+
+  if (imageBuilt) {
+    execute("docker", ["image", "rm", "--force", imageTag], {
+      capture: true,
+      allowFailure: true,
+    });
+  }
+}
