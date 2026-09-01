@@ -71,6 +71,33 @@ async function waitForReadiness() {
   );
 }
 
+async function waitForNativeHealth() {
+  let lastStatus = "missing";
+
+  for (let attempt = 1; attempt <= 75; attempt += 1) {
+    lastStatus = captured("docker", [
+      "inspect",
+      "--format",
+      "{{if .State.Health}}{{.State.Health.Status}}{{else}}missing{{end}}",
+      containerName,
+    ]);
+
+    if (lastStatus === "healthy") {
+      return;
+    }
+
+    if (lastStatus === "unhealthy") {
+      throw new Error("Production container native healthcheck became unhealthy");
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+  }
+
+  throw new Error(
+    `Production container native healthcheck did not become healthy (last status: ${lastStatus})`,
+  );
+}
+
 try {
   const dockerVersion = captured("docker", [
     "version",
@@ -187,6 +214,7 @@ try {
   }
 
   await waitForReadiness();
+  await waitForNativeHealth();
 
   const stopStartedAt = Date.now();
   execute("docker", ["stop", "--time", "10", containerName], {
@@ -227,7 +255,7 @@ try {
   }
 
   console.log(
-    `Hardened production container readiness and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
+    `Hardened production container readiness, native health and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
   );
 } finally {
   if (containerStarted) {
