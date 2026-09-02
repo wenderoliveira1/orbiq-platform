@@ -29,6 +29,10 @@ const requiredRuntimeContracts = [
       "CMD wget -q -O /dev/null http://127.0.0.1:3000/api/ready || exit 1",
   },
   {
+    label: "explicit graceful stop signal",
+    value: "STOPSIGNAL SIGTERM",
+  },
+  {
     label: "exec-form server command",
     value: 'CMD ["node", "apps/web/server.js"]',
   },
@@ -63,10 +67,15 @@ if (
 }
 
 const userPosition = runnerStage.indexOf("USER nextjs");
+const stopSignalPosition = runnerStage.indexOf("STOPSIGNAL SIGTERM");
 const commandPosition = runnerStage.indexOf('CMD ["node", "apps/web/server.js"]');
 
 if (userPosition === -1 || userPosition > commandPosition) {
   throw new Error("Dockerfile: runtime must drop privileges before startup");
+}
+
+if (stopSignalPosition === -1 || stopSignalPosition > commandPosition) {
+  throw new Error("Dockerfile: graceful stop signal must be declared before startup");
 }
 
 console.log("Container runtime security contract verified.");
