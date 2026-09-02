@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-async function installWaitingWorkerMock(page: Parameters<typeof test>[0]["page"]) {
+async function installWaitingWorkerMock(page: Page) {
   await page.addInitScript(() => {
     const messages: unknown[] = [];
     const listeners = new Map<string, Set<(...args: unknown[]) => void>>();
