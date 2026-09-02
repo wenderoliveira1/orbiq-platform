@@ -52,6 +52,10 @@ ENV NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL"
 ENV NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
 ENV PORT="3000"
 
+LABEL org.opencontainers.image.title="Orbiq"
+LABEL org.opencontainers.image.description="Orbiq production web application"
+LABEL org.opencontainers.image.source="https://github.com/wenderoliveira1/orbiq-platform"
+
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
