@@ -8,7 +8,8 @@ Impedir que dependências ou artefatos acidentais aumentem silenciosamente a ima
 
 - mede a imagem efetivamente construída no smoke test;
 - exige tamanho válido e maior que zero;
-- define orçamento máximo de 400 MiB;
+- define orçamento máximo de 250 MiB;
+- usa como referência a medição atual de 197,2 MiB e preserva aproximadamente 53 MiB de margem;
 - informa somente o tamanho agregado, sem listar arquivos ou metadados sensíveis;
 - falha antes de iniciar o container se o orçamento for ultrapassado;
 - preserva isolamento, healthcheck nativo e shutdown seguro;

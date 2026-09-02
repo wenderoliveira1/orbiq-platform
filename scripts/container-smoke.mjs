@@ -129,7 +129,7 @@ try {
       imageTag,
     ]),
   );
-  const maximumImageSizeBytes = 400 * 1024 * 1024;
+  const maximumImageSizeBytes = 250 * 1024 * 1024;
 
   if (!Number.isFinite(imageSizeBytes) || imageSizeBytes <= 0) {
     throw new Error("Production image size could not be determined");
@@ -137,12 +137,12 @@ try {
 
   if (imageSizeBytes > maximumImageSizeBytes) {
     throw new Error(
-      `Production image exceeds 400 MiB budget (${(imageSizeBytes / 1024 / 1024).toFixed(1)} MiB)`,
+      `Production image exceeds 250 MiB budget (${(imageSizeBytes / 1024 / 1024).toFixed(1)} MiB)`,
     );
   }
 
   console.log(
-    `Production image size ${(imageSizeBytes / 1024 / 1024).toFixed(1)} MiB is within the 400 MiB budget.`,
+    `Production image size ${(imageSizeBytes / 1024 / 1024).toFixed(1)} MiB is within the 250 MiB budget.`,
   );
 
   const runtimeUser = captured("docker", [
