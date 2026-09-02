@@ -59,26 +59,23 @@ test.describe("Fase 2.1AQ — PWA offline em runtime", () => {
   test("mantém o cache público na origem do aplicativo", async ({ page }) => {
     await page.goto("/offline", { waitUntil: "domcontentloaded" });
 
-    const appOrigin = await expect
+    await expect
       .poll(
         async () =>
           page.evaluate(async () => {
             const registration = await navigator.serviceWorker.getRegistration("/");
-            return registration?.active?.scriptURL
-              ? new URL(registration.active.scriptURL).origin
-              : null;
+            return Boolean(registration?.active?.scriptURL);
           }),
         { timeout: 15_000, intervals: [250, 500, 1_000] },
       )
-      .not.toBeNull()
-      .then(() =>
-        page.evaluate(async () => {
-          const registration = await navigator.serviceWorker.getRegistration("/");
-          return registration?.active?.scriptURL
-            ? new URL(registration.active.scriptURL).origin
-            : null;
-        }),
-      );
+      .toBe(true);
+
+    const appOrigin = await page.evaluate(async () => {
+      const registration = await navigator.serviceWorker.getRegistration("/");
+      return registration?.active?.scriptURL
+        ? new URL(registration.active.scriptURL).origin
+        : null;
+    });
 
     const cacheEntries = await page.evaluate(async () => {
       const cache = await caches.open("orbiq-public-shell-v3");
