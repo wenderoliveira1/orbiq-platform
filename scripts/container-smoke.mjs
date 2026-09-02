@@ -206,6 +206,39 @@ try {
     }
   }
 
+  const imageEnvironment = JSON.parse(
+    captured("docker", [
+      "image",
+      "inspect",
+      "--format",
+      "{{json .Config.Env}}",
+      imageTag,
+    ]),
+  );
+  const imageHistory = captured("docker", [
+    "history",
+    "--no-trunc",
+    "--format",
+    "{{.CreatedBy}}",
+    imageTag,
+  ]);
+  const sensitiveMetadataPattern =
+    /SUPABASE_(?:SERVICE_ROLE|ANON)_KEY|DATABASE_URL|PASSWORD|PRIVATE_KEY|ACCESS_TOKEN|CLIENT_SECRET|API_SECRET/i;
+  const environmentNames = imageEnvironment.map((entry) => entry.split("=", 1)[0]);
+  const metadataNames = [...environmentNames, ...Object.keys(imageLabels ?? {})];
+
+  if (metadataNames.some((name) => sensitiveMetadataPattern.test(name))) {
+    throw new Error(
+      "Production image metadata contains a forbidden credential identifier",
+    );
+  }
+
+  if (sensitiveMetadataPattern.test(imageHistory)) {
+    throw new Error(
+      "Production image history contains a forbidden credential identifier",
+    );
+  }
+
   execute(
     "docker",
     [
