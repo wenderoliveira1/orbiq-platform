@@ -303,6 +303,39 @@ try {
     );
   }
 
+  const permissionProbe = [
+    'const { lstatSync, readdirSync } = require("node:fs");',
+    'const { join } = require("node:path");',
+    'const pending = ["/app"];',
+    'let violations = 0;',
+    'while (pending.length > 0) {',
+    '  const path = pending.pop();',
+    '  const stat = lstatSync(path);',
+    '  if (stat.isSymbolicLink()) continue;',
+    '  if ((stat.mode & 0o6022) !== 0) violations += 1;',
+    '  if (stat.isDirectory()) {',
+    '    for (const entry of readdirSync(path)) pending.push(join(path, entry));',
+    '  }',
+    '}',
+    'process.stdout.write(String(violations));',
+  ].join("\n");
+
+  const permissionViolations = Number(
+    captured("docker", [
+      "exec",
+      containerName,
+      "node",
+      "-e",
+      permissionProbe,
+    ]),
+  );
+
+  if (!Number.isInteger(permissionViolations) || permissionViolations > 0) {
+    throw new Error(
+      "Production image contains unsafe filesystem permissions",
+    );
+  }
+
   const hostConfig = JSON.parse(
     captured("docker", [
       "inspect",
@@ -386,7 +419,7 @@ try {
   }
 
   console.log(
-    `Hardened production container filesystem hygiene, readiness, native health and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
+    `Hardened production container filesystem hygiene and permissions, readiness, native health and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
   );
 } finally {
   if (containerStarted) {
