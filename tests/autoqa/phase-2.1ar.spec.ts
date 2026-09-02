@@ -14,7 +14,7 @@ test.describe("Fase 2.1AR - atualização segura do PWA em runtime", () => {
     expect(source).toContain("clientsClaim");
     expect(source).toContain("message");
     expect(source).toContain("UPDATE");
-    expect(source).not.toContain("caches.open(\"api\"");
+    expect(source).not.toContain("caches.open(\"api\")");
   });
 
   test("a tela de instalação continua acessível em viewport móvel", async ({ page }) => {
