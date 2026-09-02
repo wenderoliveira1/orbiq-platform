@@ -169,6 +169,19 @@ try {
     );
   }
 
+  const stopSignal = captured("docker", [
+    "image",
+    "inspect",
+    "--format",
+    "{{.Config.StopSignal}}",
+    imageTag,
+  ]);
+  if (stopSignal !== "SIGTERM") {
+    throw new Error(
+      `Production image has unexpected stop signal: ${stopSignal || "missing"}`,
+    );
+  }
+
   execute(
     "docker",
     [
