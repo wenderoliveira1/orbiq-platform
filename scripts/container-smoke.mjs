@@ -50,9 +50,29 @@ async function waitForReadiness() {
         body?.service === "orbiq-web" &&
         body?.status === "ready"
       ) {
+        const cacheControl = response.headers.get("cache-control") ?? "";
+        const contentType = response.headers.get("content-type") ?? "";
+        const exposesCookie = response.headers.has("set-cookie");
+
+        if (
+          !cacheControl.includes("no-store") ||
+          !cacheControl.includes("max-age=0") ||
+          !contentType.includes("application/json") ||
+          exposesCookie
+        ) {
+          throw new Error("Readiness endpoint HTTP contract changed");
+        }
+
         return;
       }
-    } catch {
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === "Readiness endpoint HTTP contract changed"
+      ) {
+        throw error;
+      }
+
       // The standalone server can still be starting.
     }
 
@@ -444,7 +464,7 @@ try {
   }
 
   console.log(
-    `Hardened production container filesystem hygiene and permissions, readiness, native health and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
+    `Hardened production container filesystem hygiene and permissions, HTTP readiness contract, native health and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
   );
 } finally {
   if (containerStarted) {
