@@ -24,25 +24,8 @@ async function installWaitingWorkerMock(page: Page) {
         listeners.get(type)?.delete(listener);
       },
     };
-    const serviceWorker = {
-      controller: {},
-      ready: Promise.resolve(registration),
-      register: async () => registration,
-      getRegistration: async () => registration,
-      addEventListener(type: string, listener: (...args: unknown[]) => void) {
-        const bucket = listeners.get(`sw:${type}`) ?? new Set();
-        bucket.add(listener);
-        listeners.set(`sw:${type}`, bucket);
-      },
-      removeEventListener(type: string, listener: (...args: unknown[]) => void) {
-        listeners.get(`sw:${type}`)?.delete(listener);
-      },
-    };
 
-    Object.defineProperty(navigator, "serviceWorker", {
-      configurable: true,
-      value: serviceWorker,
-    });
+    ServiceWorkerContainer.prototype.register = async () => registration as unknown as ServiceWorkerRegistration;
 
     Object.defineProperty(window, "__orbiqPwaTest", {
       configurable: true,
