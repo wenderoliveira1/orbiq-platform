@@ -91,6 +91,28 @@ async function waitForReadiness() {
   );
 }
 
+async function verifyLiveness() {
+  const response = await fetch("http://127.0.0.1:3000/api/health", {
+    cache: "no-store",
+  });
+  const body = await response.json();
+  const cacheControl = response.headers.get("cache-control") ?? "";
+  const contentType = response.headers.get("content-type") ?? "";
+  const exposesCookie = response.headers.has("set-cookie");
+
+  if (
+    !response.ok ||
+    body?.service !== "orbiq-web" ||
+    body?.status !== "healthy" ||
+    !cacheControl.includes("no-store") ||
+    !cacheControl.includes("max-age=0") ||
+    !contentType.includes("application/json") ||
+    exposesCookie
+  ) {
+    throw new Error("Liveness endpoint HTTP contract changed");
+  }
+}
+
 async function waitForNativeHealth() {
   let lastStatus = "missing";
 
@@ -423,6 +445,7 @@ try {
   }
 
   await waitForReadiness();
+  await verifyLiveness();
   await waitForNativeHealth();
 
   const stopStartedAt = Date.now();
@@ -464,7 +487,7 @@ try {
   }
 
   console.log(
-    `Hardened production container filesystem hygiene and permissions, HTTP readiness contract, native health and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
+    `Hardened production container filesystem hygiene and permissions, HTTP readiness and liveness contracts, native health and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
   );
 } finally {
   if (containerStarted) {
