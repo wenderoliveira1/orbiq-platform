@@ -120,6 +120,31 @@ try {
   ]);
   imageBuilt = true;
 
+  const imageSizeBytes = Number(
+    captured("docker", [
+      "image",
+      "inspect",
+      "--format",
+      "{{.Size}}",
+      imageTag,
+    ]),
+  );
+  const maximumImageSizeBytes = 250 * 1024 * 1024;
+
+  if (!Number.isFinite(imageSizeBytes) || imageSizeBytes <= 0) {
+    throw new Error("Production image size could not be determined");
+  }
+
+  if (imageSizeBytes > maximumImageSizeBytes) {
+    throw new Error(
+      `Production image exceeds 250 MiB budget (${(imageSizeBytes / 1024 / 1024).toFixed(1)} MiB)`,
+    );
+  }
+
+  console.log(
+    `Production image size ${(imageSizeBytes / 1024 / 1024).toFixed(1)} MiB is within the 250 MiB budget.`,
+  );
+
   const runtimeUser = captured("docker", [
     "image",
     "inspect",
