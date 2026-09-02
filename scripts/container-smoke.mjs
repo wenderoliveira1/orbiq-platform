@@ -182,6 +182,31 @@ try {
     );
   }
 
+  const healthcheck = JSON.parse(
+    captured("docker", [
+      "image",
+      "inspect",
+      "--format",
+      "{{json .Config.Healthcheck}}",
+      imageTag,
+    ]),
+  );
+  const expectedHealthcheckTest = [
+    "CMD-SHELL",
+    "wget -q -O /dev/null http://127.0.0.1:3000/api/ready || exit 1",
+  ];
+  const healthcheckContractMatches =
+    JSON.stringify(healthcheck?.Test) ===
+      JSON.stringify(expectedHealthcheckTest) &&
+    healthcheck?.Interval === 30_000_000_000 &&
+    healthcheck?.Timeout === 5_000_000_000 &&
+    healthcheck?.StartPeriod === 15_000_000_000 &&
+    healthcheck?.Retries === 3;
+
+  if (!healthcheckContractMatches) {
+    throw new Error("Production image healthcheck contract changed");
+  }
+
   const imageLabels = JSON.parse(
     captured("docker", [
       "image",
