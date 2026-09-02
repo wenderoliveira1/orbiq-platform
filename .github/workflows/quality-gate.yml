@@ -73,6 +73,9 @@ jobs:
       - name: Verify container public configuration
         run: node scripts/verify-container-public-config.mjs
 
+      - name: Verify release provenance contract
+        run: node scripts/verify-release-provenance.mjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
