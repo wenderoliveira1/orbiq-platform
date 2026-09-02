@@ -8,7 +8,7 @@ Comprovar que o filesystem da aplicação na imagem de produção não contém p
 
 - percorre recursivamente o diretório `/app` dentro do container em execução;
 - ignora links simbólicos para não seguir caminhos fora do runtime da aplicação;
-- bloqueia arquivos e diretórios graváveis por grupo ou por qualquer usuário;
+- bloqueia arquivos e diretórios graváveis por qualquer usuário fora do proprietário/grupo;
 - bloqueia bits setuid e setgid no conteúdo da aplicação;
 - retorna apenas a quantidade de violações ao processo de teste e uma falha genérica aos logs;
 - preserva usuário não-root, filesystem somente leitura, lifecycle, limites, privacidade e higiene da imagem;

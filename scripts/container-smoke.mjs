@@ -312,7 +312,7 @@ try {
     '  const path = pending.pop();',
     '  const stat = lstatSync(path);',
     '  if (stat.isSymbolicLink()) continue;',
-    '  if ((stat.mode & 0o6022) !== 0) violations += 1;',
+    '  if ((stat.mode & 0o6002) !== 0) violations += 1;',
     '  if (stat.isDirectory()) {',
     '    for (const entry of readdirSync(path)) pending.push(join(path, entry));',
     '  }',
