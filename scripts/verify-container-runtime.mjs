@@ -11,6 +11,20 @@ if (runnerStart === -1) {
 const runnerStage = dockerfile.slice(runnerStart);
 const requiredRuntimeContracts = [
   {
+    label: "OCI image title",
+    value: 'LABEL org.opencontainers.image.title="Orbiq"',
+  },
+  {
+    label: "OCI image description",
+    value:
+      'LABEL org.opencontainers.image.description="Orbiq production web application"',
+  },
+  {
+    label: "OCI source repository",
+    value:
+      'LABEL org.opencontainers.image.source="https://github.com/wenderoliveira1/orbiq-platform"',
+  },
+  {
     label: "non-root runtime user",
     value: "USER nextjs",
   },

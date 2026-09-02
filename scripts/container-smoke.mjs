@@ -182,6 +182,30 @@ try {
     );
   }
 
+  const imageLabels = JSON.parse(
+    captured("docker", [
+      "image",
+      "inspect",
+      "--format",
+      "{{json .Config.Labels}}",
+      imageTag,
+    ]),
+  );
+  const expectedImageLabels = {
+    "org.opencontainers.image.title": "Orbiq",
+    "org.opencontainers.image.description": "Orbiq production web application",
+    "org.opencontainers.image.source":
+      "https://github.com/wenderoliveira1/orbiq-platform",
+  };
+
+  for (const [label, expectedValue] of Object.entries(expectedImageLabels)) {
+    if (imageLabels?.[label] !== expectedValue) {
+      throw new Error(
+        `Production image has unexpected OCI label ${label}: ${imageLabels?.[label] ?? "missing"}`,
+      );
+    }
+  }
+
   execute(
     "docker",
     [
