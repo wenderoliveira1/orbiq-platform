@@ -197,6 +197,42 @@ try {
   );
   containerStarted = true;
 
+  const filesystemProbe = [
+    'const { existsSync, readdirSync } = require("node:fs");',
+    'const { join } = require("node:path");',
+    'const roots = ["/app", "/app/apps/web"];',
+    'const forbiddenNames = new Set([".git", ".github", ".autoqa", "playwright-report", "test-results", "coverage"]);',
+    'const violations = [];',
+    'for (const root of roots) {',
+    '  if (!existsSync(root)) continue;',
+    '  for (const entry of readdirSync(root, { withFileTypes: true })) {',
+    '    if (entry.name === ".env" || entry.name.startsWith(".env.") || forbiddenNames.has(entry.name)) {',
+    '      violations.push(join(root, entry.name));',
+    '    }',
+    '  }',
+    '}',
+    'for (const path of ["/app/supabase/.temp", "/app/supabase/.branches"]) {',
+    '  if (existsSync(path)) violations.push(path);',
+    '}',
+    'process.stdout.write(JSON.stringify(violations));',
+  ].join("\n");
+
+  const filesystemViolations = JSON.parse(
+    captured("docker", [
+      "exec",
+      containerName,
+      "node",
+      "-e",
+      filesystemProbe,
+    ]),
+  );
+
+  if (filesystemViolations.length > 0) {
+    throw new Error(
+      `Production image contains forbidden project artifacts: ${filesystemViolations.join(", ")}`,
+    );
+  }
+
   const hostConfig = JSON.parse(
     captured("docker", [
       "inspect",
@@ -280,7 +316,7 @@ try {
   }
 
   console.log(
-    `Hardened production container readiness, native health and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
+    `Hardened production container filesystem hygiene, readiness, native health and normal SIGTERM shutdown verified in ${stopElapsedMs} ms (exit ${stoppedState.ExitCode}).`,
   );
 } finally {
   if (containerStarted) {
