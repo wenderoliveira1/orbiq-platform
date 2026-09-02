@@ -76,6 +76,9 @@ jobs:
       - name: Verify release provenance contract
         run: node scripts/verify-release-provenance.mjs
 
+      - name: Verify PWA offline contract
+        run: node scripts/verify-pwa-contract.mjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
