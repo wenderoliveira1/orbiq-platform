@@ -26,7 +26,7 @@ test.describe("Fase 2.1AI - orçamento dos payloads operacionais", () => {
 
       const body = JSON.parse(payload.toString("utf8")) as Record<string, unknown>;
       expect(Array.isArray(body)).toBe(false);
-      expect(Object.keys(body).sort()).toEqual(endpoint.fields.toSorted());
+      expect(Object.keys(body).sort()).toEqual([...endpoint.fields].sort());
     });
   }
 });
