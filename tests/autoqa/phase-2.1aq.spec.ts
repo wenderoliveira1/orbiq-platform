@@ -56,15 +56,29 @@ test.describe("Fase 2.1AQ — PWA offline em runtime", () => {
     await context.setOffline(false);
   });
 
-  test("não cria cache público para uma navegação externa", async ({ page }) => {
+  test("mantém o cache público na origem do aplicativo", async ({ page }) => {
     await page.goto("/offline", { waitUntil: "domcontentloaded" });
 
-    const interceptedOrigins = await page.evaluate(async () => {
-      const registration = await navigator.serviceWorker.getRegistration("/");
-      return registration?.scope ? new URL(registration.scope).origin : null;
-    });
-
-    expect(interceptedOrigins).toBeTruthy();
+    const appOrigin = await expect
+      .poll(
+        async () =>
+          page.evaluate(async () => {
+            const registration = await navigator.serviceWorker.getRegistration("/");
+            return registration?.active?.scriptURL
+              ? new URL(registration.active.scriptURL).origin
+              : null;
+          }),
+        { timeout: 15_000, intervals: [250, 500, 1_000] },
+      )
+      .not.toBeNull()
+      .then(() =>
+        page.evaluate(async () => {
+          const registration = await navigator.serviceWorker.getRegistration("/");
+          return registration?.active?.scriptURL
+            ? new URL(registration.active.scriptURL).origin
+            : null;
+        }),
+      );
 
     const cacheEntries = await page.evaluate(async () => {
       const cache = await caches.open("orbiq-public-shell-v3");
@@ -72,8 +86,7 @@ test.describe("Fase 2.1AQ — PWA offline em runtime", () => {
       return requests.map((request) => new URL(request.url));
     });
 
-    expect(
-      cacheEntries.every((url) => url.origin === interceptedOrigins),
-    ).toBe(true);
+    expect(appOrigin).toBeTruthy();
+    expect(cacheEntries.every((url) => url.origin === appOrigin)).toBe(true);
   });
 });
