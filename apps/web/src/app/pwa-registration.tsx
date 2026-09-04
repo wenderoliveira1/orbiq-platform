@@ -17,6 +17,11 @@ export function PwaRegistration() {
   const reloadRequested = useRef(false);
   const commandSentForWorker = useRef<ServiceWorker | null>(null);
   const timeoutId = useRef<number | undefined>(undefined);
+  const updatingRef = useRef(false);
+
+  useEffect(() => {
+    updatingRef.current = updating;
+  }, [updating]);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -48,7 +53,7 @@ export function PwaRegistration() {
     const inspectUpdate = () => surfaceWaitingWorker(currentRegistration?.waiting ?? null);
 
     const checkForUpdate = () => {
-      if (!currentRegistration || !navigator.onLine || updating) return;
+      if (!currentRegistration || !navigator.onLine || updatingRef.current) return;
       void currentRegistration.update().then(inspectUpdate).catch(() => undefined);
     };
 
@@ -106,7 +111,7 @@ export function PwaRegistration() {
       navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
       if (intervalId !== undefined) window.clearInterval(intervalId);
     };
-  }, [updating]);
+  }, []);
 
   const deferUpdate = () => {
     dismissedWorker.current = registration?.waiting ?? null;
