@@ -46,8 +46,10 @@ test.describe("Fase 2.0G - atualizações seguras do PWA", () => {
     expect(registrationSource).toContain(
       'window.addEventListener("online", checkForUpdate);',
     );
-    expect(registrationSource).toContain(
-      'navigator.serviceWorker.addEventListener(\n          "controllerchange",\n          handleControllerChange,\n        );',
+
+    const normalizedRegistrationSource = registrationSource.replace(/\s+/g, " ");
+    expect(normalizedRegistrationSource).toContain(
+      'navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);',
     );
     expect(registrationSource).toContain("if (!reloadRequested.current)");
     expect(registrationSource).toContain("window.location.reload();");
