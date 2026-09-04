@@ -4,14 +4,16 @@
 
 Evoluir a atualização segura do PWA para lidar com falhas transitórias e manter o usuário informado sem recarregar a sessão de forma inesperada.
 
-## Escopo
+## Entrega
 
-- impedir comandos duplicados quando o usuário toca várias vezes em **Atualizar agora**;
-- tratar `controllerchange` que não chega no tempo esperado sem deixar a interface presa em estado de atualização;
-- exibir mensagem de falha recuperável e permitir nova tentativa sem perder o contexto atual;
-- manter a política de não cachear APIs nem dados autenticados;
-- cobrir a transição com testes E2E em Chromium para sucesso, timeout e repetição controlada;
-- registrar no diagnóstico seguro apenas o estado técnico necessário, sem dados da oficina.
+- bloqueio idempotente de comandos duplicados por service worker aguardando;
+- listeners de atualização registrados uma única vez por montagem do componente;
+- timeout de 12 segundos para `controllerchange` sem deixar a interface presa;
+- falha recuperável com preservação da sessão e botão **Tentar novamente**;
+- novo comando de ativação enviado apenas após confirmação explícita do usuário;
+- nenhum reload automático antes da troca efetiva do controller;
+- verificações de E2E em Chromium para sucesso, timeout e retry;
+- política de cache público preservada: APIs e dados autenticados continuam fora do Cache Storage.
 
 ## Critérios de aceite
 
@@ -20,6 +22,10 @@ Evoluir a atualização segura do PWA para lidar com falhas transitórias e mant
 3. Timeout de atualização retorna a interface para um estado acionável.
 4. Nova tentativa não duplica listeners nem comandos.
 5. Quality Gate e AutoQA verdes no mesmo HEAD antes do merge.
+
+## Validação
+
+A cobertura dedicada valida o comando único, a ausência de reload prematuro, a recuperação após timeout e a preservação da política de não cachear APIs.
 
 ## Segurança
 
