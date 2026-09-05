@@ -68,12 +68,18 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
 
   return (
     <div className="orbiq-page quote-detail-page">
-      <div className="print-header"><strong>Orbiq</strong><span>{organization.name}</span></div>
+      <div className="print-header">
+        <strong>{organization.name}</strong>
+        <span>Orbiq <small>ORÇAMENTO</small></span>
+      </div>
 
       <section className="quote-detail-heading">
         <div>
           <div className="quote-detail-back no-print"><Link href="/dashboard/orcamentos">← Orçamentos</Link></div>
-          <span className="orbiq-eyebrow">ORÇAMENTO</span>
+          <div className="quote-title-lockup">
+            <span className="orbiq-eyebrow">ORBIQ</span>
+            <span className="quote-title-type">ORÇAMENTO</span>
+          </div>
           <h1>{quote.protocol}</h1>
           <div className="quote-detail-meta">
             <span>{date(quote.created_at)}</span>
@@ -151,26 +157,26 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         )}
       </section>
 
-      <section className="orbiq-panel">
-        <div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">PEÇAS / ITENS</span><h2>Itens para compra</h2></div><span className="orbiq-count-badge">{items.length}</span></div>
-        {items.length === 0 ? <div className="orbiq-empty compact"><strong>Nenhuma peça registrada.</strong></div> : (
+      {items.length > 0 ? (
+        <section className="orbiq-panel quote-items-section">
+          <div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">PEÇAS / ITENS</span><h2>Itens para compra</h2></div><span className="orbiq-count-badge">{items.length}</span></div>
           <div className="quote-detail-table">
             <div className="quote-detail-table-head item-table"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Especificação</span><span>Compra</span></div>
             {items.map((item) => <div key={item.id} className="quote-detail-table-row item-table"><div><strong>{item.description}</strong><span>{item.category}</span></div><span>{qty(item.quantity)} {item.unit}</span><span>{item.side ?? "—"}</span><span>{item.specification ?? "—"}</span><span>{item.purchase_status}</span></div>)}
           </div>
-        )}
-      </section>
+        </section>
+      ) : null}
 
       {quote.notes ? <section className="orbiq-panel"><span className="orbiq-eyebrow">OBSERVAÇÕES</span><p className="quote-detail-notes">{quote.notes}</p></section> : null}
 
       <section className="quote-detail-totals">
         <div><span>Mão de obra</span><strong>{money(laborTotal)}</strong></div>
-        <div><span>Peças escolhidas</span><strong>{money(partsTotal)}</strong></div>
+        {items.length > 0 ? <div><span>Peças escolhidas</span><strong>{money(partsTotal)}</strong></div> : null}
         <div className="main-total"><span>Valor final</span><strong>{money(quote.final_amount)}</strong></div>
       </section>
 
       <section className="quote-detail-footer no-print"><Link href="/dashboard/orcamentos" className="orbiq-secondary-button">Voltar ao histórico</Link><Link href="/dashboard/orcamentos/novo" className="orbiq-primary-button">Realizar novo orçamento</Link></section>
-      <div className="print-footer"><span>{organization.name}</span><strong>{quote.protocol}</strong><span>Gerado pelo Orbiq</span></div>
+      <div className="print-footer"><span>{organization.name}</span><strong>Orbiq</strong><span>{quote.protocol}</span></div>
     </div>
   );
 }
