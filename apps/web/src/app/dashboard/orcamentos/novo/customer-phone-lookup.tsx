@@ -30,11 +30,7 @@ function setSelectValue(name: string, value: string) {
   const select = document.querySelector<HTMLSelectElement>(`select[name="${name}"]`);
   if (!select) return;
 
-  const setter = Object.getOwnPropertyDescriptor(
-    HTMLSelectElement.prototype,
-    "value",
-  )?.set;
-
+  const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")?.set;
   setter?.call(select, value);
   select.dispatchEvent(new Event("change", { bubbles: true }));
 }
@@ -55,14 +51,16 @@ export function CustomerPhoneLookup({ customers, vehicles }: Props) {
 
   function handlePhoneChange(value: string) {
     setPhone(value);
-    const found = customers.find((item) => digits(item.phone) === digits(value) && digits(value).length >= 4);
+    const query = digits(value);
+    const found = customers.find((item) => digits(item.phone) === query && query.length >= 4);
 
     if (!found) return;
 
     setSelectValue("customer_id", found.id);
 
-    if (customerVehicles.length === 1) {
-      window.setTimeout(() => setSelectValue("vehicle_id", customerVehicles[0].id), 0);
+    const foundVehicles = vehicles.filter((vehicle) => vehicle.customer_id === found.id);
+    if (foundVehicles.length === 1) {
+      window.setTimeout(() => setSelectValue("vehicle_id", foundVehicles[0].id), 0);
     }
   }
 
