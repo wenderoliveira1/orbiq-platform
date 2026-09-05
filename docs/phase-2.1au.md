@@ -21,6 +21,7 @@ Fechar o ciclo de atualização do PWA com uma especificação operacional curta
 3. `Atualizar agora` só envia `ORBIQ_SKIP_WAITING` para o worker aguardando.
 4. Nenhum evento de atualização grava dados autenticados em Cache Storage.
 5. O diagnóstico seguro pode informar contagem/estado sem revelar identidade operacional.
+6. A telemetria permanece sem reload automático.
 
 ## Segurança e operação
 
