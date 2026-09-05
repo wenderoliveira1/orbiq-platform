@@ -74,18 +74,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
       </div>
 
       <section className="quote-detail-heading">
-        <div>
-          <div className="quote-detail-back no-print"><Link href="/dashboard/orcamentos">← Orçamentos</Link></div>
-          <div className="quote-title-lockup">
-            <span className="orbiq-eyebrow">ORBIQ</span>
-          </div>
-          <h1>{quote.protocol}</h1>
-          <div className="quote-detail-meta">
-            <span>{date(quote.created_at)}</span>
-            <span>{PRIORITY_LABELS[quote.priority] ?? quote.priority}</span>
-            <span className={`quote-status status-${quote.status}`}>{statusLabel(quote.status)}</span>
-          </div>
-        </div>
+        <div className="quote-detail-back no-print"><Link href="/dashboard/orcamentos">← Orçamentos</Link></div>
         <div className="quote-detail-actions no-print">
           <PrintButton />
           <Link href="/dashboard/orcamentos/novo" className="orbiq-primary-button">+ Novo orçamento</Link>
