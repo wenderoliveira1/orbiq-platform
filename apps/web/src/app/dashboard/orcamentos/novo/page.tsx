@@ -18,7 +18,7 @@ export default async function NewQuotePage({
   const query = await searchParams;
   const { supabase, organization } = await getCurrentContext();
 
-  const [customersResult, vehiclesResult, laborResult] = await Promise.all([
+  const [customersResult, vehiclesResult, laborResult, servicesResult] = await Promise.all([
     supabase
       .from("customers")
       .select("id, name, phone")
@@ -26,9 +26,7 @@ export default async function NewQuotePage({
       .order("name", { ascending: true }),
     supabase
       .from("vehicles")
-      .select(
-        "id, customer_id, plate, brand, model, version, model_year, mileage",
-      )
+      .select("id, customer_id, plate, brand, model, version, model_year, mileage")
       .eq("organization_id", organization.id)
       .order("plate", { ascending: true }),
     supabase
@@ -37,26 +35,31 @@ export default async function NewQuotePage({
       .eq("organization_id", organization.id)
       .eq("active", true)
       .order("description", { ascending: true }),
+    supabase
+      .from("service_catalog")
+      .select("id, category, description, default_labor_amount")
+      .eq("organization_id", organization.id)
+      .eq("active", true)
+      .order("category", { ascending: true })
+      .order("description", { ascending: true }),
   ]);
 
-  if (customersResult.error || vehiclesResult.error || laborResult.error) {
+  if (customersResult.error || vehiclesResult.error || laborResult.error || servicesResult.error) {
     throw new Error("Não foi possível carregar os dados do novo orçamento.");
   }
-
-  const customers = customersResult.data ?? [];
-  const vehicles = vehiclesResult.data ?? [];
 
   return (
     <>
       <UnsavedQuoteGuard />
       <SubmitReliabilityGuard />
 
-      <CustomerPhoneLookup customers={customers} vehicles={vehicles} />
+      <CustomerPhoneLookup customers={customersResult.data ?? []} vehicles={vehiclesResult.data ?? []} />
 
       <QuoteBuilder
-        customers={customers}
-        vehicles={vehicles}
+        customers={customersResult.data ?? []}
+        vehicles={vehiclesResult.data ?? []}
         laborServices={laborResult.data ?? []}
+        serviceCatalog={servicesResult.data ?? []}
         errorMessage={quoteErrorMessage(query.error)}
       />
     </>
