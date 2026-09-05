@@ -20,24 +20,38 @@ function failure(code: QuoteErrorCode): never {
 
 function singleRawText(formData: FormData, name: string): string {
   const values = formData.getAll(name);
-
-  if (values.length !== 1 || typeof values[0] !== "string") {
-    return failure("payload_invalid");
-  }
-
+  if (values.length !== 1 || typeof values[0] !== "string") return failure("payload_invalid");
   return values[0];
 }
 
 function parseMileage(raw: string): number | null {
   if (!raw) return null;
-
   const normalized = raw.replace(/\D/g, "");
   if (!normalized) return null;
-
   const value = Number(normalized);
   if (!Number.isFinite(value) || value < 0 || value > 9_999_999) return null;
-
   return Math.trunc(value);
+}
+
+export async function saveServiceLaborAction(
+  serviceId: string,
+  amount: number,
+): Promise<void> {
+  const { supabase, organization } = await getCurrentContext();
+
+  if (!isUuid(serviceId) || !Number.isFinite(amount) || amount < 0 || amount > 999_999_999) {
+    throw new Error("Valor de mão de obra inválido.");
+  }
+
+  const { error } = await supabase
+    .from("service_catalog")
+    .update({ default_labor_amount: Math.round(amount * 100) / 100 })
+    .eq("id", serviceId)
+    .eq("organization_id", organization.id);
+
+  if (error) throw new Error("Não foi possível salvar a mão de obra.");
+
+  revalidatePath("/dashboard/orcamentos/novo");
 }
 
 export async function createQuoteV2Action(formData: FormData): Promise<never> {
@@ -59,9 +73,7 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
     notesRaw.length > MAX_NOTES_CHARS ||
     servicesInput.length > MAX_SERVICES_JSON_CHARS ||
     itemsInput.length > MAX_ITEMS_JSON_CHARS
-  ) {
-    return failure("payload_invalid");
-  }
+  ) return failure("payload_invalid");
 
   const customerId = customerIdRaw.trim();
   const vehicleId = vehicleIdRaw.trim();
