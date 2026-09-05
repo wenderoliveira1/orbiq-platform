@@ -78,7 +78,6 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
           <div className="quote-detail-back no-print"><Link href="/dashboard/orcamentos">← Orçamentos</Link></div>
           <div className="quote-title-lockup">
             <span className="orbiq-eyebrow">ORBIQ</span>
-            <span className="quote-title-type">ORÇAMENTO</span>
           </div>
           <h1>{quote.protocol}</h1>
           <div className="quote-detail-meta">
