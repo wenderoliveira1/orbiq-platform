@@ -125,12 +125,12 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         </div>
 
         <div className="no-print" style={{ marginBottom: 16 }}>
-          <form action={addQuoteServiceAction} className="quote-status-form">
+          <form action={addQuoteServiceAction} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
             <input type="hidden" name="quote_id" value={quote.id} />
-            <input name="category" placeholder="Categoria" aria-label="Categoria do serviço" />
-            <input name="description" placeholder="Novo serviço" aria-label="Descrição do serviço" required />
-            <input name="labor_amount" type="number" min="0" step="0.01" placeholder="Mão de obra (R$)" aria-label="Valor da mão de obra" />
-            <label style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}><input name="needs_part" type="checkbox" /> Peça?</label>
+            <input name="category" placeholder="Categoria" aria-label="Categoria do serviço" style={{ flex: "0 1 150px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
+            <input name="description" placeholder="Novo serviço" aria-label="Descrição do serviço" required style={{ flex: "1 1 240px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
+            <input name="labor_amount" type="number" min="0" step="0.01" placeholder="Mão de obra (R$)" aria-label="Valor da mão de obra" style={{ flex: "0 1 150px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
+            <label style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", fontSize: 11 }}><input name="needs_part" type="checkbox" /> Peça?</label>
             <button type="submit" className="orbiq-primary-button">+ Adicionar serviço</button>
           </form>
         </div>
@@ -139,9 +139,9 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
           <div className="orbiq-empty compact"><strong>Nenhum serviço registrado.</strong></div>
         ) : (
           <div className="quote-detail-table">
-            <div className="quote-detail-table-head service-table"><span>Categoria</span><span>Serviço</span><span>Peça?</span><span>Mão de obra</span><span>Ação</span></div>
+            <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 100px 90px" }}><span>Categoria</span><span>Serviço</span><span>Peça?</span><span>Mão de obra</span><span>Ação</span></div>
             {services.map((service) => (
-              <div key={service.id} className="quote-detail-table-row service-table">
+              <div key={service.id} className="quote-detail-table-row service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 100px 90px" }}>
                 <span>{service.category}</span>
                 <strong>{service.description}</strong>
                 <span>{service.needs_part ? "Sim" : "Não"}</span>
