@@ -1,5 +1,6 @@
 import { getCurrentContext } from "../../_lib/current-organization";
 
+import { CustomerPhoneLookup } from "./customer-phone-lookup";
 import { QuoteBuilder } from "./quote-builder";
 import { quoteErrorMessage } from "./quote-errors";
 import { SubmitReliabilityGuard } from "./submit-reliability-guard";
@@ -42,14 +43,19 @@ export default async function NewQuotePage({
     throw new Error("Não foi possível carregar os dados do novo orçamento.");
   }
 
+  const customers = customersResult.data ?? [];
+  const vehicles = vehiclesResult.data ?? [];
+
   return (
     <>
       <UnsavedQuoteGuard />
       <SubmitReliabilityGuard />
 
+      <CustomerPhoneLookup customers={customers} vehicles={vehicles} />
+
       <QuoteBuilder
-        customers={customersResult.data ?? []}
-        vehicles={vehiclesResult.data ?? []}
+        customers={customers}
+        vehicles={vehicles}
         laborServices={laborResult.data ?? []}
         errorMessage={quoteErrorMessage(query.error)}
       />
