@@ -15,6 +15,9 @@ a { color: inherit; }
 button, input { font: inherit; }
 button { cursor: pointer; }
 
+/* Conteúdo digitado em cadastros e operação fica visualmente padronizado em maiúsculas. */
+input[type="text"], input[type="tel"], input[type="email"], input[type="search"], textarea, select { text-transform: uppercase; }
+
 .auth-shell { min-height: 100vh; display: grid; grid-template-columns: 1.06fr .94fr; }
 .auth-shell.single { grid-template-columns: 1fr; }
 .brand-panel { background: var(--dark); color: white; padding: 48px; display: flex; flex-direction: column; justify-content: space-between; }
@@ -95,198 +98,32 @@ button { cursor: pointer; }
 }
 
 /* ORBIQ INVITE 1.7A START */
-
-.invite-shell {
-  min-height: 100vh;
-  padding: 32px 18px;
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(
-      circle at 50% 0%,
-      #ffffff 0%,
-      #f5f7fa 48%,
-      #eef1f5 100%
-    );
-}
-
-.invite-card {
-  width: min(560px, 100%);
-  padding: 34px;
-  display: grid;
-  gap: 14px;
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  background: #ffffff;
-  box-shadow: 0 20px 70px rgba(16,24,40,.08);
-}
-
-.invite-brand {
-  margin-bottom: 9px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.invite-brand > span {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  border-radius: 11px;
-  background: var(--red);
-  color: #ffffff;
-  font-weight: 900;
-}
-
-.invite-brand strong {
-  letter-spacing: .08em;
-}
-
-.invite-eyebrow {
-  color: var(--red);
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .12em;
-}
-
-.invite-card h1 {
-  margin: 0;
-  font-size: clamp(27px, 5vw, 38px);
-  line-height: 1.05;
-  letter-spacing: -.04em;
-}
-
-.invite-card > p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.invite-details {
-  margin: 7px 0;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.invite-details > div {
-  min-height: 78px;
-  padding: 11px;
-  display: grid;
-  align-content: center;
-  gap: 5px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: #fafafa;
-}
-
-.invite-details span {
-  color: var(--muted);
-  font-size: 8px;
-  font-weight: 800;
-}
-
-.invite-details strong {
-  overflow-wrap: anywhere;
-  font-size: 10px;
-}
-
-.invite-actions {
-  display: grid;
-  gap: 8px;
-}
-
-.invite-primary,
-.invite-secondary {
-  min-height: 46px;
-  padding: 0 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 11px;
-  font-size: 12px;
-  font-weight: 850;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.invite-primary {
-  border: 1px solid var(--dark);
-  background: var(--dark);
-  color: #ffffff;
-}
-
-.invite-secondary {
-  border: 1px solid var(--line);
-  background: #ffffff;
-  color: var(--ink);
-}
-
-.invite-error {
-  padding: 11px 12px;
-  border: 1px solid #fecdd3;
-  border-radius: 10px;
-  background: #fff1f2;
-  color: #b42318;
-  font-size: 11px;
-}
-
-.invite-wrong-user {
-  padding: 14px;
-  display: grid;
-  gap: 6px;
-  border: 1px solid #fde68a;
-  border-radius: 12px;
-  background: #fffbeb;
-}
-
-.invite-wrong-user strong {
-  font-size: 12px;
-}
-
-.invite-wrong-user span {
-  color: #92400e;
-  font-size: 10px;
-}
-
-.invite-wrong-user form {
-  margin-top: 5px;
-}
-
-.invite-wrong-user button {
-  width: 100%;
-}
-
-.invite-security {
-  margin-top: 7px;
-  color: var(--muted);
-  text-align: center;
-  font-size: 9px;
-}
-
-
+.invite-shell { min-height: 100vh; padding: 32px 18px; display: grid; place-items: center; background: radial-gradient(circle at 50% 0%, #ffffff 0%, #f5f7fa 48%, #eef1f5 100%); }
+.invite-card { width: min(560px, 100%); padding: 34px; display: grid; gap: 14px; border: 1px solid var(--line); border-radius: 24px; background: #ffffff; box-shadow: 0 20px 70px rgba(16,24,40,.08); }
+.invite-brand { margin-bottom: 9px; display: flex; align-items: center; gap: 10px; }
+.invite-brand > span { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 11px; background: var(--red); color: #ffffff; font-weight: 900; }
+.invite-brand strong { letter-spacing: .08em; }
+.invite-eyebrow { color: var(--red); font-size: 10px; font-weight: 900; letter-spacing: .12em; }
+.invite-card h1 { margin: 0; font-size: clamp(27px, 5vw, 38px); line-height: 1.05; letter-spacing: -.04em; }
+.invite-card > p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.invite-details { margin: 7px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.invite-details > div { min-height: 78px; padding: 11px; display: grid; align-content: center; gap: 5px; border: 1px solid var(--line); border-radius: 11px; background: #fafafa; }
+.invite-details span { color: var(--muted); font-size: 8px; font-weight: 800; }
+.invite-details strong { overflow-wrap: anywhere; font-size: 10px; }
+.invite-actions { display: grid; gap: 8px; }
+.invite-primary, .invite-secondary { min-height: 46px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; border-radius: 11px; font-size: 12px; font-weight: 850; text-decoration: none; cursor: pointer; }
+.invite-primary { border: 1px solid var(--dark); background: var(--dark); color: #ffffff; }
+.invite-secondary { border: 1px solid var(--line); background: #ffffff; color: var(--ink); }
+.invite-error { padding: 11px 12px; border: 1px solid #fecdd3; border-radius: 10px; background: #fff1f2; color: #b42318; font-size: 11px; }
+.invite-wrong-user { padding: 14px; display: grid; gap: 6px; border: 1px solid #fde68a; border-radius: 12px; background: #fffbeb; }
+.invite-wrong-user strong { font-size: 12px; }
+.invite-wrong-user span { color: #92400e; font-size: 10px; }
+.invite-wrong-user form { margin-top: 5px; }
+.invite-wrong-user button { width: 100%; }
+.invite-security { margin-top: 7px; color: var(--muted); text-align: center; font-size: 9px; }
 @media (max-width: 600px) {
-
-  .invite-shell {
-    padding: 0;
-    place-items: stretch;
-  }
-
-  .invite-card {
-    width: 100%;
-    min-height: 100vh;
-    padding: 28px 20px;
-    align-content: center;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  .invite-details {
-    grid-template-columns: 1fr;
-  }
+  .invite-shell { padding: 0; place-items: stretch; }
+  .invite-card { width: 100%; min-height: 100vh; padding: 28px 20px; align-content: center; border: 0; border-radius: 0; box-shadow: none; }
+  .invite-details { grid-template-columns: 1fr; }
 }
-
 /* ORBIQ INVITE 1.7A END */
