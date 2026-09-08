@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 type Customer = {
   id: string;
+  customer_number: number;
   name: string;
   phone: string | null;
 };
@@ -22,8 +23,12 @@ type Props = {
   vehicles: Vehicle[];
 };
 
-function digits(value: string | null) {
+function digits(value: string | number | null) {
   return String(value ?? "").replace(/\D/g, "");
+}
+
+function displayCustomerNumber(value: number) {
+  return String(value).padStart(6, "0");
 }
 
 function setSelectValue(name: string, value: string) {
@@ -36,24 +41,24 @@ function setSelectValue(name: string, value: string) {
 }
 
 export function CustomerPhoneLookup({ customers, vehicles }: Props) {
-  const [phone, setPhone] = useState("");
+  const [customerNumber, setCustomerNumber] = useState("");
 
   const customer = useMemo(() => {
-    const query = digits(phone);
-    if (query.length < 4) return null;
-    return customers.find((item) => digits(item.phone) === query) ?? null;
-  }, [customers, phone]);
+    const query = digits(customerNumber);
+    if (!query) return null;
+    return customers.find((item) => digits(item.customer_number) === query) ?? null;
+  }, [customers, customerNumber]);
 
   const customerVehicles = useMemo(
     () => (customer ? vehicles.filter((vehicle) => vehicle.customer_id === customer.id) : []),
     [customer, vehicles],
   );
 
-  function handlePhoneChange(value: string) {
-    setPhone(value);
+  function handleCustomerNumberChange(value: string) {
     const query = digits(value);
-    const found = customers.find((item) => digits(item.phone) === query && query.length >= 4);
+    setCustomerNumber(query);
 
+    const found = customers.find((item) => digits(item.customer_number) === query);
     if (!found) return;
 
     setSelectValue("customer_id", found.id);
@@ -69,33 +74,33 @@ export function CustomerPhoneLookup({ customers, vehicles }: Props) {
       <div className="orbiq-panel-heading">
         <div>
           <span className="orbiq-eyebrow">CLIENTE EXISTENTE</span>
-          <h2>Buscar pelo telefone</h2>
+          <h2>Buscar pelo número</h2>
         </div>
       </div>
 
       <div className="orbiq-form">
         <label>
-          <span>Telefone do cliente</span>
+          <span>Número do cliente</span>
           <input
-            value={phone}
-            onChange={(event) => handlePhoneChange(event.target.value)}
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="Digite o telefone cadastrado"
+            value={customerNumber}
+            onChange={(event) => handleCustomerNumberChange(event.target.value)}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="EX.: 000001"
           />
         </label>
 
         {customer ? (
           <div className="orbiq-alert success">
-            <strong>{customer.name}</strong>
+            <strong>Nº {displayCustomerNumber(customer.customer_number)} · {customer.name}</strong>
             {customerVehicles.length === 1
               ? ` • ${[customerVehicles[0].brand, customerVehicles[0].model].filter(Boolean).join(" ")} • ${customerVehicles[0].plate}`
               : customerVehicles.length > 1
                 ? ` • ${customerVehicles.length} veículos encontrados — selecione o veículo abaixo.`
                 : " • Cliente encontrado, mas sem veículo cadastrado."}
           </div>
-        ) : digits(phone).length >= 4 ? (
-          <div className="orbiq-alert error">Nenhum cliente encontrado com esse telefone.</div>
+        ) : customerNumber ? (
+          <div className="orbiq-alert error">Nenhum cliente encontrado com esse número.</div>
         ) : null}
       </div>
     </section>
