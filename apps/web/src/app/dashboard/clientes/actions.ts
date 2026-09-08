@@ -9,8 +9,12 @@ function text(value: FormDataEntryValue | null) {
   return String(value ?? "").trim();
 }
 
+function upper(value: FormDataEntryValue | null) {
+  return text(value).toLocaleUpperCase("pt-BR");
+}
+
 function optional(value: FormDataEntryValue | null) {
-  const result = text(value);
+  const result = upper(value);
   return result.length ? result : null;
 }
 
@@ -20,7 +24,7 @@ function customersUrl(kind: "ok" | "error", message: string) {
 
 export async function createCustomerAction(formData: FormData) {
   const { supabase, organization, user } = await getCurrentContext();
-  const name = text(formData.get("name"));
+  const name = upper(formData.get("name"));
   const phone = optional(formData.get("phone"));
   const email = optional(formData.get("email"));
   const notes = optional(formData.get("notes"));
@@ -50,7 +54,7 @@ export async function createCustomerAction(formData: FormData) {
 export async function updateCustomerAction(formData: FormData) {
   const { supabase, organization } = await getCurrentContext();
   const id = text(formData.get("id"));
-  const name = text(formData.get("name"));
+  const name = upper(formData.get("name"));
   const phone = optional(formData.get("phone"));
   const email = optional(formData.get("email"));
   const notes = optional(formData.get("notes"));
