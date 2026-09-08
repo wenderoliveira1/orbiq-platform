@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getCurrentContext } from "../../_lib/current-organization";
-import { PRIORITY_LABELS, QUOTE_STATUSES, statusLabel } from "../quote-meta";
+import { QUOTE_STATUSES } from "../quote-meta";
 import {
   addQuoteServiceAction,
   deleteQuoteServiceAction,
@@ -19,15 +19,6 @@ const money = (value: number | null) =>
   value === null
     ? "—"
     : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-
-const date = (value: string) =>
-  new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 
 const qty = (value: number) =>
   new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 }).format(value);
