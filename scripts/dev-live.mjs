@@ -70,15 +70,9 @@ function probe(sql) {
   return /\btrue\b/i.test(result.stdout ?? "");
 }
 
-function ensureLocalSupabase() {
-  const status = capture(pnpmCommand, shellArgs(["exec", "supabase", "status"]));
-  if (status.status === 0) return;
-  run(pnpmCommand, shellArgs(["exec", "supabase", "start"]));
-
-  const retry = capture(pnpmCommand, shellArgs(["exec", "supabase", "status"]));
-  if (retry.status !== 0) {
-    throw new Error("Supabase local não iniciou. Verifique se o Docker Desktop está aberto.");
-  }
+function prepareExistingLocalSchema() {
+  console.log("[INFO] Alinhando o schema base do Supabase local...");
+  run(pnpmCommand, shellArgs(["prepare:local"]));
 }
 
 function applyPendingMigrations() {
@@ -141,7 +135,7 @@ function main() {
   console.log("============================================================");
   console.log(" ORBIQ LIVE — DOCKER + SUPABASE LOCAL");
   console.log("============================================================");
-  ensureLocalSupabase();
+  prepareExistingLocalSchema();
   applyPendingMigrations();
   startWeb();
 }
