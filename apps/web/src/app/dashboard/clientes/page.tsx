@@ -28,7 +28,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
 
   const { data, error } = await supabase
     .from("customers")
-    .select("id, customer_number, name, phone, email, notes, created_at")
+    .select("id, name, phone, email, notes, created_at")
     .eq("organization_id", organization.id)
     .order("name", { ascending: true });
 
