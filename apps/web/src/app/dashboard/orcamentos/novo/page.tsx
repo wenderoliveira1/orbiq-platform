@@ -15,9 +15,9 @@ export default async function NewQuotePage({ searchParams }: { searchParams: Sea
   const { supabase, organization } = await getCurrentContext();
 
   const [customersResult, vehiclesResult, servicesResult] = await Promise.all([
-    supabase.from("customers").select("id, name, phone").eq("organization_id", organization.id).order("name", { ascending: true }),
+    supabase.from("customers").select("id, customer_number, name, phone").eq("organization_id", organization.id).order("customer_number", { ascending: true }),
     supabase.from("vehicles").select("id, customer_id, plate, brand, model, version, model_year, mileage").eq("organization_id", organization.id).order("plate", { ascending: true }),
-    supabase.from("service_catalog").select("id, category, description, default_labor_amount").eq("organization_id", organization.id).eq("active", true).order("category", { ascending: true }).order("description", { ascending: true }),
+    supabase.from("service_catalog").select("id, category, description, default_labor_amount, requires_part").eq("organization_id", organization.id).eq("active", true).order("category", { ascending: true }).order("description", { ascending: true }),
   ]);
 
   if (customersResult.error || vehiclesResult.error || servicesResult.error) {
