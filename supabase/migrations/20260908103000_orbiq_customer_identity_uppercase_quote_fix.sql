@@ -80,54 +80,47 @@ begin
 end;
 $$;
 
--- Clientes
- drop trigger if exists orbiq_uppercase_customers on public.customers;
+drop trigger if exists orbiq_uppercase_customers on public.customers;
 create trigger orbiq_uppercase_customers
 before insert or update on public.customers
 for each row execute function public.orbiq_uppercase_business_text();
 
--- Veiculos
- drop trigger if exists orbiq_uppercase_vehicles on public.vehicles;
+drop trigger if exists orbiq_uppercase_vehicles on public.vehicles;
 create trigger orbiq_uppercase_vehicles
 before insert or update on public.vehicles
 for each row execute function public.orbiq_uppercase_business_text();
 
--- Servicos
- drop trigger if exists orbiq_uppercase_service_catalog on public.service_catalog;
+drop trigger if exists orbiq_uppercase_service_catalog on public.service_catalog;
 create trigger orbiq_uppercase_service_catalog
 before insert or update on public.service_catalog
 for each row execute function public.orbiq_uppercase_business_text();
 
--- Orcamentos
- drop trigger if exists orbiq_uppercase_quotes on public.quotes;
+drop trigger if exists orbiq_uppercase_quotes on public.quotes;
 create trigger orbiq_uppercase_quotes
 before insert or update on public.quotes
 for each row execute function public.orbiq_uppercase_business_text();
 
--- Servicos do orcamento
- drop trigger if exists orbiq_uppercase_quote_services on public.quote_services;
+drop trigger if exists orbiq_uppercase_quote_services on public.quote_services;
 create trigger orbiq_uppercase_quote_services
 before insert or update on public.quote_services
 for each row execute function public.orbiq_uppercase_business_text();
 
--- Pecas
- drop trigger if exists orbiq_uppercase_quote_items on public.quote_items;
+drop trigger if exists orbiq_uppercase_quote_items on public.quote_items;
 create trigger orbiq_uppercase_quote_items
 before insert or update on public.quote_items
 for each row execute function public.orbiq_uppercase_business_text();
 
--- Fornecedores / categorias / mao de obra
- drop trigger if exists orbiq_uppercase_suppliers on public.suppliers;
+drop trigger if exists orbiq_uppercase_suppliers on public.suppliers;
 create trigger orbiq_uppercase_suppliers
 before insert or update on public.suppliers
 for each row execute function public.orbiq_uppercase_business_text();
 
- drop trigger if exists orbiq_uppercase_supplier_categories on public.supplier_categories;
+drop trigger if exists orbiq_uppercase_supplier_categories on public.supplier_categories;
 create trigger orbiq_uppercase_supplier_categories
 before insert or update on public.supplier_categories
 for each row execute function public.orbiq_uppercase_business_text();
 
- drop trigger if exists orbiq_uppercase_labor_items on public.labor_items;
+drop trigger if exists orbiq_uppercase_labor_items on public.labor_items;
 create trigger orbiq_uppercase_labor_items
 before insert or update on public.labor_items
 for each row execute function public.orbiq_uppercase_business_text();
@@ -151,29 +144,26 @@ insert into public.service_catalog (organization_id, category, description, defa
 select o.id, seed.category, seed.description, 0
 from public.organizations o
 cross join (values
-    ('MECANICA', 'TROCA COXIM MOTOR'),
-    ('MECANICA', 'TROCA BOMBA DE COMBUSTIVEL'),
-    ('MECANICA', 'TROCA CORREIA DE ACESSORIOS'),
-    ('MECANICA', 'TROCA BOMBA D AGUA'),
-    ('MECANICA', 'TROCA VELAS DE IGNICAO'),
-    ('MECANICA', 'TROCA FILTRO DE COMBUSTIVEL'),
-    ('SUSPENSAO', 'TROCA PIVO'),
-    ('SUSPENSAO', 'TROCA AMORTECEDOR'),
+    ('MECÂNICA', 'TROCA COXIM MOTOR'),
+    ('MECÂNICA', 'TROCA BOMBA DE COMBUSTÍVEL'),
+    ('MECÂNICA', 'TROCA CORREIA DE ACESSÓRIOS'),
+    ('MECÂNICA', 'TROCA BOMBA D\'ÁGUA'),
+    ('MECÂNICA', 'TROCA VELAS DE IGNIÇÃO'),
+    ('MECÂNICA', 'TROCA FILTRO DE COMBUSTÍVEL'),
+    ('SUSPENSÃO', 'TROCA PIVÔ'),
+    ('SUSPENSÃO', 'TROCA AMORTECEDOR'),
     ('FREIOS', 'TROCA PASTILHAS DE FREIO'),
     ('FREIOS', 'TROCA DISCO DE FREIO'),
-    ('DIRECAO', 'TROCA TERMINAL DE DIRECAO'),
+    ('DIREÇÃO', 'TROCA TERMINAL DE DIREÇÃO'),
     ('ARREFECIMENTO', 'SUBSTITUIR RADIADOR'),
-    ('ELETRICA', 'DIAGNOSTICO ELETRICO'),
-    ('MOTOR', 'DIAGNOSTICO DE FALHA DO MOTOR'),
-    ('CAMBIO', 'TROCA DE OLEO DO CAMBIO')
+    ('ELÉTRICA', 'DIAGNÓSTICO ELÉTRICO'),
+    ('MOTOR', 'DIAGNÓSTICO DE FALHA DO MOTOR'),
+    ('CÂMBIO', 'TROCA DE ÓLEO DO CÂMBIO')
 ) as seed(category, description)
 on conflict do nothing;
 
 -- ===========================================================
 -- 4. RPC DE ORCAMENTO CORRIGIDA
---    A TELA USA service_catalog; a RPC antiga buscava
---    labor_services. Agora o servico selecionado consulta
---    o valor salvo no service_catalog.
 -- ===========================================================
 
 create or replace function public.create_quote_v2(
