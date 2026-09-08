@@ -22,24 +22,24 @@ function digits(value: string | null) {
 
 export default async function CustomersPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
-  const q = String(params.q ?? "").trim().toLocaleLowerCase("pt-BR");
-  const phoneQuery = digits(params.q ?? "");
+  const q = String(params.q ?? "").trim().toLocaleUpperCase("pt-BR");
+  const numberQuery = digits(params.q ?? "");
   const { supabase, organization } = await getCurrentContext();
 
   const { data, error } = await supabase
     .from("customers")
-    .select("id, name, phone, email, notes, created_at")
+    .select("id, customer_number, name, phone, email, notes, created_at")
     .eq("organization_id", organization.id)
-    .order("name", { ascending: true });
+    .order("customer_number", { ascending: true });
 
   if (error) throw new Error(`Falha ao carregar clientes: ${error.message}`);
 
   const customers = (data ?? []).filter((customer) => {
     if (!q) return true;
-    if (phoneQuery.length >= 4) return digits(customer.phone).includes(phoneQuery);
+    if (numberQuery) return String(customer.customer_number) === numberQuery;
     return [customer.name, customer.email]
       .filter(Boolean)
-      .some((item) => String(item).toLocaleLowerCase("pt-BR").includes(q));
+      .some((item) => String(item).toLocaleUpperCase("pt-BR").includes(q));
   });
 
   return (
@@ -48,7 +48,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
         <div>
           <span className="orbiq-eyebrow">CLIENTES</span>
           <h1>Clientes da oficina</h1>
-          <p>Cadastre uma vez e reutilize o cliente em veículos, orçamentos e histórico de atendimento.</p>
+          <p>Use o número do cliente para localizar rapidamente mesmo quando houver nomes iguais.</p>
         </div>
         <span className="orbiq-count-badge">{customers.length} exibidos</span>
       </section>
@@ -68,13 +68,13 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
           <form action={createCustomerAction} className="orbiq-form">
             <label>
               <span>Nome e sobrenome *</span>
-              <input name="name" required minLength={2} placeholder="Ex.: João da Silva" autoComplete="name" />
+              <input name="name" required minLength={2} placeholder="NOME E SOBRENOME" autoComplete="name" />
             </label>
             <div className="orbiq-form-row">
               <label><span>Telefone</span><input name="phone" inputMode="tel" placeholder="(21) 99999-9999" autoComplete="tel" /></label>
-              <label><span>E-mail</span><input name="email" type="email" placeholder="cliente@email.com" autoComplete="email" /></label>
+              <label><span>E-mail</span><input name="email" type="email" placeholder="CLIENTE@EMAIL.COM" autoComplete="email" /></label>
             </div>
-            <label><span>Observações</span><textarea name="notes" rows={4} placeholder="Informações úteis sobre o cliente..." /></label>
+            <label><span>Observações</span><textarea name="notes" rows={4} placeholder="INFORMAÇÕES ÚTEIS SOBRE O CLIENTE..." /></label>
             <button type="submit" className="orbiq-primary-button">Cadastrar cliente</button>
           </form>
         </article>
@@ -83,7 +83,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
           <div className="orbiq-panel-heading customers-heading">
             <div><span className="orbiq-eyebrow">BASE DA OFICINA</span><h2>Clientes cadastrados</h2></div>
             <form className="orbiq-search" action="/dashboard/clientes">
-              <input name="q" defaultValue={params.q ?? ""} inputMode="tel" placeholder="Buscar por telefone" />
+              <input name="q" defaultValue={params.q ?? ""} inputMode="numeric" placeholder="Buscar por nº do cliente" />
               <button type="submit" className="orbiq-secondary-button">Buscar</button>
             </form>
           </div>
@@ -102,6 +102,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
                     <div className="orbiq-record-main">
                       <strong>{customer.name}</strong>
                       <div className="orbiq-meta">
+                        <span>Nº {String(customer.customer_number).padStart(6, "0")}</span>
                         <span>{customer.phone || "Sem telefone"}</span>
                         <span>{customer.email || "Sem e-mail"}</span>
                       </div>
@@ -111,6 +112,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
                       <summary>Editar</summary>
                       <form action={updateCustomerAction} className="orbiq-form edit-form">
                         <input type="hidden" name="id" value={customer.id} />
+                        <label><span>Número do cliente</span><input value={`Nº ${String(customer.customer_number).padStart(6, "0")}`} readOnly /></label>
                         <label><span>Nome e sobrenome *</span><input name="name" required minLength={2} defaultValue={customer.name} /></label>
                         <div className="orbiq-form-row">
                           <label><span>Telefone</span><input name="phone" inputMode="tel" defaultValue={value(customer.phone)} /></label>
