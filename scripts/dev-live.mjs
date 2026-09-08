@@ -16,7 +16,7 @@ const migrations = [
   {
     id: "ATENDIMENTO-02",
     file: "20260908103000_orbiq_customer_identity_uppercase_quote_fix.sql",
-    probe: "select exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'customers' and column_name = 'customer_number') and to_regprocedure('public.create_quote_v2(uuid,uuid,uuid,text,integer,text,jsonb,jsonb)') is not null as ready;",
+    probe: "select to_regprocedure('public.create_quote_v2(uuid,uuid,uuid,text,integer,text,jsonb,jsonb)') is not null and exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'customers' and column_name = 'customer_number') as ready;",
   },
   {
     id: "ATENDIMENTO-03",
@@ -25,112 +25,57 @@ const migrations = [
   },
 ];
 
-function args(list) {
-  return windows ? ["/d", "/s", "/c", "pnpm", ...list] : list;
+function shellArgs(commandArgs) {
+  return windows ? ["/d", "/s", "/c", "pnpm", ...commandArgs] : commandArgs;
+}
+
+function execute(command, commandArgs, { capture = false, input } = {}) {
+  const result = spawnSync(command, commandArgs, {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    shell: false,
+    stdio: capture ? "pipe" : input === undefined ? "inherit" : ["pipe", "inherit", "inherit"],
+    input,
+  });
+  if (result.error) throw result.error;
+  return result;
 }
 
 function run(command, commandArgs, input) {
-  const result = spawnSync(command, commandArgs, {
-    cwd: process.cwd(),
-    stdio: input === undefined ? "inherit" : ["pipe", "inherit", "inherit"],
-    encoding: "utf8",
-    shell: false,
-    input,
-  });
-
-  if (result.error) throw result.error;
-  if (result.status !== 0) {
-    throw new Error(`Comando falhou com código ${result.status ?? "desconhecido"}.`);
-  }
+  const result = execute(command, commandArgs, { input });
+  if (result.status !== 0) throw new Error(`Comando falhou com código ${result.status ?? "desconhecido"}.`);
   return result;
 }
 
 function capture(command, commandArgs) {
-  const result = spawnSync(command, commandArgs, {
-    cwd: process.cwd(),
-    stdio: "pipe",
-    encoding: "utf8",
-    shell: false,
-  });
-  if (result.error) throw result.error;
-  return result;
+  return execute(command, commandArgs, { capture: true });
 }
 
 function psql(sql) {
   return run(
     dockerCommand,
-    [
-      "exec",
-      "-i",
-      dbContainer,
-      "psql",
-      "-U",
-      "postgres",
-      "-d",
-      "postgres",
-      "-X",
-      "-v",
-      "ON_ERROR_STOP=1",
-      "-f",
-      "-",
-    ],
+    ["exec", "-i", dbContainer, "psql", "-U", "postgres", "-d", "postgres", "-X", "-v", "ON_ERROR_STOP=1", "-f", "-"],
     sql,
   );
 }
 
 function probe(sql) {
-  const result = capture(
+  const result = execute(
     dockerCommand,
-    [
-      "exec",
-      "-i",
-      dbContainer,
-      "psql",
-      "-U",
-      "postgres",
-      "-d",
-      "postgres",
-      "-X",
-      "-t",
-      "-A",
-      "-v",
-      "ON_ERROR_STOP=1",
-      "-f",
-      "-",
-    ],
+    ["exec", "-i", dbContainer, "psql", "-U", "postgres", "-d", "postgres", "-X", "-t", "-A", "-v", "ON_ERROR_STOP=1", "-f", "-"],
+    { capture: true, input: `${sql.trim()}\n` },
   );
-  const probeResult = spawnSync(
-    dockerCommand,
-    [
-      "exec",
-      "-i",
-      dbContainer,
-      "psql",
-      "-U",
-      "postgres",
-      "-d",
-      "postgres",
-      "-X",
-      "-t",
-      "-A",
-      "-v",
-      "ON_ERROR_STOP=1",
-      "-f",
-      "-",
-    ],
-    { cwd: process.cwd(), input: `${sql.trim()}\n`, encoding: "utf8", shell: false, stdio: "pipe" },
-  );
-  if (probeResult.error || probeResult.status !== 0) throw new Error(probeResult.error?.message || probeResult.stderr || "Falha ao validar o schema local.");
-  return /\btrue\b/i.test(probeResult.stdout ?? "");
+  if (result.status !== 0) throw new Error(result.stderr || "Falha ao validar o schema local.");
+  return /\btrue\b/i.test(result.stdout ?? "");
 }
 
-function waitForLocalSupabase() {
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const status = capture(pnpmCommand, args(["exec", "supabase", "status"]));
-    if (status.status === 0) return;
-    run(pnpmCommand, args(["exec", "supabase", "start"]));
+function ensureLocalSupabase() {
+  const status = capture(pnpmCommand, shellArgs(["exec", "supabase", "status"]));
+  if (status.status === 0) return;
+  const started = run(pnpmCommand, shellArgs(["exec", "supabase", "start"]));
+  if (started.status !== 0) {
+    throw new Error("Supabase local não iniciou. Verifique se o Docker Desktop está aberto.");
   }
-  throw new Error("Supabase local não iniciou. Verifique se o Docker Desktop está aberto.");
 }
 
 function applyPendingMigrations() {
@@ -142,7 +87,7 @@ function applyPendingMigrations() {
 
     const migrationPath = resolve(process.cwd(), "supabase", "migrations", migration.file);
     const sql = readFileSync(migrationPath, "utf8");
-    console.log(`[INFO] Aplicando ${migration.file} no PostgreSQL local...`);
+    console.log(`[INFO] Aplicando ${migration.file} no banco Docker local...`);
     psql(`begin;\n${sql.trim()}\ncommit;\n`);
 
     if (!probe(migration.probe)) {
@@ -155,18 +100,19 @@ function applyPendingMigrations() {
 }
 
 function parseEnv(output) {
-  const env = {};
+  const values = {};
   for (const line of output.split(/\r?\n/)) {
     const match = line.trim().match(/^([A-Z0-9_]+)=(.*)$/);
     if (!match) continue;
-    env[match[1]] = match[2].replace(/^\"|\"$/g, "");
+    values[match[1]] = match[2].replace(/^\"|\"$/g, "");
   }
-  return env;
+  return values;
 }
 
 function startWeb() {
-  const status = capture(pnpmCommand, args(["exec", "supabase", "status", "-o", "env"]));
+  const status = capture(pnpmCommand, shellArgs(["exec", "supabase", "status", "-o", "env"]));
   if (status.status !== 0) throw new Error(status.stderr || "Não foi possível obter o ambiente do Supabase local.");
+
   const values = parseEnv(status.stdout ?? "");
   const apiUrl = values.API_URL;
   const publicKey = values.PUBLISHABLE_KEY ?? values.ANON_KEY;
@@ -176,18 +122,23 @@ function startWeb() {
   console.log("[OK] Schema de atendimento/orçamento validado");
   console.log("[INFO] Aplicação: http://localhost:3000");
 
-  run(
-    pnpmCommand,
-    args(["--filter", "web", "dev"]),
-    undefined,
-  );
+  const webEnv = {
+    ...process.env,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000",
+    NEXT_PUBLIC_SUPABASE_URL: apiUrl,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: publicKey,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: publicKey,
+  };
+
+  const result = execute(pnpmCommand, shellArgs(["--filter", "web", "dev"]), { capture: false });
+  if (result.status !== 0) process.exitCode = result.status ?? 1;
 }
 
 function main() {
   console.log("============================================================");
   console.log(" ORBIQ LIVE — DOCKER + SUPABASE LOCAL");
   console.log("============================================================");
-  waitForLocalSupabase();
+  ensureLocalSupabase();
   applyPendingMigrations();
   startWeb();
 }
