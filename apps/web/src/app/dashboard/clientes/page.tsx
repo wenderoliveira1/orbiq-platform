@@ -23,20 +23,20 @@ function digits(value: string | null) {
 export default async function CustomersPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const q = String(params.q ?? "").trim().toLocaleUpperCase("pt-BR");
-  const numberQuery = digits(params.q ?? "");
+  const phoneQuery = digits(params.q ?? "");
   const { supabase, organization } = await getCurrentContext();
 
   const { data, error } = await supabase
     .from("customers")
     .select("id, customer_number, name, phone, email, notes, created_at")
     .eq("organization_id", organization.id)
-    .order("customer_number", { ascending: true });
+    .order("name", { ascending: true });
 
   if (error) throw new Error(`Falha ao carregar clientes: ${error.message}`);
 
   const customers = (data ?? []).filter((customer) => {
     if (!q) return true;
-    if (numberQuery) return String(customer.customer_number) === numberQuery;
+    if (phoneQuery) return digits(customer.phone).includes(phoneQuery);
     return [customer.name, customer.email]
       .filter(Boolean)
       .some((item) => String(item).toLocaleUpperCase("pt-BR").includes(q));
@@ -48,7 +48,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
         <div>
           <span className="orbiq-eyebrow">CLIENTES</span>
           <h1>Clientes da oficina</h1>
-          <p>Use o número do cliente para localizar rapidamente mesmo quando houver nomes iguais.</p>
+          <p>Digite o telefone para localizar rapidamente o cliente, mesmo quando houver nomes iguais.</p>
         </div>
         <span className="orbiq-count-badge">{customers.length} exibidos</span>
       </section>
@@ -83,7 +83,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
           <div className="orbiq-panel-heading customers-heading">
             <div><span className="orbiq-eyebrow">BASE DA OFICINA</span><h2>Clientes cadastrados</h2></div>
             <form className="orbiq-search" action="/dashboard/clientes">
-              <input name="q" defaultValue={params.q ?? ""} inputMode="numeric" placeholder="Buscar por nº do cliente" />
+              <input name="q" defaultValue={params.q ?? ""} inputMode="tel" placeholder="Buscar por telefone" />
               <button type="submit" className="orbiq-secondary-button">Buscar</button>
             </form>
           </div>
@@ -91,7 +91,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
           {customers.length === 0 ? (
             <div className="orbiq-empty">
               <strong>{q ? "Nenhum cliente encontrado." : "Sua base está vazia."}</strong>
-              <span>{q ? "Confira o número informado e tente novamente." : "Cadastre o primeiro cliente no formulário ao lado."}</span>
+              <span>{q ? "Confira o telefone informado e tente novamente." : "Cadastre o primeiro cliente no formulário ao lado."}</span>
             </div>
           ) : (
             <div className="orbiq-record-list">
@@ -102,7 +102,6 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
                     <div className="orbiq-record-main">
                       <strong>{customer.name}</strong>
                       <div className="orbiq-meta">
-                        <span>Nº {String(customer.customer_number).padStart(6, "0")}</span>
                         <span>{customer.phone || "Sem telefone"}</span>
                         <span>{customer.email || "Sem e-mail"}</span>
                       </div>
@@ -112,7 +111,6 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
                       <summary>Editar</summary>
                       <form action={updateCustomerAction} className="orbiq-form edit-form">
                         <input type="hidden" name="id" value={customer.id} />
-                        <label><span>Número do cliente</span><input value={`Nº ${String(customer.customer_number).padStart(6, "0")}`} readOnly /></label>
                         <label><span>Nome e sobrenome *</span><input name="name" required minLength={2} defaultValue={customer.name} /></label>
                         <div className="orbiq-form-row">
                           <label><span>Telefone</span><input name="phone" inputMode="tel" defaultValue={value(customer.phone)} /></label>
