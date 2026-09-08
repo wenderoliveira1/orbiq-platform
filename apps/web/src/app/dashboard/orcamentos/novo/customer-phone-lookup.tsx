@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 
 type Customer = {
   id: string;
-  customer_number: number;
   name: string;
   phone: string | null;
 };
