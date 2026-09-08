@@ -29,11 +29,12 @@ function shellArgs(commandArgs) {
   return windows ? ["/d", "/s", "/c", "pnpm", ...commandArgs] : commandArgs;
 }
 
-function execute(command, commandArgs, { capture = false, input } = {}) {
+function execute(command, commandArgs, { capture = false, input, env = process.env } = {}) {
   const result = spawnSync(command, commandArgs, {
     cwd: process.cwd(),
     encoding: "utf8",
     shell: false,
+    env,
     stdio: capture ? "pipe" : input === undefined ? "inherit" : ["pipe", "inherit", "inherit"],
     input,
   });
@@ -41,14 +42,14 @@ function execute(command, commandArgs, { capture = false, input } = {}) {
   return result;
 }
 
-function run(command, commandArgs, input) {
-  const result = execute(command, commandArgs, { input });
+function run(command, commandArgs, input, env = process.env) {
+  const result = execute(command, commandArgs, { input, env });
   if (result.status !== 0) throw new Error(`Comando falhou com código ${result.status ?? "desconhecido"}.`);
   return result;
 }
 
-function capture(command, commandArgs) {
-  return execute(command, commandArgs, { capture: true });
+function capture(command, commandArgs, env = process.env) {
+  return execute(command, commandArgs, { capture: true, env });
 }
 
 function psql(sql) {
@@ -72,8 +73,10 @@ function probe(sql) {
 function ensureLocalSupabase() {
   const status = capture(pnpmCommand, shellArgs(["exec", "supabase", "status"]));
   if (status.status === 0) return;
-  const started = run(pnpmCommand, shellArgs(["exec", "supabase", "start"]));
-  if (started.status !== 0) {
+  run(pnpmCommand, shellArgs(["exec", "supabase", "start"]));
+
+  const retry = capture(pnpmCommand, shellArgs(["exec", "supabase", "status"]));
+  if (retry.status !== 0) {
     throw new Error("Supabase local não iniciou. Verifique se o Docker Desktop está aberto.");
   }
 }
@@ -118,10 +121,6 @@ function startWeb() {
   const publicKey = values.PUBLISHABLE_KEY ?? values.ANON_KEY;
   if (!apiUrl || !publicKey) throw new Error("Supabase local iniciou, mas API_URL/PUBLISHABLE_KEY não foram encontrados.");
 
-  console.log(`[OK] Banco local: ${apiUrl}`);
-  console.log("[OK] Schema de atendimento/orçamento validado");
-  console.log("[INFO] Aplicação: http://localhost:3000");
-
   const webEnv = {
     ...process.env,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL?.trim() || "http://localhost:3000",
@@ -130,7 +129,11 @@ function startWeb() {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: publicKey,
   };
 
-  const result = execute(pnpmCommand, shellArgs(["--filter", "web", "dev"]), { capture: false });
+  console.log(`[OK] Banco local: ${apiUrl}`);
+  console.log("[OK] Schema de atendimento/orçamento validado");
+  console.log("[INFO] Aplicação: http://localhost:3000");
+
+  const result = execute(pnpmCommand, shellArgs(["--filter", "web", "dev"]), { env: webEnv });
   if (result.status !== 0) process.exitCode = result.status ?? 1;
 }
 
