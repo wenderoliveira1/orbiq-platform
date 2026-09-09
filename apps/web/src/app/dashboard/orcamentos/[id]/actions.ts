@@ -24,12 +24,12 @@ async function refreshQuoteTotal(
   const [servicesResult, itemsResult] = await Promise.all([
     supabase
       .from("quote_services")
-      .select("labor_amount")
+      .select("labor_amount, quantity")
       .eq("organization_id", organizationId)
       .eq("quote_id", quoteId),
     supabase
       .from("quote_items")
-      .select("chosen_amount")
+      .select("chosen_amount, quantity")
       .eq("organization_id", organizationId)
       .eq("quote_id", quoteId),
   ]);
@@ -38,17 +38,19 @@ async function refreshQuoteTotal(
   if (itemsResult.error) return itemsResult.error.message;
 
   const laborTotal = (servicesResult.data ?? []).reduce(
-    (total, service) => total + (service.labor_amount ?? 0),
+    (total, service) =>
+      total + (service.labor_amount ?? 0) * (service.quantity ?? 1),
     0,
   );
   const partsTotal = (itemsResult.data ?? []).reduce(
-    (total, item) => total + (item.chosen_amount ?? 0),
+    (total, item) =>
+      total + (item.chosen_amount ?? 0) * (item.quantity ?? 1),
     0,
   );
 
   const { error } = await supabase
     .from("quotes")
-    .update({ final_amount: laborTotal + partsTotal })
+    .update({ final_amount: Math.round((laborTotal + partsTotal) * 100) / 100 })
     .eq("id", quoteId)
     .eq("organization_id", organizationId);
 
@@ -122,6 +124,7 @@ export async function addQuoteServiceAction(formData: FormData): Promise<never> 
   const category = text(formData.get("category"));
   const description = text(formData.get("description"));
   const laborRaw = text(formData.get("labor_amount"));
+  const quantityRaw = text(formData.get("quantity"));
   const needsPart = formData.get("needs_part") === "on";
 
   if (!quoteId) redirect("/dashboard/orcamentos");
@@ -131,8 +134,13 @@ export async function addQuoteServiceAction(formData: FormData): Promise<never> 
 
   const normalizedLabor = laborRaw.replace(/\./g, "").replace(",", ".");
   const laborAmount = normalizedLabor ? Number(normalizedLabor) : 0;
+  const normalizedQuantity = quantityRaw.replace(/\./g, "").replace(",", ".");
+  const quantity = normalizedQuantity ? Number(normalizedQuantity) : 1;
   if (!Number.isFinite(laborAmount) || laborAmount < 0 || laborAmount > 1_000_000) {
     return fail(quoteId, "Valor de mão de obra inválido.");
+  }
+  if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 100_000) {
+    return fail(quoteId, "Quantidade do serviço inválida.");
   }
 
   const { data: quote, error: quoteError } = await supabase
@@ -151,6 +159,7 @@ export async function addQuoteServiceAction(formData: FormData): Promise<never> 
     category: category || "Geral",
     description,
     needs_part: needsPart,
+    quantity,
     labor_amount: laborAmount,
   });
 
