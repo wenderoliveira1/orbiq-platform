@@ -1,0 +1,1 @@
+Canonical contract: quote_services.labor_amount is unit price; quote_services.quantity is quantity; line total is labor_amount * quantity; final quote total is sum of service line totals plus chosen parts totals.
