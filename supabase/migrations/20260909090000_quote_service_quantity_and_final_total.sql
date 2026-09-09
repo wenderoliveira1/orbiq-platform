@@ -17,6 +17,15 @@ alter table public.quote_services
     add constraint quote_services_quantity_check
     check (quantity > 0);
 
+-- The service labor amount is the UNIT price. Quantity is applied only when
+-- calculating the line total and the quote final amount.
+-- Rows created by the previous version of this migration stored line totals;
+-- normalize those rows back to unit prices before replacing the RPC.
+update public.quote_services
+set labor_amount = round(labor_amount / quantity, 2)
+where quantity > 1
+  and labor_amount is not null;
+
 create or replace function public.recalculate_quote_final_amount(target_quote_id uuid)
 returns void
 language plpgsql
@@ -38,7 +47,7 @@ begin
     update public.quotes
     set final_amount = round(
         coalesce((
-            select sum(coalesce(qs.labor_amount, 0))
+            select sum(coalesce(qs.labor_amount, 0) * coalesce(qs.quantity, 1))
             from public.quote_services qs
             where qs.quote_id = target_quote_id
         ), 0)
@@ -90,7 +99,7 @@ for each row execute function public.trg_recalculate_quote_final_amount();
 update public.quotes q
 set final_amount = round(
     coalesce((
-        select sum(coalesce(qs.labor_amount, 0))
+        select sum(coalesce(qs.labor_amount, 0) * coalesce(qs.quantity, 1))
         from public.quote_services qs
         where qs.quote_id = q.id
     ), 0)
@@ -260,7 +269,7 @@ begin
             service_description,
             service_needs_part,
             service_quantity,
-            round(service_unit_labor_amount * service_quantity, 2)
+            round(service_unit_labor_amount, 2)
         );
     end loop;
 
