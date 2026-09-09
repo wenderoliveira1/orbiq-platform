@@ -20,34 +20,14 @@ async function refreshQuoteTotal(
   quoteId: string,
 ): Promise<string | null> {
   const [servicesResult, itemsResult] = await Promise.all([
-    supabase
-      .from("quote_services")
-      .select("labor_amount, quantity")
-      .eq("organization_id", organizationId)
-      .eq("quote_id", quoteId),
-    supabase
-      .from("quote_items")
-      .select("chosen_amount, quantity")
-      .eq("organization_id", organizationId)
-      .eq("quote_id", quoteId),
+    supabase.from("quote_services").select("labor_amount, quantity").eq("organization_id", organizationId).eq("quote_id", quoteId),
+    supabase.from("quote_items").select("chosen_amount, quantity").eq("organization_id", organizationId).eq("quote_id", quoteId),
   ]);
   if (servicesResult.error) return servicesResult.error.message;
   if (itemsResult.error) return itemsResult.error.message;
-
-  const laborTotal = (servicesResult.data ?? []).reduce(
-    (total, service) => total + (service.labor_amount ?? 0) * (service.quantity ?? 1),
-    0,
-  );
-  const partsTotal = (itemsResult.data ?? []).reduce(
-    (total, item) => total + (item.chosen_amount ?? 0) * (item.quantity ?? 1),
-    0,
-  );
-
-  const { error } = await supabase
-    .from("quotes")
-    .update({ final_amount: Math.round((laborTotal + partsTotal) * 100) / 100 })
-    .eq("id", quoteId)
-    .eq("organization_id", organizationId);
+  const laborTotal = (servicesResult.data ?? []).reduce((total, service) => total + Number(service.labor_amount ?? 0) * Number(service.quantity ?? 1), 0);
+  const partsTotal = (itemsResult.data ?? []).reduce((total, item) => total + Number(item.chosen_amount ?? 0) * Number(item.quantity ?? 1), 0);
+  const { error } = await supabase.from("quotes").update({ final_amount: Math.round((laborTotal + partsTotal) * 100) / 100 }).eq("id", quoteId).eq("organization_id", organizationId);
   return error?.message ?? null;
 }
 
@@ -67,13 +47,7 @@ export async function updateQuoteStatusAction(formData: FormData): Promise<never
   if (!quoteId) redirect("/dashboard/orcamentos");
   const validStatus = QUOTE_STATUSES.some((item) => item.value === status);
   if (!validStatus) return fail(quoteId, "Status inválido.");
-  const { data, error } = await supabase
-    .from("quotes")
-    .update({ status })
-    .eq("id", quoteId)
-    .eq("organization_id", organization.id)
-    .select("id")
-    .maybeSingle();
+  const { data, error } = await supabase.from("quotes").update({ status }).eq("id", quoteId).eq("organization_id", organization.id).select("id").maybeSingle();
   if (error) return fail(quoteId, `Não foi possível alterar o status: ${error.message}`);
   if (!data) return fail(quoteId, "Orçamento não encontrado.");
   refreshQuotePaths(quoteId);
@@ -86,14 +60,7 @@ export async function deleteQuoteServiceAction(formData: FormData): Promise<neve
   const serviceId = text(formData.get("service_id"));
   if (!quoteId) redirect("/dashboard/orcamentos");
   if (!serviceId) return fail(quoteId, "Serviço inválido.");
-  const { data, error } = await supabase
-    .from("quote_services")
-    .delete()
-    .eq("id", serviceId)
-    .eq("quote_id", quoteId)
-    .eq("organization_id", organization.id)
-    .select("id")
-    .maybeSingle();
+  const { data, error } = await supabase.from("quote_services").delete().eq("id", serviceId).eq("quote_id", quoteId).eq("organization_id", organization.id).select("id").maybeSingle();
   if (error) return fail(quoteId, `Não foi possível excluir o serviço: ${error.message}`);
   if (!data) return fail(quoteId, "Serviço não encontrado.");
   const totalError = await refreshQuoteTotal(supabase, organization.id, quoteId);
@@ -122,24 +89,11 @@ export async function addQuoteServiceAction(formData: FormData): Promise<never> 
   if (!Number.isFinite(unitLabor) || unitLabor < 0 || unitLabor > 1_000_000) return fail(quoteId, "Valor de mão de obra inválido.");
   if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 100_000) return fail(quoteId, "Quantidade do serviço inválida.");
 
-  const { data: quote, error: quoteError } = await supabase
-    .from("quotes")
-    .select("id")
-    .eq("id", quoteId)
-    .eq("organization_id", organization.id)
-    .maybeSingle();
+  const { data: quote, error: quoteError } = await supabase.from("quotes").select("id").eq("id", quoteId).eq("organization_id", organization.id).maybeSingle();
   if (quoteError) return fail(quoteId, `Não foi possível validar o orçamento: ${quoteError.message}`);
   if (!quote) return fail(quoteId, "Orçamento não encontrado.");
 
-  const { error } = await supabase.from("quote_services").insert({
-    organization_id: organization.id,
-    quote_id: quoteId,
-    category: category || "Geral",
-    description,
-    needs_part: needsPart,
-    quantity,
-    labor_amount: Math.round(unitLabor * 100) / 100,
-  });
+  const { error } = await supabase.from("quote_services").insert({ organization_id: organization.id, quote_id: quoteId, category: category || "Geral", description, needs_part: needsPart, quantity, labor_amount: Math.round(unitLabor * 100) / 100 });
   if (error) return fail(quoteId, `Não foi possível adicionar o serviço: ${error.message}`);
 
   const totalError = await refreshQuoteTotal(supabase, organization.id, quoteId);
