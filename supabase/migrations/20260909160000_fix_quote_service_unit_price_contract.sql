@@ -3,6 +3,11 @@
 -- This migration reverses the previous line-total conversion for rows with quantity > 1,
 -- then makes all future quote creation and recalculation follow the unit-price contract.
 
+-- Disable the existing recalculation triggers while repairing legacy rows so the old
+-- line-total trigger cannot recalculate totals halfway through this migration.
+drop trigger if exists quote_services_recalculate_final_amount on public.quote_services;
+drop trigger if exists quote_items_recalculate_final_amount on public.quote_items;
+
 update public.quote_services
 set labor_amount = round(coalesce(labor_amount, 0) / nullif(quantity, 0), 2)
 where quantity <> 1
@@ -71,12 +76,10 @@ begin
 end;
 $$;
 
-drop trigger if exists quote_services_recalculate_final_amount on public.quote_services;
 create trigger quote_services_recalculate_final_amount
 after insert or update or delete on public.quote_services
 for each row execute function public.trg_recalculate_quote_final_amount();
 
-drop trigger if exists quote_items_recalculate_final_amount on public.quote_items;
 create trigger quote_items_recalculate_final_amount
 after insert or update or delete on public.quote_items
 for each row execute function public.trg_recalculate_quote_final_amount();
