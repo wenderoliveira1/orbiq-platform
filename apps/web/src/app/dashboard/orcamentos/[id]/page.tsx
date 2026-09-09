@@ -54,7 +54,10 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
   const vehicle = vehicleResult.data;
   const services = servicesResult.data ?? [];
   const items = itemsResult.data ?? [];
-  const laborTotal = services.reduce((sum, service) => sum + (service.labor_amount ?? 0), 0);
+  const laborTotal = services.reduce(
+    (sum, service) => sum + (service.labor_amount ?? 0) * (service.quantity ?? 1),
+    0,
+  );
   const partsTotal = items.reduce((sum, item) => sum + (item.chosen_amount ?? 0) * (item.quantity ?? 1), 0);
   const calculatedFinalTotal = laborTotal + partsTotal;
   const finalTotal = quote.final_amount ?? calculatedFinalTotal;
@@ -110,7 +113,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             <input type="hidden" name="quote_id" value={quote.id} />
             <input name="category" placeholder="Categoria" aria-label="Categoria do serviço" style={{ flex: "0 1 150px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
             <input name="description" placeholder="Novo serviço" aria-label="Descrição do serviço" required style={{ flex: "1 1 240px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
-            <input name="labor_amount" type="number" min="0" step="0.01" placeholder="Mão de obra (R$)" aria-label="Valor da mão de obra" style={{ flex: "0 1 150px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
+            <input name="labor_amount" type="number" min="0" step="0.01" placeholder="Mão de obra unitária (R$)" aria-label="Valor unitário da mão de obra" style={{ flex: "0 1 170px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
             <label style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", fontSize: 11 }}><input name="needs_part" type="checkbox" /> Peça?</label>
             <button type="submit" className="orbiq-primary-button">+ Adicionar serviço</button>
           </form>
@@ -120,21 +123,27 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
           <div className="orbiq-empty compact"><strong>Nenhum serviço registrado.</strong></div>
         ) : (
           <div className="quote-detail-table">
-            <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 110px 90px" }}><span>Categoria</span><span>Serviço</span><span>Qtd.</span><span>Peça?</span><span>Mão de obra</span><span>Ação</span></div>
-            {services.map((service) => (
-              <div key={service.id} className="quote-detail-table-row service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 110px 90px" }}>
-                <span>{service.category}</span>
-                <strong>{service.description}</strong>
-                <span>{qty(service.quantity ?? 1)}</span>
-                <span>{service.needs_part ? "Sim" : "Não"}</span>
-                <span>{money(service.labor_amount)}</span>
-                <form action={deleteQuoteServiceAction} className="no-print">
-                  <input type="hidden" name="quote_id" value={quote.id} />
-                  <input type="hidden" name="service_id" value={service.id} />
-                  <button type="submit" className="orbiq-secondary-button">Excluir</button>
-                </form>
-              </div>
-            ))}
+            <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 120px 120px 90px" }}><span>Categoria</span><span>Serviço</span><span>Qtd.</span><span>Peça?</span><span>Valor unit.</span><span>Total</span><span>Ação</span></div>
+            {services.map((service) => {
+              const quantity = service.quantity ?? 1;
+              const unitLabor = service.labor_amount ?? 0;
+              const lineTotal = unitLabor * quantity;
+              return (
+                <div key={service.id} className="quote-detail-table-row service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 120px 120px 90px" }}>
+                  <span>{service.category}</span>
+                  <strong>{service.description}</strong>
+                  <span>{qty(quantity)}</span>
+                  <span>{service.needs_part ? "Sim" : "Não"}</span>
+                  <span>{money(unitLabor)}</span>
+                  <strong>{money(lineTotal)}</strong>
+                  <form action={deleteQuoteServiceAction} className="no-print">
+                    <input type="hidden" name="quote_id" value={quote.id} />
+                    <input type="hidden" name="service_id" value={service.id} />
+                    <button type="submit" className="orbiq-secondary-button">Excluir</button>
+                  </form>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
