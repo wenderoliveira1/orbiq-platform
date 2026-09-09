@@ -128,8 +128,7 @@ begin
         service_quantity :=
             coalesce((service_entry ->> 'quantity')::numeric, 1);
 
-        if not isfinite(service_quantity)
-           or service_quantity <= 0
+        if service_quantity <= 0
            or service_quantity > 100000 then
             raise exception 'Invalid service quantity';
         end if;
@@ -163,8 +162,7 @@ begin
                 raise exception 'Service description is required';
             end if;
 
-            if not isfinite(service_unit_labor_amount)
-               or service_unit_labor_amount < 0
+            if service_unit_labor_amount < 0
                or service_unit_labor_amount > 1000000 then
                 raise exception 'Invalid labor amount';
             end if;
@@ -211,7 +209,7 @@ begin
         item_unit :=
             upper(btrim(coalesce(nullif(item_entry ->> 'unit', ''), 'UN')));
 
-        if not isfinite(item_quantity) or item_quantity <= 0 then
+        if item_quantity <= 0 then
             raise exception 'Purchase item quantity must be greater than zero';
         end if;
 
