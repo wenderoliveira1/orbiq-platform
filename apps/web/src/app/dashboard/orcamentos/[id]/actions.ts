@@ -20,14 +20,22 @@ async function refreshQuoteTotal(
   quoteId: string,
 ): Promise<string | null> {
   const [servicesResult, itemsResult] = await Promise.all([
-    supabase.from("quote_services").select("labor_amount").eq("organization_id", organizationId).eq("quote_id", quoteId),
-    supabase.from("quote_items").select("chosen_amount, quantity").eq("organization_id", organizationId).eq("quote_id", quoteId),
+    supabase
+      .from("quote_services")
+      .select("labor_amount, quantity")
+      .eq("organization_id", organizationId)
+      .eq("quote_id", quoteId),
+    supabase
+      .from("quote_items")
+      .select("chosen_amount, quantity")
+      .eq("organization_id", organizationId)
+      .eq("quote_id", quoteId),
   ]);
   if (servicesResult.error) return servicesResult.error.message;
   if (itemsResult.error) return itemsResult.error.message;
 
   const laborTotal = (servicesResult.data ?? []).reduce(
-    (total, service) => total + (service.labor_amount ?? 0),
+    (total, service) => total + (service.labor_amount ?? 0) * (service.quantity ?? 1),
     0,
   );
   const partsTotal = (itemsResult.data ?? []).reduce(
@@ -130,7 +138,7 @@ export async function addQuoteServiceAction(formData: FormData): Promise<never> 
     description,
     needs_part: needsPart,
     quantity,
-    labor_amount: Math.round(unitLabor * quantity * 100) / 100,
+    labor_amount: Math.round(unitLabor * 100) / 100,
   });
   if (error) return fail(quoteId, `Não foi possível adicionar o serviço: ${error.message}`);
 
