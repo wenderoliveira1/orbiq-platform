@@ -84,7 +84,7 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
     }
   }
 
-  const { data, error } = await supabase.rpc("create_quote_v2", {
+  const { data, error } = await supabase.rpc("create_quote_with_quantities", {
     target_org_id: organization.id,
     target_customer_id: customerId,
     target_vehicle_id: vehicleId,
