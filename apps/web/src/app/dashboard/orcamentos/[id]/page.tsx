@@ -42,7 +42,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
     supabase.from("customers").select("id, name, phone, email").eq("organization_id", organization.id).eq("id", quote.customer_id).maybeSingle(),
     supabase.from("vehicles").select("id, plate, brand, model, version, model_year").eq("organization_id", organization.id).eq("id", quote.vehicle_id).maybeSingle(),
     supabase.from("quote_services").select("id, category, description, needs_part, quantity, labor_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
-    supabase.from("quote_items").select("id, category, description, quantity, unit, side, specification, purchase_status, chosen_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
+    supabase.from("quote_items").select("id, category, description, quantity, unit, side, specification, purchase_status, chosen_amount, created_at").eq("organization_id", organization.id).eq("id", id).maybeSingle().then(() => supabase.from("quote_items").select("id, category, description, quantity, unit, side, specification, purchase_status, chosen_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true })),
   ]);
 
   if (customerResult.error) throw new Error(`Falha ao carregar cliente: ${customerResult.error.message}`);
@@ -59,8 +59,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
     0,
   );
   const partsTotal = items.reduce((sum, item) => sum + (item.chosen_amount ?? 0) * (item.quantity ?? 1), 0);
-  const calculatedFinalTotal = laborTotal + partsTotal;
-  const finalTotal = quote.final_amount ?? calculatedFinalTotal;
+  const finalTotal = Math.round((laborTotal + partsTotal) * 100) / 100;
 
   return (
     <div className="orbiq-page quote-detail-page">
