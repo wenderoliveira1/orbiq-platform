@@ -41,7 +41,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
   const [customerResult, vehicleResult, servicesResult, itemsResult] = await Promise.all([
     supabase.from("customers").select("id, name, phone, email").eq("organization_id", organization.id).eq("id", quote.customer_id).maybeSingle(),
     supabase.from("vehicles").select("id, plate, brand, model, version, model_year").eq("organization_id", organization.id).eq("id", quote.vehicle_id).maybeSingle(),
-    supabase.from("quote_services").select("id, category, description, needs_part, labor_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
+    supabase.from("quote_services").select("id, category, description, needs_part, quantity, labor_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
     supabase.from("quote_items").select("id, category, description, quantity, unit, side, specification, purchase_status, chosen_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
   ]);
 
@@ -55,7 +55,9 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
   const services = servicesResult.data ?? [];
   const items = itemsResult.data ?? [];
   const laborTotal = services.reduce((sum, service) => sum + (service.labor_amount ?? 0), 0);
-  const partsTotal = items.reduce((sum, item) => sum + (item.chosen_amount ?? 0), 0);
+  const partsTotal = items.reduce((sum, item) => sum + (item.chosen_amount ?? 0) * (item.quantity ?? 1), 0);
+  const calculatedFinalTotal = laborTotal + partsTotal;
+  const finalTotal = quote.final_amount ?? calculatedFinalTotal;
 
   return (
     <div className="orbiq-page quote-detail-page">
@@ -118,11 +120,12 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
           <div className="orbiq-empty compact"><strong>Nenhum serviço registrado.</strong></div>
         ) : (
           <div className="quote-detail-table">
-            <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 100px 90px" }}><span>Categoria</span><span>Serviço</span><span>Peça?</span><span>Mão de obra</span><span>Ação</span></div>
+            <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 110px 90px" }}><span>Categoria</span><span>Serviço</span><span>Qtd.</span><span>Peça?</span><span>Mão de obra</span><span>Ação</span></div>
             {services.map((service) => (
-              <div key={service.id} className="quote-detail-table-row service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 100px 90px" }}>
+              <div key={service.id} className="quote-detail-table-row service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 110px 90px" }}>
                 <span>{service.category}</span>
                 <strong>{service.description}</strong>
+                <span>{qty(service.quantity ?? 1)}</span>
                 <span>{service.needs_part ? "Sim" : "Não"}</span>
                 <span>{money(service.labor_amount)}</span>
                 <form action={deleteQuoteServiceAction} className="no-print">
@@ -151,7 +154,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
       <section className="quote-detail-totals">
         <div><span>Mão de obra</span><strong>{money(laborTotal)}</strong></div>
         {items.length > 0 ? <div><span>Peças escolhidas</span><strong>{money(partsTotal)}</strong></div> : null}
-        <div className="main-total"><span>Valor final</span><strong>{money(quote.final_amount)}</strong></div>
+        <div className="main-total"><span>Valor final</span><strong>{money(finalTotal)}</strong></div>
       </section>
 
       <section className="quote-detail-footer no-print"><Link href="/dashboard/orcamentos" className="orbiq-secondary-button">Voltar ao histórico</Link><Link href="/dashboard/orcamentos/novo" className="orbiq-primary-button">Realizar novo orçamento</Link></section>
