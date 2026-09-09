@@ -17,16 +17,24 @@ alter table public.quote_services
     add constraint quote_services_quantity_check
     check (quantity > 0);
 
--- Recalculates the quote total from persisted line values.
--- quote_services.labor_amount is the line total (unit labor x quantity).
--- quote_items.chosen_amount is the unit purchase price, multiplied by quantity.
 create or replace function public.recalculate_quote_final_amount(target_quote_id uuid)
 returns void
 language plpgsql
 security invoker
 set search_path = public
 as $$
+declare
+    target_org_id uuid;
 begin
+    select organization_id
+    into target_org_id
+    from public.quotes
+    where id = target_quote_id;
+
+    if target_org_id is null or not public.is_org_member(target_org_id) then
+        raise exception 'Quote does not belong to current organization';
+    end if;
+
     update public.quotes
     set final_amount = round(
         coalesce((
@@ -79,7 +87,6 @@ create trigger quote_items_recalculate_final_amount
 after insert or update or delete on public.quote_items
 for each row execute function public.trg_recalculate_quote_final_amount();
 
--- Backfill the final amount for existing quotes without changing their line data.
 update public.quotes q
 set final_amount = round(
     coalesce((
@@ -309,5 +316,8 @@ $$;
 revoke all on function public.create_quote_v2(uuid, uuid, uuid, text, integer, text, jsonb, jsonb) from public, anon;
 grant execute on function public.create_quote_v2(uuid, uuid, uuid, text, integer, text, jsonb, jsonb) to authenticated;
 
+revoke all on function public.recalculate_quote_final_amount(uuid) from public, anon;
 grant execute on function public.recalculate_quote_final_amount(uuid) to authenticated;
+
+revoke all on function public.trg_recalculate_quote_final_amount() from public, anon;
 notify pgrst, 'reload schema';
