@@ -54,10 +54,9 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
   const vehicle = vehicleResult.data;
   const services = servicesResult.data ?? [];
   const items = itemsResult.data ?? [];
-  const laborTotal = services.reduce(
-    (sum, service) => sum + (service.labor_amount ?? 0) * (service.quantity ?? 1),
-    0,
-  );
+  const laborTotal = Math.round(
+    services.reduce((sum, service) => sum + (service.labor_amount ?? 0), 0) * 100,
+  ) / 100;
   const partsTotal = items.reduce((sum, item) => sum + (item.chosen_amount ?? 0) * (item.quantity ?? 1), 0);
   const finalTotal = Math.round((laborTotal + partsTotal) * 100) / 100;
 
@@ -125,8 +124,8 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 120px 120px 90px" }}><span>Categoria</span><span>Serviço</span><span>Qtd.</span><span>Peça?</span><span>Valor unit.</span><span>Total</span><span>Ação</span></div>
             {services.map((service) => {
               const quantity = service.quantity ?? 1;
-              const unitLabor = service.labor_amount ?? 0;
-              const lineTotal = unitLabor * quantity;
+              const lineTotal = service.labor_amount ?? 0;
+              const unitLabor = quantity > 0 ? lineTotal / quantity : lineTotal;
               return (
                 <div key={service.id} className="quote-detail-table-row service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 120px 120px 90px" }}>
                   <span>{service.category}</span>
