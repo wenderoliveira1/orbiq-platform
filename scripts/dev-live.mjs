@@ -23,6 +23,11 @@ const migrations = [
     file: "20260908104500_orbiq_service_part_defaults.sql",
     probe: "select exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'service_catalog' and column_name = 'requires_part') as ready;",
   },
+  {
+    id: "ORCAMENTO-QUANTIDADE",
+    file: "20260909180000_orbiq_quote_quantity_runtime_bootstrap.sql",
+    probe: "select exists (select 1 from information_schema.columns where table_schema='public' and table_name='quote_services' and column_name='quantity') and to_regprocedure('public.recalculate_quote_final_amount(uuid)') is not null and to_regprocedure('public.create_quote_with_quantities(uuid,uuid,uuid,text,integer,text,jsonb,jsonb)') is not null and position('quantity' in pg_get_functiondef(to_regprocedure('public.recalculate_quote_final_amount(uuid)'))) > 0 as ready;",
+  },
 ];
 
 function shellArgs(commandArgs) {
@@ -67,8 +72,6 @@ function probe(sql) {
     { capture: true, input: `${sql.trim()}\n` },
   );
   if (result.status !== 0) throw new Error(result.stderr || "Falha ao validar o schema local.");
-
-  // psql -t -A renders PostgreSQL booleans as `t` / `f`.
   const normalized = String(result.stdout ?? "").trim().toLowerCase();
   return normalized === "t" || normalized === "true";
 }
