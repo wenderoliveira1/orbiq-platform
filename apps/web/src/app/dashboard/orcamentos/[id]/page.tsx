@@ -42,7 +42,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
     supabase.from("customers").select("id, name, phone, email").eq("organization_id", organization.id).eq("id", quote.customer_id).maybeSingle(),
     supabase.from("vehicles").select("id, plate, brand, model, version, model_year").eq("organization_id", organization.id).eq("id", quote.vehicle_id).maybeSingle(),
     supabase.from("quote_services").select("id, category, description, needs_part, quantity, labor_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
-    supabase.from("quote_items").select("id, category, description, quantity, unit, side, specification, purchase_status, chosen_amount, created_at").eq("organization_id", organization.id).eq("id", id).maybeSingle().then(() => supabase.from("quote_items").select("id, category, description, quantity, unit, side, specification, purchase_status, chosen_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true })),
+    supabase.from("quote_items").select("id, category, description, quantity, unit, side, specification, purchase_status, chosen_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
   ]);
 
   if (customerResult.error) throw new Error(`Falha ao carregar cliente: ${customerResult.error.message}`);
@@ -55,7 +55,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
   const services = servicesResult.data ?? [];
   const items = itemsResult.data ?? [];
   const laborTotal = Math.round(
-    services.reduce((sum, service) => sum + (service.labor_amount ?? 0), 0) * 100,
+    services.reduce((sum, service) => sum + (service.labor_amount ?? 0) * (service.quantity ?? 1), 0) * 100,
   ) / 100;
   const partsTotal = items.reduce((sum, item) => sum + (item.chosen_amount ?? 0) * (item.quantity ?? 1), 0);
   const finalTotal = Math.round((laborTotal + partsTotal) * 100) / 100;
@@ -112,6 +112,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             <input name="category" placeholder="Categoria" aria-label="Categoria do serviço" style={{ flex: "0 1 150px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
             <input name="description" placeholder="Novo serviço" aria-label="Descrição do serviço" required style={{ flex: "1 1 240px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
             <input name="labor_amount" type="number" min="0" step="0.01" placeholder="Mão de obra unitária (R$)" aria-label="Valor unitário da mão de obra" style={{ flex: "0 1 170px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
+            <input name="quantity" type="number" min="0.001" step="0.001" defaultValue="1" placeholder="Qtd." aria-label="Quantidade do serviço" style={{ flex: "0 1 95px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
             <label style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", fontSize: 11 }}><input name="needs_part" type="checkbox" /> Peça?</label>
             <button type="submit" className="orbiq-primary-button">+ Adicionar serviço</button>
           </form>
@@ -124,8 +125,8 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 120px 120px 90px" }}><span>Categoria</span><span>Serviço</span><span>Qtd.</span><span>Peça?</span><span>Valor unit.</span><span>Total</span><span>Ação</span></div>
             {services.map((service) => {
               const quantity = service.quantity ?? 1;
-              const lineTotal = service.labor_amount ?? 0;
-              const unitLabor = quantity > 0 ? lineTotal / quantity : lineTotal;
+              const unitLabor = service.labor_amount ?? 0;
+              const lineTotal = unitLabor * quantity;
               return (
                 <div key={service.id} className="quote-detail-table-row service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 120px 120px 90px" }}>
                   <span>{service.category}</span>
