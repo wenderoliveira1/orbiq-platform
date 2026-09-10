@@ -1,16 +1,12 @@
 # Orbiq Platform
 
-Plataforma profissional de operações automotivas, preparada para evolução SaaS, web e mobile.
+Plataforma profissional de operações automotivas, preparada para evolução SaaS e web.
 
 ## Web
 - Next.js
 - React
 - TypeScript
 - Tailwind CSS
-
-## Mobile
-- React Native
-- Expo
 
 ## Backend
 - Supabase
@@ -21,18 +17,20 @@ Plataforma profissional de operações automotivas, preparada para evolução Sa
 
 ## Estrutura
 
-- `apps/web`
-- `packages/types`
-- `packages/validation`
-- `packages/config`
-- `supabase`
-- `scripts`
-- `tests`
+- `apps/web` — aplicação Web (App Router)
+- `packages/types` — tipos gerados do Postgres
+- `packages/validation` — pacote compartilhado (placeholder)
+- `packages/config` — contrato de ambiente público
+- `supabase` — migrations e config local
+- `scripts` — bootstrap, quality gate, release
+- `tests` — AutoQA / Playwright
+
+> Mobile (React Native / Expo) está no roadmap; ainda não há `apps/mobile` neste repositório.
 
 ## Desenvolvimento local
 
 Pré-requisitos:
-- Node.js 22+
+- Node.js 22.23.2 (ver `.node-version`)
 - pnpm 11.22.0
 - Docker Desktop em execução
 
@@ -74,14 +72,15 @@ pnpm dev:web
 
 ## Qualidade
 
+```bash
+pnpm quality
+pnpm test:autoqa
+```
+
 O projeto possui Quality Gate, Playwright/AutoQA, migrations versionadas e tipos gerados a partir do PostgreSQL/Supabase.
 
-O pacote `@orbiq/config` centraliza o contrato compartilhável de ambiente para
-Web e para o futuro aplicativo mobile. A aplicação encerra a inicialização com
-mensagem objetiva se alguma variável obrigatória estiver ausente, inválida ou
-contiver uma chave privilegiada.
+O pacote `@orbiq/config` centraliza o contrato compartilhável de ambiente. A aplicação encerra a inicialização com mensagem objetiva se alguma variável obrigatória estiver ausente, inválida ou contiver uma chave privilegiada.
 
-Consulte `apps/web/README.md` para o fluxo Web, PWA, suporte e entrega privada
-de exportações.
+Consulte `apps/web/README.md` para o fluxo Web, PWA, suporte e entrega privada de exportações.
 
 O antigo Google Apps Script continua operacional durante a migração controlada para a nova plataforma.

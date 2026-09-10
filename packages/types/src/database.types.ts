@@ -1125,6 +1125,47 @@ export type Database = {
           },
         ]
       }
+      service_catalog: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          default_labor_amount: number
+          description: string
+          id: string
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          default_labor_amount?: number
+          description: string
+          id?: string
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          default_labor_amount?: number
+          description?: string
+          id?: string
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_catalog_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_categories: {
         Row: {
           active: boolean | null
@@ -1828,6 +1869,15 @@ export type Database = {
           parts_sale_amount: number
           subtotal_amount: number
         }[]
+      }
+      save_service_catalog: {
+        Args: {
+          target_category: string
+          target_description: string
+          target_labor_amount: number
+          target_org_id: string
+        }
+        Returns: string
       }
       save_supplier: {
         Args: {

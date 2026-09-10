@@ -1,18 +1,21 @@
 node_modules/
+**/node_modules/
 .pnpm-store/
 
 .next/
+**/.next/
 out/
 dist/
 build/
 
-.expo/
-web-build/
-
 .env
 .env.local
+.env.*.local
 .env.development.local
 .env.production.local
+**/.env
+**/.env.local
+**/.env.*.local
 
 supabase/.temp/
 
@@ -28,14 +31,3 @@ Thumbs.db
 *.keystore
 google-services.json
 GoogleService-Info.plist
-# ORBIQ LOCAL DEVELOPMENT
-.env
-.env.local
-.env.*.local
-**/.env
-**/.env.local
-**/.env.*.local
-node_modules/
-**/node_modules/
-.next/
-**/.next/
