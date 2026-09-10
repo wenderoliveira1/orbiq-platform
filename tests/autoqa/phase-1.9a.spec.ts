@@ -162,7 +162,7 @@ test.describe("Fase 1.9A - onboarding profissional da oficina", () => {
     await page.getByLabel("Cidade").fill("Belo Horizonte");
     await page.getByLabel("UF").fill("mg");
     await page.getByLabel("Validade padrão do orçamento").fill("12");
-    await page.getByLabel("Margem padrão das peças (%)").fill("32.5");
+    await page.getByLabel("Lucro padrão das peças (% sobre a venda)").fill("32.5");
     await page
       .getByLabel("Observação padrão do orçamento")
       .fill("AUTOQA onboarding profissional concluído.");
