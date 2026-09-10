@@ -35,7 +35,7 @@ function normalizeForMatch(value: string) {
 }
 
 const CATEGORY_ALIASES: Array<{ category: string; patterns: string[] }> = [
-  { category: "FUNILARIA", patterns: ["funilaria", "lataria", "amassado", "amassar"] },
+  { category: "FUNILARIA", patterns: ["funilaria", "lataria", "amassado", "amassar", "desamassar", "bater chapa"] },
   { category: "PINTURA", patterns: ["pintura", "pintar", "repintura"] },
   { category: "MECÂNICA", patterns: ["mecanica", "mecanico"] },
   { category: "SUSPENSÃO", patterns: ["suspensao", "amortecedor", "bandeja"] },
@@ -46,25 +46,11 @@ const CATEGORY_ALIASES: Array<{ category: string; patterns: string[] }> = [
   { category: "ELÉTRICA", patterns: ["eletrica", "eletrico", "bateria", "alternador", "partida"] },
   { category: "ARREFECIMENTO", patterns: ["arrefecimento", "radiador", "agua do motor"] },
   { category: "AR-CONDICIONADO", patterns: ["ar-condicionado", "ar condicionado", "climatizacao"] },
-  { category: "ALINHAMENTO", patterns: ["alinhamento", "balanceamento", "geometria"] },
+  { category: "ALINHAMENTO", patterns: ["alinhamento e balanceamento", "alinhamento", "balanceamento", "geometria"] },
 ];
 
-const SIDE_TOKENS = [
-  "dianteiro esquerdo",
-  "dianteiro direito",
-  "traseiro esquerdo",
-  "traseiro direito",
-  "para-lama esquerdo",
-  "para-lama direito",
-  "paralama esquerdo",
-  "paralama direito",
-  "esquerdo",
-  "direita",
-  "direito",
-  "esquerda",
-  "dianteiro",
-  "traseiro",
-];
+const FUNILARIA_VERB_RE =
+  /\b(desamassar|retocar|cortar|soldar|polir|recuperar|alinhar|pintar|trocar|bater chapa|retoque|polimento)\b/;
 
 function detectCategory(normalized: string): string {
   for (const entry of CATEGORY_ALIASES) {
@@ -117,7 +103,7 @@ function extractPartDescription(raw: string, needsPart: boolean): string {
   }
   // Common body parts often imply the part itself
   const body = raw.match(
-    /\b(para-?lama(?:\s+\w+)?|para-?choque(?:\s+\w+)?|cap[oô]|porta(?:\s+\w+)?|retrovisor(?:\s+\w+)?|farol(?:\s+\w+)?|lanterna(?:\s+\w+)?)\b/i,
+    /\b(para-?lama(?:\s+\w+)?|para-?choque(?:\s+\w+)?|cap[oô]|porta(?:\s+\w+)?|retrovisor(?:\s+\w+)?|farol(?:\s+\w+)?|lanterna(?:\s+\w+)?|painel(?:\s+\w+)?|coluna(?:\s+\w+)?|soleira|tampa traseira)\b/i,
   );
   if (body?.[1]) {
     return body[1].trim().toLocaleUpperCase("pt-BR");
@@ -146,6 +132,7 @@ export function parseVoiceTranscript(transcript: string): ParsedVoiceService {
   const { amount, cleaned } = extractLaborAmount(raw);
 
   // Prefer Funilaria guided composition when action + part are recognized.
+  // Pintura stays in the same Funilaria flow when a body part is present.
   const funilaria = matchFunilariaFromTranscript(cleaned || raw);
   if (funilaria.description) {
     const explicitPart =
@@ -161,18 +148,27 @@ export function parseVoiceTranscript(transcript: string): ParsedVoiceService {
   }
 
   let category = detectCategory(normalized);
-  // Body-shop verbs without a matched part still lean Funilaria
-  if (
-    category === "OUTROS" &&
-    /\b(desamassar|retocar|cortar|soldar|polir|recuperar)\b/.test(normalized)
-  ) {
+  // Body-shop verbs without a matched part still lean Funilaria (incl. pintar alone)
+  if (category === "OUTROS" && FUNILARIA_VERB_RE.test(normalized)) {
+    category = "FUNILARIA";
+  }
+  // "pintura para-lama…" without full match still prefers FUNILARIA over bare PINTURA sibling
+  if (category === "PINTURA" && funilaria.part) {
     category = "FUNILARIA";
   }
 
   const needsPart = detectNeedsPart(normalized) && /\b(peca|pecas|com peca|inclui peca|trocar)\b/.test(normalized);
   const partDescription = extractPartDescription(cleaned, needsPart);
-  const description = buildDescription(cleaned, category);
-  void SIDE_TOKENS;
+  let description = buildDescription(cleaned, category);
+
+  // Partial funilaria: known verb or part → keep uppercase composition hint
+  if (funilaria.action && !funilaria.part) {
+    description = funilaria.action.verb;
+    if (category === "OUTROS" || category === "PINTURA") category = "FUNILARIA";
+  } else if (funilaria.part && !funilaria.action) {
+    description = funilaria.part.phrase;
+    if (category === "OUTROS" || category === "PINTURA") category = "FUNILARIA";
+  }
 
   return {
     category,
@@ -204,6 +200,6 @@ export function createSpeechRecognition(): SpeechRecognition | null {
   recognition.lang = "pt-BR";
   recognition.continuous = false;
   recognition.interimResults = true;
-  recognition.maxAlternatives = 1;
+  recognition.maxAlternatives = 3;
   return recognition;
 }

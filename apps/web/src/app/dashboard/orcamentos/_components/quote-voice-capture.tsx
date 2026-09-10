@@ -41,12 +41,18 @@ export function QuoteVoiceCapture({
   const titleId = useId();
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const finalChunkRef = useRef("");
+  const appendModeRef = useRef(false);
+  const transcriptRef = useRef("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [supported, setSupported] = useState(true);
   const [transcript, setTranscript] = useState("");
   const [interim, setInterim] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<ParsedVoiceService>(emptyFields);
+
+  useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,66 +107,82 @@ export function QuoteVoiceCapture({
     [categories],
   );
 
-  const startListening = useCallback(() => {
-    setError(null);
-    setInterim("");
-    setTranscript("");
-    finalChunkRef.current = "";
-    const recognition = createSpeechRecognition();
-    if (!recognition) {
-      setSupported(false);
-      setPhase("unsupported");
-      return;
-    }
-    recognitionRef.current = recognition;
-
-    recognition.onresult = (event) => {
-      let interimText = "";
-      let finalText = "";
-      for (let i = event.resultIndex; i < event.results.length; i += 1) {
-        const result = event.results[i];
-        const piece = result[0]?.transcript ?? "";
-        if (result.isFinal) finalText += piece;
-        else interimText += piece;
-      }
-      if (finalText) {
-        finalChunkRef.current = `${finalChunkRef.current} ${finalText}`.trim();
-        setTranscript(finalChunkRef.current);
-      }
-      setInterim(interimText);
-    };
-
-    recognition.onerror = (event) => {
-      const code = event.error;
-      if (code === "aborted") return;
-      if (code === "not-allowed") {
-        setError("Microfone bloqueado. Permita o microfone no navegador.");
-      } else if (code === "no-speech") {
-        setError("Nenhuma fala detectada. Segure o mic e fale o serviço.");
+  const startListening = useCallback(
+    (opts?: { append?: boolean }) => {
+      const append = Boolean(opts?.append);
+      appendModeRef.current = append;
+      setError(null);
+      setInterim("");
+      if (!append) {
+        setTranscript("");
+        finalChunkRef.current = "";
       } else {
-        setError("Falha na captura de voz. Tente novamente.");
+        // Keep prior final text; second utterance will append after a space.
+        finalChunkRef.current = transcriptRef.current.trim();
       }
-      setPhase("idle");
-    };
-
-    recognition.onend = () => {
-      recognitionRef.current = null;
-      const text = (finalChunkRef.current || "").trim();
-      if (text) {
-        openReview(text);
+      const recognition = createSpeechRecognition();
+      if (!recognition) {
+        setSupported(false);
+        setPhase("unsupported");
         return;
       }
-      setPhase((current) => (current === "listening" ? "idle" : current));
-    };
+      recognitionRef.current = recognition;
 
-    try {
-      recognition.start();
-      setPhase("listening");
-    } catch {
-      setError("Não foi possível iniciar o microfone.");
-      setPhase("idle");
-    }
-  }, [openReview]);
+      recognition.onresult = (event) => {
+        let interimText = "";
+        let finalText = "";
+        for (let i = event.resultIndex; i < event.results.length; i += 1) {
+          const result = event.results[i];
+          // Prefer first alternative; maxAlternatives helps Chrome mid-operation.
+          const piece = result[0]?.transcript ?? "";
+          if (result.isFinal) finalText += piece;
+          else interimText += piece;
+        }
+        if (finalText) {
+          finalChunkRef.current = `${finalChunkRef.current} ${finalText}`.trim();
+          setTranscript(finalChunkRef.current);
+        }
+        setInterim(interimText);
+      };
+
+      recognition.onerror = (event) => {
+        const code = event.error;
+        if (code === "aborted") return;
+        if (code === "not-allowed") {
+          setError("Microfone bloqueado. Permita o microfone no navegador (Chrome/Edge).");
+        } else if (code === "no-speech") {
+          setError("Nenhuma fala detectada. Toque no mic e fale o serviço.");
+        } else {
+          setError("Falha na captura de voz. Tente novamente no Chrome ou Edge.");
+        }
+        setPhase(appendModeRef.current && transcriptRef.current.trim() ? "review" : "idle");
+      };
+
+      recognition.onend = () => {
+        recognitionRef.current = null;
+        const text = (finalChunkRef.current || "").trim();
+        if (text) {
+          openReview(text);
+          return;
+        }
+        setPhase((current) => {
+          if (current === "listening") {
+            return appendModeRef.current && transcriptRef.current.trim() ? "review" : "idle";
+          }
+          return current;
+        });
+      };
+
+      try {
+        recognition.start();
+        setPhase("listening");
+      } catch {
+        setError("Não foi possível iniciar o microfone.");
+        setPhase(append ? "review" : "idle");
+      }
+    },
+    [openReview],
+  );
 
   function discard() {
     stopListening();
@@ -212,6 +234,8 @@ export function QuoteVoiceCapture({
     );
   }
 
+  const phaseLabel = phase === "listening" ? "Ouvindo" : phase === "review" ? "Revise" : "Pronto";
+
   return (
     <div
       className={`quote-voice-capture${phase === "listening" ? " is-listening" : ""}${
@@ -231,27 +255,44 @@ export function QuoteVoiceCapture({
           <strong>Falar serviço com as mãos ocupadas</strong>
           <small>Captura → revisa → Confirmar. Nada é salvo só por falar.</small>
         </div>
-        {phase !== "review" ? (
+        <span
+          className={`quote-voice-phase-badge is-${phase}`}
+          data-testid="quote-voice-phase-badge"
+          data-voice-phase-label={phaseLabel}
+        >
+          {phaseLabel}
+        </span>
+      </div>
+
+      {phase !== "review" ? (
+        <div className="quote-voice-mic-wrap">
           <button
             type="button"
-            className={`quote-voice-mic${phase === "listening" ? " is-active" : ""}`}
+            className={`quote-voice-mic is-large${phase === "listening" ? " is-active" : ""}`}
             data-testid="quote-voice-mic"
             aria-pressed={phase === "listening"}
             aria-label={phase === "listening" ? "Parar de ouvir" : "Iniciar captura de voz"}
             onClick={() => {
               if (phase === "listening") stopListening();
-              else startListening();
+              else startListening({ append: false });
             }}
           >
             <span className="quote-voice-mic-icon" aria-hidden>
               {phase === "listening" ? "■" : "🎤"}
             </span>
-            <span className="quote-voice-mic-label">
-              {phase === "listening" ? "Ouvindo… toque para parar" : "Falar serviço"}
+            <span className="quote-voice-mic-copy">
+              <strong className="quote-voice-mic-label">
+                {phase === "listening" ? "Ouvindo…" : "Falar serviço"}
+              </strong>
+              <span className="quote-voice-mic-hint">
+                {phase === "listening"
+                  ? "Toque para parar · Chrome/Edge"
+                  : "Ex.: desamassar porta dianteira E"}
+              </span>
             </span>
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {error ? (
         <p className="quote-voice-error" data-testid="quote-voice-error" role="alert">
@@ -267,6 +308,24 @@ export function QuoteVoiceCapture({
 
       {phase === "review" ? (
         <div className="quote-voice-review" data-testid="quote-voice-review">
+          <div className="quote-voice-review-toolbar">
+            <p className="quote-voice-review-kicker" data-testid="quote-voice-review-kicker">
+              Revise antes de confirmar — nada foi salvo ainda
+            </p>
+            <button
+              type="button"
+              className="quote-voice-mic is-secondary"
+              data-testid="quote-voice-second-utterance"
+              aria-label="Falar de novo e complementar"
+              onClick={() => startListening({ append: true })}
+            >
+              <span className="quote-voice-mic-icon" aria-hidden>
+                🎤
+              </span>
+              <span className="quote-voice-mic-label">Falar de novo</span>
+            </button>
+          </div>
+
           <label className="quote-voice-field quote-voice-transcript">
             <span>Texto transcrito</span>
             <textarea

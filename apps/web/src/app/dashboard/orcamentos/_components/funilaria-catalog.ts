@@ -19,37 +19,298 @@ export type FunilariaPart = {
   aliases: string[];
 };
 
+/** Professional body-shop verbs — Pintura stays here as "pintar" (one Funilaria flow). */
 export const FUNILARIA_ACTIONS: FunilariaAction[] = [
-  { id: "cortar", label: "Cortar", verb: "CORTAR", aliases: ["cortar", "corte"] },
-  { id: "retocar", label: "Retocar", verb: "RETOCAR", aliases: ["retocar", "retoque"] },
-  { id: "desamassar", label: "Desamassar", verb: "DESAMASSAR", aliases: ["desamassar", "desamassado", "bater chapa", "bater"] },
-  { id: "recuperar", label: "Recuperar", verb: "RECUPERAR", aliases: ["recuperar", "recuperacao"] },
-  { id: "alinhar", label: "Alinhar", verb: "ALINHAR", aliases: ["alinhar", "alinhamento de chapa", "alinhar chapa"] },
-  { id: "pintar", label: "Pintar", verb: "PINTAR", aliases: ["pintar", "pintura", "repintura"] },
-  { id: "trocar", label: "Trocar", verb: "TROCAR", aliases: ["trocar", "substituir", "substituicao"] },
-  { id: "soldar", label: "Soldar", verb: "SOLDAR", aliases: ["soldar", "solda"] },
-  { id: "polir", label: "Polir", verb: "POLIR", aliases: ["polir", "polimento"] },
+  {
+    id: "alinhar",
+    label: "Alinhar",
+    verb: "ALINHAR",
+    aliases: ["alinhar chapa", "alinhamento de chapa", "alinhar", "alinhe"],
+  },
+  {
+    id: "desamassar",
+    label: "Desamassar",
+    verb: "DESAMASSAR",
+    aliases: ["desamassar", "desamassado", "bater chapa", "bater a chapa", "bater", "amassar"],
+  },
+  {
+    id: "retocar",
+    label: "Retocar",
+    verb: "RETOCAR",
+    aliases: ["retocar", "retoque", "fazer retoque"],
+  },
+  {
+    id: "recuperar",
+    label: "Recuperar",
+    verb: "RECUPERAR",
+    aliases: ["recuperar", "recuperacao", "recuperação"],
+  },
+  {
+    id: "cortar",
+    label: "Cortar",
+    verb: "CORTAR",
+    aliases: ["cortar", "corte", "fazer corte"],
+  },
+  {
+    id: "pintar",
+    label: "Pintar",
+    verb: "PINTAR",
+    aliases: ["pintar", "pintura", "repintura", "pintura completa"],
+  },
+  {
+    id: "trocar",
+    label: "Trocar",
+    verb: "TROCAR",
+    aliases: ["trocar", "substituir", "substituicao", "substituição"],
+  },
+  {
+    id: "soldar",
+    label: "Soldar",
+    verb: "SOLDAR",
+    aliases: ["soldar", "solda", "fazer solda"],
+  },
+  {
+    id: "polir",
+    label: "Polir",
+    verb: "POLIR",
+    aliases: ["polir", "polimento", "fazer polimento"],
+  },
 ];
 
 export const FUNILARIA_PARTS: FunilariaPart[] = [
-  { id: "lateral-e", label: "Lateral esquerda", phrase: "LATERAL ESQUERDA", aliases: ["lateral esquerda", "lateral e"] },
-  { id: "lateral-d", label: "Lateral direita", phrase: "LATERAL DIREITA", aliases: ["lateral direita", "lateral d"] },
-  { id: "porta-de", label: "Porta dianteira E", phrase: "PORTA DIANTEIRA ESQUERDA", aliases: ["porta dianteira esquerda", "porta dianteira e"] },
-  { id: "porta-dd", label: "Porta dianteira D", phrase: "PORTA DIANTEIRA DIREITA", aliases: ["porta dianteira direita", "porta dianteira d"] },
-  { id: "porta-te", label: "Porta traseira E", phrase: "PORTA TRASEIRA ESQUERDA", aliases: ["porta traseira esquerda", "porta traseira e"] },
-  { id: "porta-td", label: "Porta traseira D", phrase: "PORTA TRASEIRA DIREITA", aliases: ["porta traseira direita", "porta traseira d"] },
-  { id: "parachoque-d", label: "Para-choque dianteiro", phrase: "PARA-CHOQUE DIANTEIRO", aliases: ["para-choque dianteiro", "parachoque dianteiro", "para choque dianteiro"] },
-  { id: "parachoque-t", label: "Para-choque traseiro", phrase: "PARA-CHOQUE TRASEIRO", aliases: ["para-choque traseiro", "parachoque traseiro", "para choque traseiro"] },
-  { id: "paralama-e", label: "Para-lama E", phrase: "PARA-LAMA ESQUERDO", aliases: ["para-lama esquerdo", "paralama esquerdo", "para lama esquerdo", "para-lama e"] },
-  { id: "paralama-d", label: "Para-lama D", phrase: "PARA-LAMA DIREITO", aliases: ["para-lama direito", "paralama direito", "para lama direito", "para-lama d"] },
-  { id: "capo", label: "Capô", phrase: "CAPÔ", aliases: ["capo", "capô"] },
-  { id: "porta-malas", label: "Porta-malas", phrase: "PORTA-MALAS", aliases: ["porta-malas", "porta malas", "tampa traseira"] },
-  { id: "teto", label: "Teto", phrase: "TETO", aliases: ["teto"] },
-  { id: "coluna", label: "Coluna", phrase: "COLUNA", aliases: ["coluna", "coluna a", "coluna b", "coluna c"] },
-  { id: "saia", label: "Saia / soleira", phrase: "SAIA", aliases: ["saia", "soleira"] },
-  { id: "retrovisor-e", label: "Retrovisor E", phrase: "RETROVISOR ESQUERDO", aliases: ["retrovisor esquerdo", "retrovisor e"] },
-  { id: "retrovisor-d", label: "Retrovisor D", phrase: "RETROVISOR DIREITO", aliases: ["retrovisor direito", "retrovisor d"] },
-  { id: "painel", label: "Painel frontal", phrase: "PAINEL FRONTAL", aliases: ["painel", "painel frontal"] },
+  {
+    id: "lateral-e",
+    label: "Lateral E",
+    phrase: "LATERAL ESQUERDA",
+    aliases: [
+      "lateral esquerda",
+      "lateral e",
+      "lateral do lado esquerdo",
+      "lateral lado esquerdo",
+      "lateral motorista",
+    ],
+  },
+  {
+    id: "lateral-d",
+    label: "Lateral D",
+    phrase: "LATERAL DIREITA",
+    aliases: [
+      "lateral direita",
+      "lateral d",
+      "lateral do lado direito",
+      "lateral lado direito",
+      "lateral passageiro",
+    ],
+  },
+  {
+    id: "porta-de",
+    label: "Porta dianteira E",
+    phrase: "PORTA DIANTEIRA ESQUERDA",
+    aliases: [
+      "porta dianteira esquerda",
+      "porta dianteira e",
+      "porta da frente esquerda",
+      "porta frente esquerda",
+      "porta diant e",
+    ],
+  },
+  {
+    id: "porta-dd",
+    label: "Porta dianteira D",
+    phrase: "PORTA DIANTEIRA DIREITA",
+    aliases: [
+      "porta dianteira direita",
+      "porta dianteira d",
+      "porta da frente direita",
+      "porta frente direita",
+      "porta diant d",
+    ],
+  },
+  {
+    id: "porta-te",
+    label: "Porta traseira E",
+    phrase: "PORTA TRASEIRA ESQUERDA",
+    aliases: [
+      "porta traseira esquerda",
+      "porta traseira e",
+      "porta de tras esquerda",
+      "porta de trás esquerda",
+      "porta tras e",
+    ],
+  },
+  {
+    id: "porta-td",
+    label: "Porta traseira D",
+    phrase: "PORTA TRASEIRA DIREITA",
+    aliases: [
+      "porta traseira direita",
+      "porta traseira d",
+      "porta de tras direita",
+      "porta de trás direita",
+      "porta tras d",
+    ],
+  },
+  {
+    id: "parachoque-d",
+    label: "Para-choque dianteiro",
+    phrase: "PARA-CHOQUE DIANTEIRO",
+    aliases: [
+      "para-choque dianteiro",
+      "parachoque dianteiro",
+      "para choque dianteiro",
+      "para-choque da frente",
+      "parachoque da frente",
+      "para-choque dianteira",
+      "parachoque dianteira",
+    ],
+  },
+  {
+    id: "parachoque-t",
+    label: "Para-choque traseiro",
+    phrase: "PARA-CHOQUE TRASEIRO",
+    aliases: [
+      "para-choque traseiro",
+      "parachoque traseiro",
+      "para choque traseiro",
+      "para-choque de tras",
+      "para-choque de trás",
+      "parachoque de tras",
+      "para-choque traseira",
+      "parachoque traseira",
+    ],
+  },
+  {
+    id: "paralama-e",
+    label: "Para-lama E",
+    phrase: "PARA-LAMA ESQUERDO",
+    aliases: [
+      "para-lama esquerdo",
+      "paralama esquerdo",
+      "para lama esquerdo",
+      "para-lama e",
+      "paralama e",
+      "para-lama do lado esquerdo",
+      "paralama do lado esquerdo",
+      "para-lama esquerda",
+      "paralama esquerda",
+    ],
+  },
+  {
+    id: "paralama-d",
+    label: "Para-lama D",
+    phrase: "PARA-LAMA DIREITO",
+    aliases: [
+      "para-lama direito",
+      "paralama direito",
+      "para lama direito",
+      "para-lama d",
+      "paralama d",
+      "para-lama do lado direito",
+      "paralama do lado direito",
+      "para-lama direita",
+      "paralama direita",
+    ],
+  },
+  {
+    id: "capo",
+    label: "Capô",
+    phrase: "CAPÔ",
+    aliases: ["capo", "capô", "tampa do motor", "tampa dianteira"],
+  },
+  {
+    id: "porta-malas",
+    label: "Porta-malas",
+    phrase: "PORTA-MALAS",
+    aliases: ["porta-malas", "porta malas", "portamalas", "bagageiro"],
+  },
+  {
+    id: "tampa-traseira",
+    label: "Tampa traseira",
+    phrase: "TAMPA TRASEIRA",
+    aliases: ["tampa traseira", "tampa de tras", "tampa de trás", "tampa tras"],
+  },
+  {
+    id: "teto",
+    label: "Teto",
+    phrase: "TETO",
+    aliases: ["teto", "teto do carro"],
+  },
+  {
+    id: "coluna-a",
+    label: "Coluna A",
+    phrase: "COLUNA A",
+    aliases: ["coluna a", "coluna aa", "coluna dianteira"],
+  },
+  {
+    id: "coluna-b",
+    label: "Coluna B",
+    phrase: "COLUNA B",
+    aliases: ["coluna b", "coluna bb", "coluna central", "coluna do meio"],
+  },
+  {
+    id: "coluna-c",
+    label: "Coluna C",
+    phrase: "COLUNA C",
+    aliases: ["coluna c", "coluna cc", "coluna traseira"],
+  },
+  {
+    id: "soleira",
+    label: "Soleira",
+    phrase: "SOLEIRA",
+    aliases: ["soleira", "soleiras"],
+  },
+  {
+    id: "saia",
+    label: "Saia",
+    phrase: "SAIA",
+    aliases: ["saia", "saia lateral"],
+  },
+  {
+    id: "painel-frontal",
+    label: "Painel frontal",
+    phrase: "PAINEL FRONTAL",
+    aliases: ["painel frontal", "painel da frente", "painel dianteiro", "painel"],
+  },
+  {
+    id: "painel-traseiro",
+    label: "Painel traseiro",
+    phrase: "PAINEL TRASEIRO",
+    aliases: ["painel traseiro", "painel de tras", "painel de trás", "painel tras"],
+  },
+  {
+    id: "retrovisor-e",
+    label: "Retrovisor E",
+    phrase: "RETROVISOR ESQUERDO",
+    aliases: [
+      "retrovisor esquerdo",
+      "retrovisor e",
+      "retrovisor do lado esquerdo",
+      "espelho esquerdo",
+    ],
+  },
+  {
+    id: "retrovisor-d",
+    label: "Retrovisor D",
+    phrase: "RETROVISOR DIREITO",
+    aliases: [
+      "retrovisor direito",
+      "retrovisor d",
+      "retrovisor do lado direito",
+      "espelho direito",
+    ],
+  },
+  {
+    id: "grade",
+    label: "Grade",
+    phrase: "GRADE",
+    aliases: ["grade", "grade frontal", "grade dianteira"],
+  },
+  {
+    id: "assoalho",
+    label: "Assoalho",
+    phrase: "ASSOALHO",
+    aliases: ["assoalho", "assoalho do carro"],
+  },
 ];
 
 export function composeFunilariaDescription(actionVerb: string, partPhrase: string): string {
@@ -60,6 +321,25 @@ function strip(value: string) {
   return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("pt-BR");
 }
 
+function bestAliasMatch<T extends { aliases: string[] }>(
+  normalized: string,
+  candidates: T[],
+): T | null {
+  let best: T | null = null;
+  let bestLen = 0;
+  for (const candidate of candidates) {
+    for (const alias of candidate.aliases) {
+      const needle = strip(alias);
+      if (!needle) continue;
+      if (normalized.includes(needle) && needle.length > bestLen) {
+        best = candidate;
+        bestLen = needle.length;
+      }
+    }
+  }
+  return best;
+}
+
 /** Best-effort match from free text (voice) into funilaria action + part. */
 export function matchFunilariaFromTranscript(transcript: string): {
   action: FunilariaAction | null;
@@ -67,26 +347,8 @@ export function matchFunilariaFromTranscript(transcript: string): {
   description: string | null;
 } {
   const normalized = strip(transcript);
-  let action: FunilariaAction | null = null;
-  let part: FunilariaPart | null = null;
-
-  for (const candidate of FUNILARIA_ACTIONS) {
-    if (candidate.aliases.some((alias) => normalized.includes(strip(alias)))) {
-      action = candidate;
-      break;
-    }
-  }
-
-  // Longer aliases first for parts
-  const partsByAliasLen = [...FUNILARIA_PARTS].sort(
-    (a, b) => Math.max(...b.aliases.map((x) => x.length)) - Math.max(...a.aliases.map((x) => x.length)),
-  );
-  for (const candidate of partsByAliasLen) {
-    if (candidate.aliases.some((alias) => normalized.includes(strip(alias)))) {
-      part = candidate;
-      break;
-    }
-  }
+  const action = bestAliasMatch(normalized, FUNILARIA_ACTIONS);
+  const part = bestAliasMatch(normalized, FUNILARIA_PARTS);
 
   if (action && part) {
     return {
@@ -97,3 +359,38 @@ export function matchFunilariaFromTranscript(transcript: string): {
   }
   return { action, part, description: null };
 }
+
+/** Stable ids for AutoQA / coverage checks. */
+export const FUNILARIA_REQUIRED_ACTION_IDS = [
+  "alinhar",
+  "desamassar",
+  "retocar",
+  "recuperar",
+  "cortar",
+  "pintar",
+  "trocar",
+  "soldar",
+  "polir",
+] as const;
+
+export const FUNILARIA_REQUIRED_PART_IDS = [
+  "lateral-e",
+  "lateral-d",
+  "porta-de",
+  "porta-dd",
+  "porta-te",
+  "porta-td",
+  "parachoque-d",
+  "parachoque-t",
+  "paralama-e",
+  "paralama-d",
+  "capo",
+  "porta-malas",
+  "tampa-traseira",
+  "teto",
+  "coluna-a",
+  "coluna-b",
+  "coluna-c",
+  "soleira",
+  "painel-traseiro",
+] as const;

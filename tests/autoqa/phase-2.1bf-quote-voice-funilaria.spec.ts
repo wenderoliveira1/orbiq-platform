@@ -4,6 +4,10 @@ import { expect, test } from "@playwright/test";
 
 import {
   composeFunilariaDescription,
+  FUNILARIA_ACTIONS,
+  FUNILARIA_PARTS,
+  FUNILARIA_REQUIRED_ACTION_IDS,
+  FUNILARIA_REQUIRED_PART_IDS,
   matchFunilariaFromTranscript,
 } from "../../apps/web/src/app/dashboard/orcamentos/_components/funilaria-catalog";
 import { parseVoiceTranscript } from "../../apps/web/src/app/dashboard/orcamentos/_components/quote-voice-parse";
@@ -26,6 +30,8 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     expect(capture).toContain('data-testid="quote-voice-discard"');
     expect(capture).toContain('data-testid="quote-voice-labor-group"');
     expect(capture).toContain('data-testid="quote-voice-parts-group"');
+    expect(capture).toContain('data-testid="quote-voice-phase-badge"');
+    expect(capture).toContain('data-testid="quote-voice-second-utterance"');
     expect(capture).toContain("MÃO DE OBRA");
     expect(capture).toContain("PEÇAS");
     expect(capture).toContain("Confirmar e adicionar");
@@ -33,6 +39,10 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     expect(capture).toContain("VOZ (PT-BR)");
     expect(capture).toContain("Nada é salvo só por falar");
     expect(capture).toContain("quote-voice-unsupported");
+    expect(capture).toContain("Ouvindo");
+    expect(capture).toContain("Revise");
+    expect(capture).toContain("Falar de novo");
+    expect(capture).toContain("is-large");
 
     // Human gate: speech end opens review only; onConfirm is reserved for confirm()
     expect(capture).toContain("openReview(text)");
@@ -71,6 +81,12 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     expect(catalog).toContain('verb: "ALINHAR"');
     expect(catalog).toContain('phrase: "PARA-LAMA ESQUERDO"');
     expect(catalog).toContain("composeFunilariaDescription");
+    expect(catalog).toContain('phrase: "COLUNA A"');
+    expect(catalog).toContain('phrase: "COLUNA B"');
+    expect(catalog).toContain('phrase: "COLUNA C"');
+    expect(catalog).toContain('phrase: "SOLEIRA"');
+    expect(catalog).toContain('phrase: "PAINEL TRASEIRO"');
+    expect(catalog).toContain('phrase: "TAMPA TRASEIRA"');
 
     expect(composeFunilariaDescription("ALINHAR", "PARA-LAMA ESQUERDO")).toBe(
       "ALINHAR — PARA-LAMA ESQUERDO",
@@ -80,6 +96,40 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     expect(matched.description).toBe("ALINHAR — PARA-LAMA ESQUERDO");
     expect(matched.action?.id).toBe("alinhar");
     expect(matched.part?.id).toBe("paralama-e");
+  });
+
+  test("catálogo Funilaria cobre ações e peças profissionais", async () => {
+    const actionIds = FUNILARIA_ACTIONS.map((item) => item.id);
+    const partIds = FUNILARIA_PARTS.map((item) => item.id);
+
+    for (const id of FUNILARIA_REQUIRED_ACTION_IDS) {
+      expect(actionIds, `missing action ${id}`).toContain(id);
+    }
+    for (const id of FUNILARIA_REQUIRED_PART_IDS) {
+      expect(partIds, `missing part ${id}`).toContain(id);
+    }
+
+    // Pintura stays inside Funilaria as "pintar" — one flow, no sibling chip set required.
+    expect(actionIds).toContain("pintar");
+    expect(FUNILARIA_ACTIONS.find((a) => a.id === "pintar")?.aliases).toEqual(
+      expect.arrayContaining(["pintar", "pintura"]),
+    );
+
+    const phrases = [
+      ["desamassar porta dianteira esquerda", "DESAMASSAR — PORTA DIANTEIRA ESQUERDA"],
+      ["retocar lateral direita", "RETOCAR — LATERAL DIREITA"],
+      ["recuperar coluna b", "RECUPERAR — COLUNA B"],
+      ["cortar soleira", "CORTAR — SOLEIRA"],
+      ["pintar para-choque dianteiro", "PINTAR — PARA-CHOQUE DIANTEIRO"],
+      ["soldar painel traseiro", "SOLDAR — PAINEL TRASEIRO"],
+      ["polir capô", "POLIR — CAPÔ"],
+      ["alinhar tampa traseira", "ALINHAR — TAMPA TRASEIRA"],
+    ] as const;
+
+    for (const [utterance, expected] of phrases) {
+      const matched = matchFunilariaFromTranscript(utterance);
+      expect(matched.description, utterance).toBe(expected);
+    }
   });
 
   test("parse de voz pré-preenche Funilaria sem auto-peça em alinhar", async () => {
@@ -93,6 +143,10 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     expect(trocar.description).toBe("TROCAR — PARA-LAMA DIREITO");
     expect(trocar.needsPart).toBe(true);
     expect(trocar.partDescription).toBe("PARA-LAMA DIREITO");
+
+    const pinturaBody = parseVoiceTranscript("pintura porta traseira esquerda");
+    expect(pinturaBody.category).toBe("FUNILARIA");
+    expect(pinturaBody.description).toBe("PINTAR — PORTA TRASEIRA ESQUERDA");
 
     const withLabor = parseVoiceTranscript("mão de obra pintura 800");
     expect(withLabor.laborAmount).toMatch(/800/);
@@ -132,5 +186,8 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     expect(css).toContain(".quote-voice-group-kicker");
     expect(css).toContain("min-height: 52px");
     expect(css).toContain("min-height: 64px");
+    expect(css).toContain(".quote-voice-phase-badge");
+    expect(css).toContain(".quote-voice-mic.is-large");
+    expect(css).toContain("quote-voice-pulse");
   });
 });
