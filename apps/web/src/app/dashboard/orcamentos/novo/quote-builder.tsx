@@ -15,6 +15,8 @@ const serviceCategories = ["MECÂNICA", "SUSPENSÃO", "FREIOS", "DIREÇÃO", "MO
 const itemCategories = ["MECÂNICA", "CHASSI - PARALELO/ORIGINAL", "CHASSI - FERRO VELHO", "PNEUS", "VIDROS", "ÓLEOS E LUBRIFICANTES", "FUNILARIA", "ELÉTRICA", "OUTROS"];
 const units = ["UN", "PAR", "KIT", "JOGO", "LITRO", "METRO", "PACOTE"];
 const sides = ["", "ESQUERDO", "DIREITO", "DIANTEIRO", "TRASEIRO", "DIANTEIRO ESQUERDO", "DIANTEIRO DIREITO", "TRASEIRO ESQUERDO", "TRASEIRO DIREITO"];
+const PICKER_PAGE_SIZE = 40;
+const CATALOG_PAGE_SIZE = 24;
 
 function money(value: number) { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value); }
 function parseMoney(raw: string) { let value = raw.trim().replace(/\s/g, ""); if (!value) return 0; if (value.includes(",")) value = value.replace(/\./g, "").replace(",", "."); const result = Number(value); return Number.isFinite(result) ? result : null; }
@@ -42,11 +44,66 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   const [openStep, setOpenStep] = useState<StepId>(1);
   const [partDetailsOpen, setPartDetailsOpen] = useState<Record<string, boolean>>({});
   const [extraDetailsOpen, setExtraDetailsOpen] = useState(false);
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [vehicleQuery, setVehicleQuery] = useState("");
+  const [serviceQuery, setServiceQuery] = useState("");
+  const [customerLimit, setCustomerLimit] = useState(PICKER_PAGE_SIZE);
+  const [vehicleLimit, setVehicleLimit] = useState(PICKER_PAGE_SIZE);
+  const [serviceLimit, setServiceLimit] = useState(CATALOG_PAGE_SIZE);
 
-  const filteredVehicles = useMemo(() => vehicles.filter((vehicle) => vehicle.customer_id === customerId), [vehicles, customerId]);
+  const selectedCustomer = useMemo(() => customers.find((customer) => customer.id === customerId), [customers, customerId]);
+  const filteredCustomers = useMemo(() => {
+    const query = customerQuery.trim().toLocaleLowerCase("pt-BR");
+    const digitsQuery = customerQuery.replace(/\D/g, "");
+    if (!query) return customers;
+    return customers.filter((customer) => {
+      const name = customer.name.toLocaleLowerCase("pt-BR");
+      const phone = String(customer.phone ?? "");
+      const phoneDigits = phone.replace(/\D/g, "");
+      return name.includes(query) || phone.toLocaleLowerCase("pt-BR").includes(query) || (digitsQuery.length >= 2 && phoneDigits.includes(digitsQuery));
+    });
+  }, [customers, customerQuery]);
+  const visibleCustomers = useMemo(() => {
+    const list = filteredCustomers.slice(0, customerLimit);
+    if (selectedCustomer && !list.some((customer) => customer.id === selectedCustomer.id)) {
+      return [selectedCustomer, ...list];
+    }
+    return list;
+  }, [filteredCustomers, customerLimit, selectedCustomer]);
+
+  const filteredVehicles = useMemo(() => {
+    const owned = vehicles.filter((vehicle) => vehicle.customer_id === customerId);
+    const query = vehicleQuery.trim().toLocaleLowerCase("pt-BR");
+    if (!query) return owned;
+    return owned.filter((vehicle) => {
+      const haystack = [vehicle.plate, vehicle.brand, vehicle.model, vehicle.version]
+        .filter(Boolean)
+        .join(" ")
+        .toLocaleLowerCase("pt-BR");
+      return haystack.includes(query);
+    });
+  }, [vehicles, customerId, vehicleQuery]);
   const selectedVehicle = useMemo(() => vehicles.find((vehicle) => vehicle.id === vehicleId), [vehicles, vehicleId]);
+  const visibleVehicles = useMemo(() => {
+    const list = filteredVehicles.slice(0, vehicleLimit);
+    if (selectedVehicle && selectedVehicle.customer_id === customerId && !list.some((vehicle) => vehicle.id === selectedVehicle.id)) {
+      return [selectedVehicle, ...list];
+    }
+    return list;
+  }, [filteredVehicles, vehicleLimit, selectedVehicle, customerId]);
+
   const availableCategories = useMemo(() => Array.from(new Set([...serviceCategories, ...serviceCatalog.map((service) => service.category.toLocaleUpperCase("pt-BR"))])), [serviceCatalog]);
-  const filteredServices = useMemo(() => serviceCategory ? serviceCatalog.filter((service) => normalizeCategory(service.category) === normalizeCategory(serviceCategory)) : [], [serviceCatalog, serviceCategory]);
+  const filteredServices = useMemo(() => {
+    if (!serviceCategory) return [];
+    const byCategory = serviceCatalog.filter((service) => normalizeCategory(service.category) === normalizeCategory(serviceCategory));
+    const query = serviceQuery.trim().toLocaleLowerCase("pt-BR");
+    if (!query) return byCategory;
+    return byCategory.filter((service) => {
+      const haystack = `${service.description} ${service.category}`.toLocaleLowerCase("pt-BR");
+      return haystack.includes(query);
+    });
+  }, [serviceCatalog, serviceCategory, serviceQuery]);
+  const visibleServices = useMemo(() => filteredServices.slice(0, serviceLimit), [filteredServices, serviceLimit]);
   const laborTotal = useMemo(() => selectedServices.reduce((total, service) => total + service.laborAmount * parseQuantity(service.quantity), 0), [selectedServices]);
   const generatedItems = useMemo(() => selectedServices.filter((service) => service.needsPart).map((service) => {
     const quantity = parseQuantity(service.partQuantity);
@@ -90,8 +147,18 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   const step1Ready = Boolean(customerId && vehicleId);
   const step1Complete = Boolean(customerId && vehicleId && mileage.trim());
 
-  function chooseCustomer(id: string) { setCustomerId(id); setVehicleId(""); setMileage(""); }
-  function chooseVehicle(id: string) { setVehicleId(id); const vehicle = vehicles.find((item) => item.id === id); setMileage(vehicle?.mileage != null ? String(vehicle.mileage) : ""); }
+  function chooseCustomer(id: string) {
+    setCustomerId(id);
+    setVehicleId("");
+    setMileage("");
+    setVehicleQuery("");
+    setVehicleLimit(PICKER_PAGE_SIZE);
+  }
+  function chooseVehicle(id: string) {
+    setVehicleId(id);
+    const vehicle = vehicles.find((item) => item.id === id);
+    setMileage(vehicle?.mileage != null ? String(vehicle.mileage) : "");
+  }
   function addCatalogService(service: ServiceCatalogItem) {
     const serviceKey = `catalog-${service.id}`;
     if (selectedServices.some((item) => item.key === serviceKey)) return;
@@ -171,27 +238,72 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
         </button>
         <div className="quote-step-body" hidden={openStep !== 1}>
           <div className="quote-builder-grid">
-            <label>
+            <label className="quote-picker-field">
               <span>Cliente *</span>
+              <input
+                type="search"
+                value={customerQuery}
+                onChange={(event) => {
+                  setCustomerQuery(event.target.value);
+                  setCustomerLimit(PICKER_PAGE_SIZE);
+                }}
+                placeholder="Buscar nome ou telefone"
+                aria-label="Buscar cliente"
+                autoComplete="off"
+              />
               <select name="customer_id" value={customerId} onChange={(event) => chooseCustomer(event.target.value)} required>
                 <option value="">Selecione o cliente</option>
-                {customers.map((customer) => (
+                {visibleCustomers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
                     {customer.name}{customer.phone ? ` · ${customer.phone}` : ""}
                   </option>
                 ))}
               </select>
+              <small className="quote-picker-meta">
+                {filteredCustomers.length === 0
+                  ? "Nenhum cliente encontrado"
+                  : `Mostrando ${Math.min(visibleCustomers.length, filteredCustomers.length)} de ${filteredCustomers.length}`}
+                {filteredCustomers.length > customerLimit ? (
+                  <button type="button" className="quote-picker-more" onClick={() => setCustomerLimit((current) => current + PICKER_PAGE_SIZE)}>
+                    Mostrar mais
+                  </button>
+                ) : null}
+              </small>
             </label>
-            <label>
+            <label className="quote-picker-field">
               <span>Veículo *</span>
+              <input
+                type="search"
+                value={vehicleQuery}
+                onChange={(event) => {
+                  setVehicleQuery(event.target.value);
+                  setVehicleLimit(PICKER_PAGE_SIZE);
+                }}
+                placeholder={customerId ? "Buscar placa ou modelo" : "Selecione o cliente primeiro"}
+                aria-label="Buscar veículo"
+                disabled={!customerId}
+                autoComplete="off"
+              />
               <select name="vehicle_id" value={vehicleId} onChange={(event) => chooseVehicle(event.target.value)} disabled={!customerId} required>
                 <option value="">{customerId ? "Selecione o veículo" : "Selecione primeiro o cliente"}</option>
-                {filteredVehicles.map((vehicle) => (
+                {visibleVehicles.map((vehicle) => (
                   <option key={vehicle.id} value={vehicle.id}>
                     {vehicle.plate} · {[vehicle.brand, vehicle.model, vehicle.version].filter(Boolean).join(" ")}
                   </option>
                 ))}
               </select>
+              <small className="quote-picker-meta">
+                {!customerId
+                  ? "Escolha o cliente para listar veículos"
+                  : filteredVehicles.length === 0
+                    ? "Nenhum veículo encontrado"
+                    : `Mostrando ${Math.min(visibleVehicles.length, filteredVehicles.length)} de ${filteredVehicles.length}`}
+                {customerId && filteredVehicles.length > vehicleLimit ? (
+                  <button type="button" className="quote-picker-more" onClick={() => setVehicleLimit((current) => current + PICKER_PAGE_SIZE)}>
+                    Mostrar mais
+                  </button>
+                ) : null}
+              </small>
             </label>
             <label>
               <span>Quilometragem *</span>
@@ -253,26 +365,62 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
           <p className="quote-builder-section-description">Selecione a área e depois o serviço. O valor salvo no catálogo é o valor unitário.</p>
           <div className="quote-labor-browser">
             <div className="quote-labor-search">
-              <select value={serviceCategory} onChange={(event) => setServiceCategory(event.target.value)} aria-label="Área do serviço">
+              <select
+                value={serviceCategory}
+                onChange={(event) => {
+                  setServiceCategory(event.target.value);
+                  setServiceQuery("");
+                  setServiceLimit(CATALOG_PAGE_SIZE);
+                }}
+                aria-label="Área do serviço"
+              >
                 <option value="">Selecione a área do serviço</option>
                 {availableCategories.map((category) => <option key={category} value={category}>{category}</option>)}
               </select>
+              <input
+                type="search"
+                value={serviceQuery}
+                onChange={(event) => {
+                  setServiceQuery(event.target.value);
+                  setServiceLimit(CATALOG_PAGE_SIZE);
+                }}
+                placeholder="Buscar serviço no catálogo"
+                aria-label="Buscar serviço"
+                disabled={!serviceCategory}
+                autoComplete="off"
+              />
               <span>{filteredServices.length} serviço(s)</span>
             </div>
             {serviceCategory ? (
-              <div className="quote-labor-catalog">
-                {filteredServices.map((service) => {
-                  const added = selectedServices.some((item) => item.key === `catalog-${service.id}`);
-                  return (
-                    <button key={service.id} type="button" className={`quote-labor-card${added ? " added" : ""}`} disabled={added} onClick={() => addCatalogService(service)}>
-                      <span>{service.category}</span>
-                      <strong>{service.description}</strong>
-                      <b>{Number(service.default_labor_amount) > 0 ? money(Number(service.default_labor_amount)) : "MÃO DE OBRA A DEFINIR"}</b>
-                      <small>{service.requires_part ? "PEÇA JÁ MARCADA PARA COMPRA" : added ? "ADICIONADO" : "+ ADICIONAR"}</small>
-                    </button>
-                  );
-                })}
-              </div>
+              filteredServices.length === 0 ? (
+                <div className="orbiq-empty compact">
+                  <strong>Nenhum serviço encontrado.</strong>
+                  <span>Ajuste a busca ou adicione um serviço manual abaixo.</span>
+                </div>
+              ) : (
+                <>
+                  <div className="quote-labor-catalog">
+                    {visibleServices.map((service) => {
+                      const added = selectedServices.some((item) => item.key === `catalog-${service.id}`);
+                      return (
+                        <button key={service.id} type="button" className={`quote-labor-card${added ? " added" : ""}`} disabled={added} onClick={() => addCatalogService(service)}>
+                          <span>{service.category}</span>
+                          <strong>{service.description}</strong>
+                          <b>{Number(service.default_labor_amount) > 0 ? money(Number(service.default_labor_amount)) : "MÃO DE OBRA A DEFINIR"}</b>
+                          <small>{service.requires_part ? "PEÇA JÁ MARCADA PARA COMPRA" : added ? "ADICIONADO" : "+ ADICIONAR"}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {filteredServices.length > serviceLimit ? (
+                    <div className="quote-catalog-more">
+                      <button type="button" className="orbiq-secondary-button" onClick={() => setServiceLimit((current) => current + CATALOG_PAGE_SIZE)}>
+                        Mostrar mais serviços ({filteredServices.length - serviceLimit} restantes)
+                      </button>
+                    </div>
+                  ) : null}
+                </>
+              )
             ) : (
               <div className="orbiq-empty compact">
                 <strong>Escolha uma área.</strong>

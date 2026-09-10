@@ -199,6 +199,61 @@ export async function updateQuoteItemQuantityAction(formData: FormData): Promise
 }
 
 
+export async function updateQuoteServiceDescriptionAction(formData: FormData): Promise<never> {
+  const { supabase, organization } = await getCurrentContext();
+  const quoteId = text(formData.get("quote_id"));
+  const serviceId = text(formData.get("service_id"));
+  const description = text(formData.get("description")).toLocaleUpperCase("pt-BR");
+  if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
+  if (!serviceId) return fail(quoteId, "Serviço inválido.");
+  if (description.length < 2) return fail(quoteId, "Informe a descrição do serviço.");
+  if (description.length > 300) return fail(quoteId, "A descrição do serviço é muito longa.");
+
+  const { data, error } = await supabase
+    .from("quote_services")
+    .update({ description })
+    .eq("id", serviceId)
+    .eq("quote_id", quoteId)
+    .eq("organization_id", organization.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return fail(quoteId, `Não foi possível atualizar a descrição: ${error.message}`);
+  if (!data) return fail(quoteId, "Serviço não encontrado.");
+
+  refreshQuotePaths(quoteId);
+  redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Descrição do serviço atualizada.")}`);
+}
+
+export async function updateQuoteItemDescriptionAction(formData: FormData): Promise<never> {
+  const { supabase, organization } = await getCurrentContext();
+  const quoteId = text(formData.get("quote_id"));
+  const itemId = text(formData.get("item_id"));
+  const description = text(formData.get("description")).toLocaleUpperCase("pt-BR");
+  if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
+  if (!itemId) return fail(quoteId, "Item inválido.");
+  if (description.length < 2) return fail(quoteId, "Informe a descrição da peça.");
+  if (description.length > 300) return fail(quoteId, "A descrição da peça é muito longa.");
+
+  const { data, error } = await supabase
+    .from("quote_items")
+    .update({ description })
+    .eq("id", itemId)
+    .eq("quote_id", quoteId)
+    .eq("organization_id", organization.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return fail(quoteId, `Não foi possível atualizar a descrição: ${error.message}`);
+  if (!data) return fail(quoteId, "Item não encontrado.");
+
+  refreshQuotePaths(quoteId);
+  redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Descrição da peça atualizada.")}`);
+}
+
+
 export async function updateQuoteServiceLaborAction(formData: FormData): Promise<never> {
   const { supabase, organization } = await getCurrentContext();
   const quoteId = text(formData.get("quote_id"));
