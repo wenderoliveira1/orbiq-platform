@@ -17,6 +17,7 @@ import {
 import { MobileNavigation } from "./mobile-navigation";
 import { DashboardNav } from "./nav";
 import { OrganizationSwitcher } from "./organization-switcher";
+import { AiHelpAssistant } from "./_components/ai-help/ai-help-assistant";
 import { ThemeToggle } from "./theme-toggle";
 import { parseThemePreference, THEME_COOKIE } from "@/lib/theme";
 
@@ -116,6 +117,7 @@ export default async function DashboardLayout({
         />
 
         <div className="orbiq-content">{children}</div>
+        <AiHelpAssistant />
       </main>
     </div>
   );
