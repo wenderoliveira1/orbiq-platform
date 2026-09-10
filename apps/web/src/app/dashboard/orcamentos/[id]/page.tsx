@@ -12,6 +12,7 @@ import {
   duplicateQuoteAction,
   updateQuoteIdentityAction,
   updateQuoteItemDescriptionAction,
+  updateQuoteItemPriceAction,
   updateQuoteItemQuantityAction,
   updateQuoteNotesAction,
   updateQuoteServiceDescriptionAction,
@@ -54,7 +55,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
     supabase.from("customers").select("id, name, phone, email").eq("organization_id", organization.id).eq("id", quote.customer_id).maybeSingle(),
     supabase.from("vehicles").select("id, plate, brand, model, version, model_year").eq("organization_id", organization.id).eq("id", quote.vehicle_id).maybeSingle(),
     supabase.from("quote_services").select("id, category, description, needs_part, quantity, labor_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
-    supabase.from("quote_items").select("id, category, description, quantity, unit, side, specification, purchase_status, chosen_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
+    supabase.from("quote_items").select("id, category, description, quantity, unit, side, specification, purchase_status, chosen_amount, sale_unit_amount, sale_total_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
     supabase.from("service_catalog").select("id, category, description, default_labor_amount, requires_part").eq("organization_id", organization.id).eq("active", true).order("category", { ascending: true }).order("description", { ascending: true }).limit(400),
   ]);
 
@@ -363,39 +364,52 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
       {(!locked || items.length > 0) ? (
         <section className="orbiq-panel quote-items-section">
           <div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">PEÇAS / ITENS</span><h2>Itens para compra</h2></div><span className="orbiq-count-badge">{items.length}</span></div>
-
           {!locked ? (
-            <div className="no-print quote-append-panel">
-              <form action={addQuoteItemAction} className="quote-append-form quote-append-item-form">
-                <input type="hidden" name="quote_id" value={quote.id} />
-                <input name="description" placeholder="Nova peça / serviço avulso" aria-label="Descrição da peça" required maxLength={300} />
-                <input name="category" placeholder="Categoria" aria-label="Categoria da peça" maxLength={80} />
-                <input name="quantity" type="number" min="0.001" step="0.001" defaultValue="1" placeholder="Qtd." aria-label="Quantidade da peça" />
-                <input name="unit" placeholder="UN" defaultValue="UN" aria-label="Unidade" maxLength={40} />
-                <input name="side" placeholder="Lado" aria-label="Lado" maxLength={80} />
-                <input name="specification" placeholder="Especificação" aria-label="Especificação" maxLength={300} />
-                <input name="chosen_amount" type="number" min="0" step="0.01" placeholder="Custo total (opc.)" aria-label="Custo total da peça" />
-                <button type="submit" className="orbiq-primary-button">+ Peça</button>
-              </form>
-            </div>
+            <>
+              <p className="quote-builder-section-description no-print" style={{ marginTop: 0 }}>
+                Sem preço no atendimento? Informe custo unitário e venda (opcional) aqui — mesmo caminho do Comercial / Preço direto. Após aprovação comercial, use Reabrir com &quot;sim&quot;.
+              </p>
+              <div className="no-print quote-append-panel">
+                <form action={addQuoteItemAction} className="quote-append-form quote-append-item-form">
+                  <input type="hidden" name="quote_id" value={quote.id} />
+                  <input name="description" placeholder="Nova peça / serviço avulso" aria-label="Descrição da peça" required maxLength={300} />
+                  <input name="category" placeholder="Categoria" aria-label="Categoria da peça" maxLength={80} />
+                  <input name="quantity" type="number" min="0.001" step="0.001" defaultValue="1" placeholder="Qtd." aria-label="Quantidade da peça" />
+                  <input name="unit" placeholder="UN" defaultValue="UN" aria-label="Unidade" maxLength={40} />
+                  <input name="side" placeholder="Lado" aria-label="Lado" maxLength={80} />
+                  <input name="specification" placeholder="Especificação" aria-label="Especificação" maxLength={300} />
+                  <input name="chosen_amount" type="number" min="0" step="0.01" placeholder="Custo total (opc.)" aria-label="Custo total da peça" />
+                  <button type="submit" className="orbiq-primary-button">+ Peça</button>
+                </form>
+              </div>
+            </>
           ) : null}
 
           {items.length === 0 ? (
             <div className="orbiq-empty compact"><strong>Nenhuma peça registrada.</strong></div>
           ) : (
             <div className="quote-detail-table">
-              <div className="quote-detail-table-head item-table" style={{ gridTemplateColumns: "1.7fr 220px 130px 1fr 100px" }}><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Especificação</span><span>Compra</span></div>
-              {items.map((item) => (
-                <div key={item.id} className="quote-detail-table-row item-table" style={{ gridTemplateColumns: "1.7fr 220px 130px 1fr 100px" }}>
+              <div className="quote-detail-table-head item-table quote-item-price-grid"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Preço</span><span>Compra</span></div>
+              {items.map((item) => {
+                const quantity = Number(item.quantity ?? 1) || 1;
+                const unitCost =
+                  item.chosen_amount !== null && quantity > 0
+                    ? Math.round((Number(item.chosen_amount) / quantity) * 100) / 100
+                    : null;
+                const saleUnit = item.sale_unit_amount !== null && item.sale_unit_amount !== undefined
+                  ? Number(item.sale_unit_amount)
+                  : null;
+                return (
+                <div key={item.id} className="quote-detail-table-row item-table quote-item-price-grid">
                   <div>
                     {locked ? (
                       <>
                         <strong>{item.description}</strong>
-                        <span>{item.category}</span>
+                        <span>{item.category}{item.specification ? ` · ${item.specification}` : ""}</span>
                       </>
                     ) : (
                       <>
-                        <div className="print-only"><strong>{item.description}</strong><span>{item.category}</span></div>
+                        <div className="print-only"><strong>{item.description}</strong><span>{item.category}{item.specification ? ` · ${item.specification}` : ""}</span></div>
                         <form action={updateQuoteItemDescriptionAction} className="no-print" style={{ display: "grid", gap: 6 }}>
                           <input type="hidden" name="quote_id" value={quote.id} />
                           <input type="hidden" name="item_id" value={item.id} />
@@ -410,7 +424,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
                             />
                             <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar</button>
                           </div>
-                          <span>{item.category}</span>
+                          <span>{item.category}{item.specification ? ` · ${item.specification}` : ""}</span>
                         </form>
                       </>
                     )}
@@ -442,10 +456,51 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
                     )}
                   </div>
                   <span>{item.side ?? "—"}</span>
-                  <span>{item.specification ?? "—"}</span>
+                  <div>
+                    {locked ? (
+                      <div className="quote-item-price-readonly">
+                        <strong>{money(item.chosen_amount)}</strong>
+                        <small>Custo linha{saleUnit !== null ? ` · Venda unit. ${money(saleUnit)}` : ""}</small>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="print-only quote-item-price-readonly">
+                          <strong>{money(item.chosen_amount)}</strong>
+                          <small>{unitCost !== null ? `Unit. ${money(unitCost)}` : "Sem preço"}</small>
+                        </div>
+                        <form action={updateQuoteItemPriceAction} className="no-print quote-item-price-form" data-testid="quote-item-price-form">
+                          <input type="hidden" name="quote_id" value={quote.id} />
+                          <input type="hidden" name="item_id" value={item.id} />
+                          <label>
+                            <span>Custo unit. R$</span>
+                            <input
+                              name="cost_unit_amount"
+                              inputMode="decimal"
+                              defaultValue={unitCost !== null ? String(unitCost).replace(".", ",") : ""}
+                              placeholder="0,00"
+                              aria-label={`Custo unitário de ${item.description}`}
+                            />
+                          </label>
+                          <label>
+                            <span>Venda unit. (opc.)</span>
+                            <input
+                              name="sale_unit_amount"
+                              inputMode="decimal"
+                              defaultValue={saleUnit !== null ? String(saleUnit).replace(".", ",") : ""}
+                              placeholder="Margem no Comercial"
+                              aria-label={`Venda unitária de ${item.description}`}
+                            />
+                          </label>
+                          <button type="submit" className="orbiq-secondary-button">Salvar preço</button>
+                          <small>{item.chosen_amount !== null ? `Linha: ${money(item.chosen_amount)}` : "Sem preço — será cotado"}</small>
+                        </form>
+                      </>
+                    )}
+                  </div>
                   <span>{item.purchase_status}</span>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

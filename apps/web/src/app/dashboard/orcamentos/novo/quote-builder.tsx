@@ -1,15 +1,39 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { createQuoteV2Action, saveServiceCatalogAction, saveServiceLaborAction } from "./actions";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  createQuoteV2Action,
+  discardQuoteBuilderServerDraftAction,
+  saveServiceCatalogAction,
+  saveServiceLaborAction,
+  upsertQuoteBuilderDraftAction,
+} from "./actions";
+import {
+  canSyncQuoteBuilderDraftToServer,
+  clearQuoteBuilderDraft,
+  isMeaningfulQuoteBuilderDraft,
+  QUOTE_BUILDER_DRAFT_DEBOUNCE_MS,
+  QUOTE_BUILDER_SERVER_SYNC_DEBOUNCE_MS,
+  readQuoteBuilderDraft,
+  writeQuoteBuilderDraft,
+  type QuoteBuilderDraftPriority,
+  type QuoteBuilderDraftStep,
+} from "./quote-builder-draft";
 
 type Customer = { id: string; name: string; phone: string | null };
 type Vehicle = { id: string; customer_id: string; plate: string; brand: string | null; model: string | null; version: string | null; model_year: number | null; mileage: number | null };
 type ServiceCatalogItem = { id: string; category: string; description: string; default_labor_amount: number; requires_part: boolean };
 type SelectedService = { key: string; serviceCatalogId: string | null; category: string; description: string; laborAmount: number; quantity: string; needsPart: boolean; partDescription: string; partCategory: string; partQuantity: string; partUnit: string; partSide: string; partSpecification: string; hasManualPrice: boolean; partCost: string; partSale: string };
 type ExtraItem = { key: string; category: string; description: string; quantity: string; unit: string; side: string; specification: string; hasManualPrice: boolean; partCost: string; partSale: string };
-type Props = { customers: Customer[]; vehicles: Vehicle[]; serviceCatalog: ServiceCatalogItem[]; errorMessage?: string };
-type StepId = 1 | 2 | 3 | 4;
+type Props = {
+  customers: Customer[];
+  vehicles: Vehicle[];
+  serviceCatalog: ServiceCatalogItem[];
+  organizationId: string;
+  userId: string;
+  errorMessage?: string;
+};
+type StepId = QuoteBuilderDraftStep;
 
 const serviceCategories = ["MECÂNICA", "SUSPENSÃO", "FREIOS", "DIREÇÃO", "MOTOR", "CÂMBIO", "ELÉTRICA", "ARREFECIMENTO", "AR-CONDICIONADO", "FUNILARIA", "PINTURA", "ALINHAMENTO", "OUTROS"];
 const itemCategories = ["MECÂNICA", "CHASSI - PARALELO/ORIGINAL", "CHASSI - FERRO VELHO", "PNEUS", "VIDROS", "ÓLEOS E LUBRIFICANTES", "FUNILARIA", "ELÉTRICA", "OUTROS"];
@@ -24,10 +48,12 @@ function parseQuantity(raw: string) { const result = Number(raw.trim().replace("
 function normalizeCategory(value: string) { return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleUpperCase("pt-BR").trim(); }
 function key(prefix: string) { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 
-export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage }: Props) {
+export function QuoteBuilder({ customers, vehicles, serviceCatalog, organizationId, userId, errorMessage }: Props) {
   const [customerId, setCustomerId] = useState("");
   const [vehicleId, setVehicleId] = useState("");
   const [mileage, setMileage] = useState("");
+  const [priority, setPriority] = useState<QuoteBuilderDraftPriority>("normal");
+  const [notes, setNotes] = useState("");
   const [serviceCategory, setServiceCategory] = useState("");
   const [manualDescription, setManualDescription] = useState("");
   const [manualCategory, setManualCategory] = useState("MECÂNICA");
@@ -50,6 +76,13 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   const [customerLimit, setCustomerLimit] = useState(PICKER_PAGE_SIZE);
   const [vehicleLimit, setVehicleLimit] = useState(PICKER_PAGE_SIZE);
   const [serviceLimit, setServiceLimit] = useState(CATALOG_PAGE_SIZE);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [serverDraftQuoteId, setServerDraftQuoteId] = useState<string | null>(null);
+  const [serverDraftProtocol, setServerDraftProtocol] = useState<string | null>(null);
+  const [serverDraftStatus, setServerDraftStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const skipNextServerSyncRef = useRef(true);
+  const serverSyncInFlightRef = useRef(false);
 
   const selectedCustomer = useMemo(() => customers.find((customer) => customer.id === customerId), [customers, customerId]);
   const filteredCustomers = useMemo(() => {
@@ -144,6 +177,172 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   const itemsPayload = useMemo(() => [...generatedItems, ...extraItemsPayload], [generatedItems, extraItemsPayload]);
   const servicesPayload = useMemo(() => selectedServices.map((service) => ({ labor_service_id: null, service_catalog_id: service.serviceCatalogId, category: service.category, description: service.description, labor_amount: service.laborAmount, quantity: parseQuantity(service.quantity), needs_part: service.needsPart })), [selectedServices]);
 
+  useEffect(() => {
+    let cancelled = false;
+    // Defer restore so we do not setState synchronously inside the effect body
+    // (react-hooks/set-state-in-effect). localStorage is only available in the browser.
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      const draft = readQuoteBuilderDraft(organizationId, userId);
+      if (draft && isMeaningfulQuoteBuilderDraft(draft)) {
+        const customerExists = !draft.customerId || customers.some((customer) => customer.id === draft.customerId);
+        const vehicleExists =
+          !draft.vehicleId ||
+          vehicles.some(
+            (vehicle) =>
+              vehicle.id === draft.vehicleId &&
+              (!draft.customerId || vehicle.customer_id === draft.customerId),
+          );
+        setCustomerId(customerExists ? draft.customerId : "");
+        setVehicleId(customerExists && vehicleExists ? draft.vehicleId : "");
+        setMileage(draft.mileage);
+        setPriority(draft.priority);
+        setNotes(draft.notes);
+        setServiceCategory(draft.serviceCategory);
+        setSelectedServices(draft.selectedServices);
+        setExtraItems(draft.extraItems);
+        setOpenStep(draft.openStep);
+        setServerDraftQuoteId(draft.serverDraftQuoteId);
+        setServerDraftProtocol(draft.serverDraftProtocol);
+        setDraftRestored(true);
+      }
+      setDraftReady(true);
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+    // Restore only on mount for this org/user.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [organizationId, userId]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+    const timer = window.setTimeout(() => {
+      writeQuoteBuilderDraft({
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        organizationId,
+        userId,
+        openStep,
+        customerId,
+        vehicleId,
+        mileage,
+        priority,
+        notes,
+        serviceCategory,
+        selectedServices,
+        extraItems,
+        serverDraftQuoteId,
+        serverDraftProtocol,
+      });
+    }, QUOTE_BUILDER_DRAFT_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [
+    draftReady,
+    organizationId,
+    userId,
+    openStep,
+    customerId,
+    vehicleId,
+    mileage,
+    priority,
+    notes,
+    serviceCategory,
+    selectedServices,
+    extraItems,
+    serverDraftQuoteId,
+    serverDraftProtocol,
+  ]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+    if (skipNextServerSyncRef.current) {
+      skipNextServerSyncRef.current = false;
+      return;
+    }
+    if (!canSyncQuoteBuilderDraftToServer({ customerId, vehicleId, mileage, selectedServices })) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      if (serverSyncInFlightRef.current) return;
+      serverSyncInFlightRef.current = true;
+      setServerDraftStatus("saving");
+      const syncItems = itemsPayload.filter((item) => item.description.trim().length >= 2);
+      void upsertQuoteBuilderDraftAction({
+        draftQuoteId: serverDraftQuoteId,
+        customerId,
+        vehicleId,
+        priority,
+        mileage,
+        notes,
+        servicesJson: JSON.stringify(servicesPayload),
+        itemsJson: JSON.stringify(syncItems),
+      })
+        .then((result) => {
+          if (!result.ok) {
+            setServerDraftStatus("error");
+            return;
+          }
+          setServerDraftQuoteId(result.quoteId);
+          setServerDraftProtocol(result.protocol || null);
+          setServerDraftStatus("saved");
+        })
+        .catch(() => setServerDraftStatus("error"))
+        .finally(() => {
+          serverSyncInFlightRef.current = false;
+        });
+    }, QUOTE_BUILDER_SERVER_SYNC_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [
+    draftReady,
+    customerId,
+    vehicleId,
+    mileage,
+    priority,
+    notes,
+    selectedServices,
+    servicesPayload,
+    itemsPayload,
+    serverDraftQuoteId,
+  ]);
+
+  function resetBuilderState() {
+    setCustomerId("");
+    setVehicleId("");
+    setMileage("");
+    setPriority("normal");
+    setNotes("");
+    setServiceCategory("");
+    setSelectedServices([]);
+    setExtraItems([]);
+    setOpenStep(1);
+    setCustomerQuery("");
+    setVehicleQuery("");
+    setServiceQuery("");
+    setCustomerLimit(PICKER_PAGE_SIZE);
+    setVehicleLimit(PICKER_PAGE_SIZE);
+    setServiceLimit(CATALOG_PAGE_SIZE);
+    setServerDraftQuoteId(null);
+    setServerDraftProtocol(null);
+    setServerDraftStatus("idle");
+    setDraftRestored(false);
+  }
+
+  function discardDraft() {
+    const quoteId = serverDraftQuoteId;
+    clearQuoteBuilderDraft(organizationId, userId);
+    resetBuilderState();
+    skipNextServerSyncRef.current = true;
+    if (quoteId) {
+      void discardQuoteBuilderServerDraftAction(quoteId);
+    }
+  }
+
+  function handleFormSubmit() {
+    clearQuoteBuilderDraft(organizationId, userId);
+  }
+
   const step1Ready = Boolean(customerId && vehicleId);
   const step1Complete = Boolean(customerId && vehicleId && mileage.trim());
 
@@ -210,10 +409,23 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   const canSave = Boolean(customerId && vehicleId && mileage.trim() && selectedServices.length > 0 && !generatedPartMissing && !manualCostMissing);
 
   return (
-    <form action={createQuoteV2Action} className="quote-builder">
+    <form action={createQuoteV2Action} className="quote-builder" onSubmit={handleFormSubmit}>
       <input type="hidden" name="services_json" value={JSON.stringify(servicesPayload)} />
       <input type="hidden" name="items_json" value={JSON.stringify(itemsPayload)} />
+      <input type="hidden" name="draft_quote_id" value={serverDraftQuoteId ?? ""} />
       {errorMessage ? <div className="orbiq-alert error">{errorMessage}</div> : null}
+      {draftRestored ? (
+        <div className="orbiq-alert success quote-draft-banner" role="status" data-testid="quote-draft-restored">
+          <div>
+            <strong>Rascunho restaurado</strong>
+            <span>Seu progresso do Novo Orçamento foi recuperado após sair ou atualizar a página.</span>
+            {serverDraftProtocol ? <small>Servidor: {serverDraftProtocol}</small> : null}
+          </div>
+          <button type="button" className="orbiq-secondary-button" onClick={discardDraft} data-testid="quote-draft-discard">
+            Descartar rascunho
+          </button>
+        </div>
+      ) : null}
 
       <section className="quote-builder-header">
         <div>
@@ -225,6 +437,11 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
           <span>Mão de obra</span>
           <strong>{money(laborTotal)}</strong>
           <small>{selectedServices.length} serviço(s)</small>
+          {serverDraftStatus === "saving" ? <small className="quote-draft-sync">Salvando rascunho…</small> : null}
+          {serverDraftStatus === "saved" && serverDraftProtocol ? (
+            <small className="quote-draft-sync">Rascunho no servidor · {serverDraftProtocol}</small>
+          ) : null}
+          {serverDraftStatus === "error" ? <small className="quote-draft-sync is-error">Falha ao salvar no servidor</small> : null}
         </div>
       </section>
 
@@ -323,17 +540,17 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
             <span>Prioridade</span>
             <div>
               <label>
-                <input type="radio" name="priority" value="normal" defaultChecked />
+                <input type="radio" name="priority" value="normal" checked={priority === "normal"} onChange={() => setPriority("normal")} />
                 <strong>Normal</strong>
                 <small>Fluxo padrão</small>
               </label>
               <label>
-                <input type="radio" name="priority" value="customer_waiting" />
+                <input type="radio" name="priority" value="customer_waiting" checked={priority === "customer_waiting"} onChange={() => setPriority("customer_waiting")} />
                 <strong>Cliente aguardando</strong>
                 <small>Cliente permanece na oficina</small>
               </label>
               <label>
-                <input type="radio" name="priority" value="vehicle_stopped" />
+                <input type="radio" name="priority" value="vehicle_stopped" checked={priority === "vehicle_stopped"} onChange={() => setPriority("vehicle_stopped")} />
                 <strong>Veículo parado</strong>
                 <small>Prioridade operacional</small>
               </label>
@@ -741,7 +958,14 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
         <div className="quote-step-body" hidden={openStep !== 4}>
           <label>
             <span>Observações gerais</span>
-            <textarea name="notes" rows={5} className="quote-builder-notes" placeholder="OBSERVAÇÕES GERAIS DO ORÇAMENTO..." />
+            <textarea
+              name="notes"
+              rows={5}
+              className="quote-builder-notes"
+              placeholder="OBSERVAÇÕES GERAIS DO ORÇAMENTO..."
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+            />
           </label>
         </div>
       </section>
