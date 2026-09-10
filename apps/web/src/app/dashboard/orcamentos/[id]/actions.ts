@@ -289,6 +289,83 @@ export async function updateQuoteServiceLaborAction(formData: FormData): Promise
   redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Mão de obra atualizada.")}`);
 }
 
+
+export async function updateQuoteItemPriceAction(formData: FormData): Promise<never> {
+  const { supabase, organization } = await getCurrentContext();
+  const quoteId = text(formData.get("quote_id"));
+  const itemId = text(formData.get("item_id"));
+  const costUnitRaw = text(formData.get("cost_unit_amount"));
+  const saleUnitRaw = text(formData.get("sale_unit_amount"));
+  if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
+  if (!itemId) return fail(quoteId, "Item inválido.");
+
+  const { data: item, error: itemError } = await supabase
+    .from("quote_items")
+    .select("id, quantity")
+    .eq("id", itemId)
+    .eq("quote_id", quoteId)
+    .eq("organization_id", organization.id)
+    .maybeSingle();
+  if (itemError) return fail(quoteId, `Não foi possível validar a peça: ${itemError.message}`);
+  if (!item) return fail(quoteId, "Item não encontrado.");
+
+  const quantity = Number(item.quantity ?? 1);
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    return fail(quoteId, "Quantidade da peça inválida.");
+  }
+
+  function parseMoneyField(raw: string): number | null {
+    if (!raw) return null;
+    const normalized = raw.includes(",")
+      ? raw.replace(/\./g, "").replace(",", ".")
+      : raw;
+    const value = Number(normalized);
+    if (!Number.isFinite(value) || value < 0 || value > 1_000_000) return Number.NaN;
+    return Math.round(value * 100) / 100;
+  }
+
+  const costUnit = parseMoneyField(costUnitRaw);
+  if (costUnit !== null && Number.isNaN(costUnit)) {
+    return fail(quoteId, "Custo unitário inválido.");
+  }
+  const saleUnit = parseMoneyField(saleUnitRaw);
+  if (saleUnit !== null && Number.isNaN(saleUnit)) {
+    return fail(quoteId, "Preço de venda unitário inválido.");
+  }
+  if (costUnit === null && saleUnit !== null) {
+    return fail(quoteId, "Informe o custo unitário antes da venda.");
+  }
+
+  const chosenAmount =
+    costUnit === null ? null : Math.round(costUnit * quantity * 100) / 100;
+  const saleTotal =
+    saleUnit === null ? null : Math.round(saleUnit * quantity * 100) / 100;
+
+  const { data, error } = await supabase
+    .from("quote_items")
+    .update({
+      chosen_amount: chosenAmount,
+      sale_unit_amount: saleUnit,
+      sale_total_amount: saleTotal,
+      purchase_status: chosenAmount !== null ? "approved" : "pending",
+    })
+    .eq("id", itemId)
+    .eq("quote_id", quoteId)
+    .eq("organization_id", organization.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return fail(quoteId, `Não foi possível atualizar o preço: ${error.message}`);
+  if (!data) return fail(quoteId, "Item não encontrado.");
+
+  const totalError = await refreshQuoteTotal(supabase, organization.id, quoteId);
+  if (totalError) return fail(quoteId, `Preço atualizado, mas não foi possível atualizar o total: ${totalError}`);
+  refreshQuotePaths(quoteId);
+  revalidatePath(`/dashboard/comercial/${quoteId}`);
+  redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Preço da peça atualizado.")}`);
+}
+
 export async function updateQuoteNotesAction(formData: FormData): Promise<never> {
   const { supabase, organization } = await getCurrentContext();
   const quoteId = text(formData.get("quote_id"));
