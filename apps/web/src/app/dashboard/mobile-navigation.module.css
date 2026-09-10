@@ -32,10 +32,19 @@
   height: 40px;
   flex: 0 0 40px;
   border-radius: 13px;
-  background: var(--orbiq-accent);
+  background: #f4f6f8;
   color: #fff;
   font-weight: 850;
   text-decoration: none;
+  overflow: hidden;
+  padding: 5px;
+}
+
+.brandMark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .headerIdentity {

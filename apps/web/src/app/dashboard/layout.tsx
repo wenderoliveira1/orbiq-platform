@@ -56,12 +56,12 @@ export default async function DashboardLayout({
             className="orbiq-brand-mark"
             aria-label="Orbiq"
           >
-            O
+            <img src="/brand/orbiq-mark.png" alt="" width={32} height={32} />
           </Link>
 
           <div>
             <strong>Orbiq</strong>
-            <span>Automotive Operations Platform</span>
+            <span>Operações automotivas</span>
           </div>
         </div>
 

@@ -69,4 +69,36 @@ test.describe("Fase 2.1AV — reabrir orçamento bloqueado + cabeçalho da folha
     expect(layout).toContain("<strong>Orbiq</strong>");
     expect(orcamentos).not.toContain("RESULTADOS");
   });
+
+  test("permite editar identidade do orçamento e exibe marca Orbiq no chrome", async () => {
+    const quoteDetail = await readFile(
+      "apps/web/src/app/dashboard/orcamentos/[id]/page.tsx",
+      "utf8",
+    );
+    const quoteActions = await readFile(
+      "apps/web/src/app/dashboard/orcamentos/[id]/actions.ts",
+      "utf8",
+    );
+    const layout = await readFile("apps/web/src/app/dashboard/layout.tsx", "utf8");
+    const mobile = await readFile(
+      "apps/web/src/app/dashboard/mobile-navigation.tsx",
+      "utf8",
+    );
+    const login = await readFile("apps/web/src/app/login/page.tsx", "utf8");
+
+    expect(quoteActions).toContain("updateQuoteIdentityAction");
+    expect(quoteActions).toContain('section === "customer"');
+    expect(quoteActions).toContain('section === "vehicle"');
+    expect(quoteActions).toContain("assertQuoteNotCommerciallyLocked");
+    expect(quoteDetail).toContain("updateQuoteIdentityAction");
+    expect(quoteDetail).toContain("Salvar cliente");
+    expect(quoteDetail).toContain("Salvar veículo");
+    expect(quoteDetail).toContain('name="mileage"');
+    expect(quoteDetail).toContain('name="plate"');
+    expect(layout).toContain('/brand/orbiq-mark.png');
+    expect(layout).toContain("<strong>Orbiq</strong>");
+    expect(mobile).toContain('/brand/orbiq-mark.png');
+    expect(login).toContain('/brand/orbiq-mark.png');
+    expect(login).toContain("Entrar no Orbiq");
+  });
 });

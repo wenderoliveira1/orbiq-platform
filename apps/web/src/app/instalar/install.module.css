@@ -35,6 +35,7 @@
   text-decoration: none;
 }
 
+.brandMark,
 .brand > span:first-child {
   width: 42px;
   height: 42px;
@@ -42,10 +43,20 @@
   display: grid;
   place-items: center;
   border-radius: 13px;
-  background: var(--install-red);
+  background: #f4f6f8;
   color: #ffffff;
   font-size: 14px;
   font-weight: 900;
+  overflow: hidden;
+  padding: 5px;
+}
+
+.brandMark img,
+.brand > span:first-child img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .brand > span:last-child {
