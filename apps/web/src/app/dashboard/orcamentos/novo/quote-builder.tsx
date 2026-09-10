@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
+import { FunilariaGuidedPicker } from "../_components/funilaria-guided-picker";
+import { QuoteVoiceCapture, type QuoteVoiceConfirmPayload } from "../_components/quote-voice-capture";
 import {
   createQuoteV2Action,
   discardQuoteBuilderServerDraftAction,
@@ -382,6 +384,65 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
       } catch { window.alert("NÃO FOI POSSÍVEL SALVAR O SERVIÇO NO CATÁLOGO."); }
     });
   }
+  function addVoiceOrGuidedService(input: {
+    category: string;
+    description: string;
+    laborAmount: string;
+    needsPart: boolean;
+    partDescription: string;
+  }) {
+    const description = input.description.trim().toLocaleUpperCase("pt-BR");
+    if (description.length < 2) return window.alert("INFORME A DESCRIÇÃO DO SERVIÇO.");
+    const amountRaw = input.laborAmount.trim();
+    const amount = amountRaw ? parseMoney(amountRaw) : 0;
+    if (amount === null || amount < 0) return window.alert("INFORME UM VALOR DE MÃO DE OBRA VÁLIDO.");
+    const category = input.category.toLocaleUpperCase("pt-BR") || "OUTROS";
+    const needsPart = Boolean(input.needsPart);
+    const partDescription = needsPart
+      ? (input.partDescription.trim().toLocaleUpperCase("pt-BR") || description)
+      : "";
+    startSaving(async () => {
+      try {
+        const id = await saveServiceCatalogAction(category, description, amount);
+        setSelectedServices((current) => [
+          ...current,
+          {
+            key: key("voice"),
+            serviceCatalogId: id,
+            category,
+            description,
+            laborAmount: amount,
+            quantity: "1",
+            needsPart,
+            partDescription,
+            partCategory: category === "FUNILARIA" ? "FUNILARIA" : "MECÂNICA",
+            partQuantity: "1",
+            partUnit: "UN",
+            partSide: "",
+            partSpecification: "",
+            hasManualPrice: false,
+            partCost: "",
+            partSale: "",
+          },
+        ]);
+        setServiceCategory(category);
+        setManualCategory(category);
+        setManualDescription("");
+        setManualAmount("");
+      } catch {
+        window.alert("NÃO FOI POSSÍVEL SALVAR O SERVIÇO NO CATÁLOGO.");
+      }
+    });
+  }
+  function onVoiceConfirm(payload: QuoteVoiceConfirmPayload) {
+    addVoiceOrGuidedService({
+      category: payload.category,
+      description: payload.description,
+      laborAmount: payload.laborAmount,
+      needsPart: payload.needsPart,
+      partDescription: payload.partDescription,
+    });
+  }
   function saveLabor(service: SelectedService) {
     if (!service.serviceCatalogId) return;
     startSaving(async () => { try { await saveServiceLaborAction(service.serviceCatalogId!, service.laborAmount); } catch { window.alert("NÃO FOI POSSÍVEL SALVAR A MÃO DE OBRA."); } });
@@ -680,6 +741,22 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
               </div>
             )}
           </div>
+
+          <QuoteVoiceCapture
+            categories={availableCategories}
+            onConfirm={onVoiceConfirm}
+          />
+          <FunilariaGuidedPicker
+            onConfirm={(payload) =>
+              addVoiceOrGuidedService({
+                category: payload.category,
+                description: payload.description,
+                laborAmount: payload.laborAmount,
+                needsPart: payload.needsPartHint,
+                partDescription: payload.partDescription,
+              })
+            }
+          />
 
           <div className="quote-manual-service">
             <div>

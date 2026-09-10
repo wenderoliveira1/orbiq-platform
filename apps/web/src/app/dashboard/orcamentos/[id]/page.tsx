@@ -22,6 +22,7 @@ import {
   updateQuoteServiceQuantityAction,
   updateQuoteStatusAction,
 } from "./actions";
+import { QuoteAppendWithVoice } from "../_components/quote-append-with-voice";
 import { PrintButton } from "./print-button";
 
 type PageProps = {
@@ -260,25 +261,15 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         </div>
 
         {!locked ? (
-          <div className="no-print quote-append-panel">
-            <form action={addQuoteServiceAction} className="quote-append-form">
-              <input type="hidden" name="quote_id" value={quote.id} />
-              <select name="service_catalog_id" aria-label="Serviço do catálogo" defaultValue="">
-                <option value="">Catálogo (opcional)</option>
-                {serviceCatalog.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {service.category} — {service.description}
-                  </option>
-                ))}
-              </select>
-              <input name="category" placeholder="Categoria" aria-label="Categoria do serviço" />
-              <input name="description" placeholder="Ou descreva o serviço" aria-label="Descrição do serviço" />
-              <input name="labor_amount" type="number" min="0" step="0.01" placeholder="MO unit. (R$)" aria-label="Valor unitário da mão de obra" />
-              <input name="quantity" type="number" min="0.001" step="0.001" defaultValue="1" placeholder="Qtd." aria-label="Quantidade do serviço" />
-              <label className="quote-append-check"><input name="needs_part" type="checkbox" /> Peça?</label>
-              <button type="submit" className="orbiq-primary-button">+ Serviço</button>
-            </form>
-          </div>
+          <QuoteAppendWithVoice
+            quoteId={quote.id}
+            serviceCatalog={serviceCatalog.map((service) => ({
+              id: service.id,
+              category: service.category,
+              description: service.description,
+            }))}
+            addAction={addQuoteServiceAction}
+          />
         ) : null}
 
         {services.length === 0 ? (

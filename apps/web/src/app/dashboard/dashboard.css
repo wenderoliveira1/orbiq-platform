@@ -9566,3 +9566,255 @@ a.ops-pipeline-step:hover {
   border-bottom: 1px solid var(--orbiq-border);
   margin-bottom: 12px;
 }
+
+
+/* ORBIQ QUOTE VOICE CAPTURE + FUNILARIA GUIDED 20260910 */
+
+.quote-voice-capture,
+.funilaria-guided-picker {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 14px;
+  background: var(--orbiq-surface);
+}
+
+.quote-voice-capture.is-listening {
+  border-color: rgba(227, 6, 19, 0.45);
+  box-shadow: 0 0 0 2px rgba(227, 6, 19, 0.12);
+}
+
+.quote-voice-capture-head,
+.funilaria-guided-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.quote-voice-capture-head > div,
+.funilaria-guided-head > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.quote-voice-capture-head strong,
+.funilaria-guided-head strong {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.quote-voice-capture-head small,
+.funilaria-guided-head small {
+  color: var(--orbiq-muted);
+  font-size: 11px;
+}
+
+.quote-voice-mic {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 16px 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(227, 6, 19, 0.35);
+  background: linear-gradient(180deg, #fff 0%, #fff5f5 100%);
+  color: var(--orbiq-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.quote-voice-mic.is-active {
+  background: #e30613;
+  color: #fff;
+  border-color: #e30613;
+}
+
+.quote-voice-mic-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(227, 6, 19, 0.12);
+  font-size: 18px;
+}
+
+.quote-voice-mic.is-active .quote-voice-mic-icon {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.quote-voice-mic-label {
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
+.quote-voice-live,
+.quote-voice-fallback,
+.quote-voice-error,
+.funilaria-step-hint,
+.quote-voice-parts-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--orbiq-muted);
+}
+
+.quote-voice-error {
+  color: #b91c1c;
+}
+
+.quote-voice-review,
+.funilaria-confirm {
+  display: grid;
+  gap: 10px;
+}
+
+.quote-voice-fields {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.quote-voice-group,
+.funilaria-preview {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--orbiq-border);
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.quote-voice-group-kicker {
+  color: var(--orbiq-accent, #e30613);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.quote-voice-field {
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--orbiq-muted);
+}
+
+.quote-voice-field input,
+.quote-voice-field select,
+.quote-voice-field textarea,
+.funilaria-confirm .quote-voice-field input {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 11px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-text);
+  font: inherit;
+}
+
+.quote-voice-field textarea {
+  min-height: 64px;
+  resize: vertical;
+}
+
+.quote-voice-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--orbiq-text);
+}
+
+.quote-voice-actions,
+.funilaria-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.funilaria-chip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.funilaria-chip-grid.is-parts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.funilaria-chip {
+  display: grid;
+  gap: 4px;
+  min-height: 64px;
+  padding: 12px 12px;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid var(--orbiq-border);
+  background: var(--orbiq-surface);
+  color: var(--orbiq-text);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.funilaria-chip:hover,
+.funilaria-chip:focus-visible {
+  border-color: rgba(227, 6, 19, 0.45);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(227, 6, 19, 0.12);
+}
+
+.funilaria-chip strong {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.funilaria-chip span {
+  color: var(--orbiq-muted);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.funilaria-preview strong {
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.funilaria-preview small {
+  color: var(--orbiq-muted);
+  font-size: 11px;
+}
+
+.quote-voice-capture.is-dense,
+.funilaria-guided-picker {
+  padding: 10px 12px;
+}
+
+@media (max-width: 900px) {
+  .quote-voice-fields,
+  .funilaria-chip-grid,
+  .funilaria-chip-grid.is-parts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .quote-voice-fields,
+  .funilaria-chip-grid,
+  .funilaria-chip-grid.is-parts {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-voice-mic {
+    width: 100%;
+    justify-content: center;
+  }
+}
