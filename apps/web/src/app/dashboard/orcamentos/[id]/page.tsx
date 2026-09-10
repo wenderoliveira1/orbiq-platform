@@ -140,7 +140,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         <section className="orbiq-panel quote-items-section">
           <div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">PEÇAS / ITENS</span><h2>Itens para compra</h2></div><span className="orbiq-count-badge">{items.length}</span></div>
           <div className="quote-detail-table">
-            <div className="orbiq-detail-table-head item-table"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Especificação</span><span>Compra</span></div>
+            <div className="quote-detail-table-head item-table"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Especificação</span><span>Compra</span></div>
             {items.map((item) => <div key={item.id} className="quote-detail-table-row item-table"><div><strong>{item.description}</strong><span>{item.category}</span></div><span>{qty(item.quantity)} {item.unit}</span><span>{item.side ?? "—"}</span><span>{item.specification ?? "—"}</span><span>{item.purchase_status}</span></div>)}
           </div>
         </section>
