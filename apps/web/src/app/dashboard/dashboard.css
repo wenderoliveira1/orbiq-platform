@@ -4628,7 +4628,7 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 
 .quote-builder label > span {
   color: var(--orbiq-muted);
-  font-size: 8px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -4636,15 +4636,15 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 .quote-builder select,
 .quote-builder textarea {
   width: 100%;
-  min-height: 40px;
-  padding: 8px 10px;
+  min-height: 44px;
+  padding: 10px 12px;
   border: 1px solid var(--orbiq-border);
   border-radius: 9px;
   outline: none;
   background: var(--orbiq-surface);
   color: var(--orbiq-text);
   font: inherit;
-  font-size: 9px;
+  font-size: 14px;
 }
 
 .quote-builder textarea {
@@ -4732,7 +4732,8 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 .quote-builder-section-description {
   margin: 4px 0 0;
   color: var(--orbiq-muted);
-  font-size: 8px;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .quote-labor-browser {
@@ -4818,16 +4819,16 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 
 .quote-manual-service {
   margin-top: 12px;
-  padding: 11px;
+  padding: 12px;
   display: grid;
   grid-template-columns:
     minmax(145px, .8fr)
+    minmax(150px, .9fr)
     minmax(190px, 1.4fr)
     minmax(140px, 1fr)
-    115px
     auto;
-  gap: 7px;
-  align-items: center;
+  gap: 10px;
+  align-items: end;
   border: 1px dashed var(--orbiq-border-strong);
   border-radius: 12px;
 }
@@ -4956,11 +4957,10 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   grid-template-columns:
     1.5fr
     1.1fr
-    75px
     90px
-    1fr
-    1fr;
-  gap: 7px;
+    minmax(140px, .9fr);
+  gap: 10px;
+  align-items: start;
 }
 
 .quote-builder-empty {
@@ -4998,12 +4998,11 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   grid-template-columns:
     1.3fr
     1fr
-    65px
     90px
-    1fr
-    1fr
+    minmax(180px, 1.1fr)
     auto;
-  gap: 7px;
+  gap: 10px;
+  align-items: end;
 }
 
 .quote-parts-summary {
@@ -5078,7 +5077,9 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 
 .quote-save-button {
   justify-self: end;
-  min-width: 180px;
+  min-width: 200px;
+  min-height: 48px;
+  font-size: 16px;
 }
 
 .quote-save-button:disabled {
@@ -5106,12 +5107,17 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 
   .quote-service-part-grid {
     grid-template-columns:
-      repeat(3, 1fr);
+      repeat(2, 1fr);
   }
 
   .quote-extra-item-form {
     grid-template-columns:
-      repeat(3, 1fr);
+      repeat(2, 1fr);
+  }
+
+  .quote-part-details,
+  .quote-extra-item-form > .orbiq-secondary-button {
+    grid-column: 1 / -1;
   }
 }
 
@@ -5149,6 +5155,10 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   }
 
   .quote-extra-item-form {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-manual-service {
     grid-template-columns: 1fr;
   }
 
@@ -5190,6 +5200,165 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 
   .quote-save-button {
     grid-column: auto;
+  }
+}
+
+
+/* Quote UX simplify — stepped disclosure + touch targets */
+.quote-builder .orbiq-panel-heading h2,
+.quote-step-toggle h2 {
+  font-size: 18px;
+}
+
+.quote-builder .orbiq-primary-button,
+.quote-builder .quote-step-continue {
+  min-height: 48px;
+  padding: 0 18px;
+  font-size: 16px;
+}
+
+.quote-builder .orbiq-secondary-button {
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.quote-builder-header p {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.quote-step {
+  padding-top: 14px;
+}
+
+.quote-step-toggle {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.quote-step-toggle h2 {
+  margin: 5px 0 0;
+}
+
+.quote-step-chevron {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 10px;
+  background: var(--orbiq-surface-soft);
+  color: var(--orbiq-muted);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.quote-step-body {
+  margin-top: 16px;
+}
+
+.quote-step-body[hidden] {
+  display: none !important;
+}
+
+.quote-step.is-soft-locked:not(.is-open) {
+  opacity: .72;
+}
+
+.quote-step-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.quote-selected-service-controls {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.quote-selected-service-controls label {
+  flex: 1 1 130px;
+}
+
+.quote-part-details {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+}
+
+.quote-part-details-toggle {
+  width: fit-content;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px dashed var(--orbiq-border-strong);
+  border-radius: 10px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quote-part-details-body {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quote-needs-part strong {
+  font-size: 14px;
+}
+
+.quote-needs-part small {
+  font-size: 12px;
+}
+
+.quote-priority-group > span {
+  font-size: 12px;
+}
+
+.quote-priority-group strong {
+  font-size: 14px;
+}
+
+.quote-priority-group small {
+  font-size: 12px;
+}
+
+.quote-builder-finish span {
+  font-size: 12px;
+}
+
+.quote-builder-finish strong {
+  font-size: 16px;
+}
+
+@media (max-width: 800px) {
+  .quote-part-details-body {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-step-actions {
+    justify-content: stretch;
+  }
+
+  .quote-step-continue,
+  .quote-save-button {
+    width: 100%;
   }
 }
 
