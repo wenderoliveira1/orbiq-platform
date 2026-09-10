@@ -343,7 +343,7 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
   const notesRaw = singleRawText(formData, "notes");
   const servicesInput = singleRawText(formData, "services_json");
   const itemsInput = singleRawText(formData, "items_json");
-  const draftQuoteIdRaw = String(formData.get("draft_quote_id") ?? "").trim();
+  const draftQuoteIdRaw = singleRawText(formData, "draft_quote_id").trim();
 
   if (
     customerIdRaw.length > MAX_ID_CHARS ||

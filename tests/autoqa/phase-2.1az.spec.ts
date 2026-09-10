@@ -58,7 +58,7 @@ test.describe("Fase 2.1AZ — rascunho contínuo do Novo Orçamento + preço no 
     expect(actions).toContain("export async function upsertQuoteBuilderDraftAction");
     expect(actions).toContain("export async function discardQuoteBuilderServerDraftAction");
     expect(actions).toContain("replaceDraftQuoteLines");
-    expect(actions).toContain('formData.get("draft_quote_id")');
+    expect(actions).toContain('singleRawText(formData, "draft_quote_id")');
     expect(actions).toContain("finalizedQuoteId");
   });
 
