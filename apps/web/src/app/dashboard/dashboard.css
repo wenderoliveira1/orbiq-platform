@@ -1959,7 +1959,7 @@ a.quote-history-metric:hover {
 
   @page {
     size: A4 portrait;
-    margin: 8mm;
+    margin: 6mm;
   }
 
   html,
@@ -1982,10 +1982,13 @@ a.quote-history-metric:hover {
     display: inline !important;
   }
 
-  .print-hide-empty,
-  .quote-detail-page .orbiq-panel:has(> .orbiq-empty.compact),
-  .quote-detail-page .quote-items-section:has(.orbiq-empty.compact) {
+  /* Empty sections must be omitted via JSX/no-print — do not rely on :has() for print. */
+  .print-hide-empty {
     display: none !important;
+  }
+
+  a[href]::after {
+    content: none !important;
   }
 
   .orbiq-shell,
@@ -2006,8 +2009,8 @@ a.quote-history-metric:hover {
   .quote-detail-page {
     display: block !important;
     padding: 0 !important;
-    font-size: 9pt !important;
-    line-height: 1.25 !important;
+    font-size: 8.5pt !important;
+    line-height: 1.2 !important;
     color: #111 !important;
   }
 
@@ -2067,8 +2070,8 @@ a.quote-history-metric:hover {
   }
 
   .quote-detail-page .orbiq-panel {
-    padding: 6px 8px !important;
-    margin: 0 0 6px !important;
+    padding: 4px 6px !important;
+    margin: 0 0 4px !important;
     break-inside: auto;
   }
 
@@ -2138,16 +2141,42 @@ a.quote-history-metric:hover {
     padding: 3px 0 !important;
   }
 
+  /* Dense single-column print rows (desc + amount) — avoid wide multi-col grids */
   .quote-detail-table-head.service-table,
-  .quote-detail-table-row.service-table {
-    grid-template-columns: 0.85fr 2.2fr 0.45fr 0.4fr 0.75fr 0.75fr !important;
+  .quote-detail-table-head.item-table,
+  .quote-detail-table-head.quote-item-price-grid {
+    display: none !important;
   }
 
-  .quote-detail-table-head.item-table,
+  .quote-detail-table-row.service-table {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    align-items: baseline !important;
+    gap: 2px 10px !important;
+    padding: 2px 0 !important;
+  }
+
+  .quote-detail-table-row.service-table > :nth-child(1),
+  .quote-detail-table-row.service-table > :nth-child(3),
+  .quote-detail-table-row.service-table > :nth-child(4),
+  .quote-detail-table-row.service-table > :nth-child(5) {
+    display: none !important;
+  }
+
   .quote-detail-table-row.item-table,
-  .quote-detail-table-head.quote-item-price-grid,
   .quote-detail-table-row.quote-item-price-grid {
-    grid-template-columns: 2fr 0.55fr 0.55fr 0.9fr !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    align-items: baseline !important;
+    gap: 2px 10px !important;
+    padding: 2px 0 !important;
+  }
+
+  .quote-detail-table-row.item-table > :nth-child(2),
+  .quote-detail-table-row.item-table > :nth-child(3),
+  .quote-detail-table-row.quote-item-price-grid > :nth-child(2),
+  .quote-detail-table-row.quote-item-price-grid > :nth-child(3) {
+    display: none !important;
   }
 
   .quote-detail-table-row,
@@ -7071,7 +7100,7 @@ a.quote-history-metric:hover {
 
   @page {
     size: A4 portrait;
-    margin: 8mm;
+    margin: 6mm;
   }
 
   html,
@@ -7094,12 +7123,17 @@ a.quote-history-metric:hover {
 
   .orbiq-sidebar,
   .orbiq-mobile-header,
-  .customer-quote-toolbar {
+  .customer-quote-toolbar,
+  .no-print {
     display: none !important;
   }
 
   .quote-internal-economics {
     display: none !important;
+  }
+
+  a[href]::after {
+    content: none !important;
   }
 
   .orbiq-main {
@@ -7120,8 +7154,8 @@ a.quote-history-metric:hover {
     margin: 0 !important;
     display: block !important;
     gap: 0 !important;
-    font-size: 9pt !important;
-    line-height: 1.25 !important;
+    font-size: 8.5pt !important;
+    line-height: 1.2 !important;
   }
 
   .customer-quote-document {
@@ -7177,27 +7211,32 @@ a.quote-history-metric:hover {
   }
 
   .customer-quote-section {
-    margin: 0 0 7px !important;
+    margin: 0 0 5px !important;
     break-inside: auto;
   }
 
   .customer-quote-section-heading {
-    margin-bottom: 3px !important;
+    margin-bottom: 2px !important;
   }
 
   .customer-quote-section-heading h2 {
-    font-size: 10pt !important;
+    font-size: 9.5pt !important;
   }
 
+  .customer-section-label,
   .customer-section-help {
     display: none !important;
   }
 
   .customer-service-row,
   .customer-part-row {
-    padding: 3px 0 !important;
+    padding: 2px 0 !important;
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+
+  .customer-parts-head {
+    display: none !important;
   }
 
   .customer-quote-totals {

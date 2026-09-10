@@ -259,7 +259,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         )}
       </section>
 
-      <section className={`orbiq-panel quote-services-section${services.length === 0 ? " print-hide-empty" : ""}`}>
+      <section className={`orbiq-panel quote-services-section${services.length === 0 ? " no-print" : ""}`} data-testid="quote-detail-services">
         <div className="orbiq-panel-heading">
           <div><span className="orbiq-eyebrow">SERVIÇOS</span><h2>Serviços solicitados</h2></div>
           <span className="orbiq-count-badge">{services.length}</span>
@@ -278,7 +278,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         ) : null}
 
         {services.length === 0 ? (
-          <div className="orbiq-empty compact"><strong>Nenhum serviço registrado.</strong></div>
+          <div className="orbiq-empty compact no-print"><strong>Nenhum serviço registrado.</strong></div>
         ) : (
           <div className="quote-detail-table">
             <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 200px 70px 120px 120px 90px" }}><span>Categoria</span><span>Serviço</span><span>Qtd.</span><span>Peça?</span><span>Valor unit.</span><span>Total</span><span className="no-print">Ação</span></div>
@@ -386,7 +386,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
       </section>
 
       {(!locked || items.length > 0) ? (
-        <section className={`orbiq-panel quote-items-section${items.length === 0 ? " print-hide-empty" : ""}`}>
+        <section className={`orbiq-panel quote-items-section${items.length === 0 ? " no-print" : ""}`} data-testid="quote-detail-parts">
           <div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">PEÇAS / ITENS</span><h2>Itens para compra</h2></div><span className="orbiq-count-badge">{items.length}</span></div>
           {!locked ? (
             <>
@@ -410,7 +410,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
           ) : null}
 
           {items.length === 0 ? (
-            <div className="orbiq-empty compact"><strong>Nenhuma peça registrada.</strong></div>
+            <div className="orbiq-empty compact no-print"><strong>Nenhuma peça registrada.</strong></div>
           ) : (
             <div className="quote-detail-table">
               <div className="quote-detail-table-head item-table quote-item-price-grid"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Preço</span><span className="no-print quote-internal-economics">Compra</span><span className="no-print">Ação</span></div>
@@ -559,7 +559,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         </section>
       ) : null}
 
-      <section className={`orbiq-panel${!quote.notes ? " print-hide-empty" : ""}`}>
+      <section className={`orbiq-panel${!quote.notes ? " no-print" : ""}`} data-testid="quote-detail-notes">
         <span className="orbiq-eyebrow">OBSERVAÇÕES</span>
         {quote.notes ? (
           <p className="quote-detail-notes print-only">{quote.notes}</p>
@@ -583,7 +583,9 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
       </section>
 
       <section className="quote-detail-totals">
-        <div><span>Mão de obra</span><strong>{money(laborTotal)}</strong></div>
+        {services.length > 0 ? (
+          <div><span>Mão de obra</span><strong>{money(laborTotal)}</strong></div>
+        ) : null}
         {items.length > 0 ? (
           <>
             <div className="no-print quote-internal-economics">
