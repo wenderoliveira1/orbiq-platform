@@ -75,9 +75,19 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
   const laborTotal = Math.round(
     services.reduce((sum, service) => sum + (service.labor_amount ?? 0) * (service.quantity ?? 1), 0) * 100,
   ) / 100;
-  const partsTotal = items.reduce((sum, item) => sum + (item.chosen_amount ?? 0), 0);
-  const finalTotal = Math.round((laborTotal + partsTotal) * 100) / 100;
+  // Custo interno (oficina). Nunca usar na impressão voltada ao cliente.
+  const partsCostTotal = items.reduce((sum, item) => sum + (item.chosen_amount ?? 0), 0);
+  const partsSaleTotal = items.reduce((sum, item) => sum + (item.sale_total_amount ?? 0), 0);
+  const saleSubtotal = Math.round((laborTotal + partsSaleTotal) * 100) / 100;
+  const finalTotal = Math.round((laborTotal + partsCostTotal) * 100) / 100;
+  const printGrandTotal =
+    quote.final_amount !== null && quote.final_amount !== undefined
+      ? Number(quote.final_amount)
+      : saleSubtotal;
   const locked = quote.commercial_status === "approved";
+  const hasClientSalePrices = items.some(
+    (item) => item.sale_total_amount !== null && item.sale_total_amount !== undefined,
+  );
 
   return (
     <div className="orbiq-page quote-detail-page">
@@ -89,7 +99,17 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
       <section className="quote-detail-heading">
         <div className="quote-detail-back no-print"><Link href="/dashboard/orcamentos">← Orçamentos</Link></div>
         <div className="quote-detail-actions no-print">
-          <PrintButton />
+          {quote.commercial_status !== "draft" && quote.final_amount !== null ? (
+            <Link
+              href={`/dashboard/comercial/${quote.id}/cliente`}
+              className="orbiq-primary-button"
+              data-testid="quote-detail-client-print"
+            >
+              Versão do cliente / Imprimir
+            </Link>
+          ) : (
+            <PrintButton />
+          )}
           <form action={duplicateQuoteAction}>
             <input type="hidden" name="quote_id" value={quote.id} />
             <button type="submit" className="orbiq-secondary-button">Duplicar</button>
@@ -397,7 +417,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             <div className="orbiq-empty compact"><strong>Nenhuma peça registrada.</strong></div>
           ) : (
             <div className="quote-detail-table">
-              <div className="quote-detail-table-head item-table quote-item-price-grid"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Preço</span><span>Compra</span><span className="no-print">Ação</span></div>
+              <div className="quote-detail-table-head item-table quote-item-price-grid"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Preço</span><span className="no-print quote-internal-economics">Compra</span><span className="no-print">Ação</span></div>
               {items.map((item) => {
                 const quantity = Number(item.quantity ?? 1) || 1;
                 const unitCost =
@@ -466,17 +486,31 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
                   <span>{item.side ?? "—"}</span>
                   <div>
                     {locked ? (
-                      <div className="quote-item-price-readonly">
-                        <strong>{money(item.chosen_amount)}</strong>
-                        <small>Custo linha{saleUnit !== null ? ` · Venda unit. ${money(saleUnit)}` : ""}</small>
-                      </div>
+                      <>
+                        <div className="quote-item-price-readonly no-print quote-internal-economics">
+                          <strong>{money(item.chosen_amount)}</strong>
+                          <small>Custo linha{saleUnit !== null ? ` · Venda unit. ${money(saleUnit)}` : ""}</small>
+                        </div>
+                        <div className="print-only quote-item-price-readonly quote-client-sale">
+                          <strong>{money(item.sale_total_amount)}</strong>
+                          <small>
+                            {saleUnit !== null
+                              ? `Venda unit. ${money(saleUnit)}`
+                              : "Venda"}
+                          </small>
+                        </div>
+                      </>
                     ) : (
                       <>
-                        <div className="print-only quote-item-price-readonly">
-                          <strong>{money(item.chosen_amount)}</strong>
-                          <small>{unitCost !== null ? `Unit. ${money(unitCost)}` : "Sem preço"}</small>
+                        <div className="print-only quote-item-price-readonly quote-client-sale">
+                          <strong>{money(item.sale_total_amount)}</strong>
+                          <small>
+                            {saleUnit !== null
+                              ? `Venda unit. ${money(saleUnit)}`
+                              : "Sem venda definida"}
+                          </small>
                         </div>
-                        <form action={updateQuoteItemPriceAction} className="no-print quote-item-price-form" data-testid="quote-item-price-form">
+                        <form action={updateQuoteItemPriceAction} className="no-print quote-item-price-form quote-internal-economics" data-testid="quote-item-price-form">
                           <input type="hidden" name="quote_id" value={quote.id} />
                           <input type="hidden" name="item_id" value={item.id} />
                           <label>
@@ -505,7 +539,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
                       </>
                     )}
                   </div>
-                  <span>{item.purchase_status}</span>
+                  <span className="no-print quote-internal-economics">{item.purchase_status}</span>
                   {locked ? (
                     <span className="no-print">—</span>
                   ) : (
@@ -552,8 +586,32 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
 
       <section className="quote-detail-totals">
         <div><span>Mão de obra</span><strong>{money(laborTotal)}</strong></div>
-        {items.length > 0 ? <div><span>Peças escolhidas</span><strong>{money(partsTotal)}</strong></div> : null}
-        <div className="main-total"><span>Valor final</span><strong>{money(finalTotal)}</strong></div>
+        {items.length > 0 ? (
+          <>
+            <div className="no-print quote-internal-economics">
+              <span>Peças (custo interno)</span>
+              <strong>{money(partsCostTotal)}</strong>
+            </div>
+            <div className="print-only quote-client-sale">
+              <span>Peças</span>
+              <strong>{money(partsSaleTotal)}</strong>
+            </div>
+            {hasClientSalePrices ? (
+              <div className="no-print">
+                <span>Peças (venda)</span>
+                <strong>{money(partsSaleTotal)}</strong>
+              </div>
+            ) : null}
+          </>
+        ) : null}
+        <div className="main-total no-print quote-internal-economics">
+          <span>Valor final (interno)</span>
+          <strong>{money(finalTotal)}</strong>
+        </div>
+        <div className="main-total print-only quote-client-sale">
+          <span>Total a pagar</span>
+          <strong>{money(printGrandTotal)}</strong>
+        </div>
       </section>
 
       <section className="quote-detail-footer no-print"><Link href="/dashboard/orcamentos" className="orbiq-secondary-button">Voltar ao histórico</Link><Link href="/dashboard/orcamentos/novo" className="orbiq-primary-button">Realizar novo orçamento</Link></section>

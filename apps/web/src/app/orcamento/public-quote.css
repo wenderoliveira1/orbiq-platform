@@ -527,3 +527,56 @@ textarea {
   font-weight: 700;
   letter-spacing: 0.02em;
 }
+
+
+.public-section-help {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+  max-width: 42ch;
+}
+
+.public-totals-heading {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.public-totals-heading span {
+  color: #e30613;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+
+.public-totals-heading h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+@media print {
+  .public-quote-shell {
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .public-quote-card {
+    width: 100% !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .public-decision,
+  .public-decision-actions,
+  .public-decision-complete {
+    display: none !important;
+  }
+
+  .public-section,
+  .public-service-row,
+  .public-part-row {
+    break-inside: avoid;
+  }
+}
