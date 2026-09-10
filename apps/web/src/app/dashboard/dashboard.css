@@ -6510,6 +6510,25 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   letter-spacing: .12em;
 }
 
+.customer-section-help {
+  margin: 2px 0 0;
+  color: var(--orbiq-muted, #64748b);
+  font-size: 11px;
+  font-weight: 500;
+  max-width: 42ch;
+}
+
+.customer-quote-totals-heading {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.customer-quote-totals-heading h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
 .customer-quote-title h1 {
   margin: 0;
   font-size: 30px;
@@ -6899,6 +6918,10 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   .orbiq-sidebar,
   .orbiq-mobile-header,
   .customer-quote-toolbar {
+    display: none !important;
+  }
+
+  .quote-internal-economics {
     display: none !important;
   }
 

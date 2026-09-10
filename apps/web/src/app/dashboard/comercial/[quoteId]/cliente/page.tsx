@@ -298,42 +298,25 @@ export default async function CustomerQuotePage({ params }: PageProps) {
           </div>
         </section>
 
-        <section className="customer-quote-section">
-          <div className="customer-quote-section-heading">
-            <div>
-              <span className="customer-section-label">SERVIÇOS</span>
-              <h2>Mão de obra</h2>
-            </div>
-            <strong>{money(laborTotal)}</strong>
-          </div>
-
-          <div className="customer-service-table">
-            {services.map((service, index) => (
-              <div key={service.id} className="customer-service-row">
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <div>
-                  <strong>{service.description}</strong>
-                  <small>{service.category}</small>
-                </div>
-                <strong>{money(service.labor_amount ?? 0)}</strong>
-              </div>
-            ))}
-          </div>
-        </section>
-
         {items.length > 0 ? (
-          <section className="customer-quote-section">
+          <section
+            className="customer-quote-section customer-quote-parts"
+            data-testid="customer-quote-parts"
+          >
             <div className="customer-quote-section-heading">
               <div>
                 <span className="customer-section-label">PEÇAS</span>
-                <h2>Materiais</h2>
+                <h2>Peças</h2>
+                <p className="customer-section-help">
+                  Valores de venda das peças deste orçamento.
+                </p>
               </div>
               <strong>{money(partsTotal)}</strong>
             </div>
 
             <div className="customer-parts-table">
               <div className="customer-parts-head">
-                <span>Item</span>
+                <span>Peça</span>
                 <span>Qtd.</span>
                 <span>Unitário</span>
                 <span>Total</span>
@@ -365,14 +348,60 @@ export default async function CustomerQuotePage({ params }: PageProps) {
           </section>
         ) : null}
 
-        <section className="customer-quote-totals">
-          <div>
-            <span>Mão de obra</span>
+        <section
+          className="customer-quote-section customer-quote-labor"
+          data-testid="customer-quote-labor"
+        >
+          <div className="customer-quote-section-heading">
+            <div>
+              <span className="customer-section-label">MÃO DE OBRA</span>
+              <h2>Mão de obra</h2>
+              <p className="customer-section-help">
+                Somente o valor de mão de obra — separado das peças.
+              </p>
+            </div>
             <strong>{money(laborTotal)}</strong>
+          </div>
+
+          <div className="customer-service-table">
+            {services.length === 0 ? (
+              <div className="customer-service-row customer-service-empty">
+                <span>—</span>
+                <div>
+                  <strong>Sem mão de obra neste orçamento</strong>
+                </div>
+                <strong>{money(0)}</strong>
+              </div>
+            ) : (
+              services.map((service, index) => (
+                <div key={service.id} className="customer-service-row">
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <strong>{service.description}</strong>
+                    <small>{service.category}</small>
+                  </div>
+                  <strong>{money(service.labor_amount ?? 0)}</strong>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section
+          className="customer-quote-totals"
+          data-testid="customer-quote-totals"
+        >
+          <div className="customer-quote-totals-heading">
+            <span className="customer-section-label">TOTAIS</span>
+            <h2>Totais (venda)</h2>
           </div>
           <div>
             <span>Peças</span>
             <strong>{money(partsTotal)}</strong>
+          </div>
+          <div>
+            <span>Mão de obra</span>
+            <strong>{money(laborTotal)}</strong>
           </div>
           <div>
             <span>Subtotal</span>
@@ -387,7 +416,7 @@ export default async function CustomerQuotePage({ params }: PageProps) {
           ) : null}
 
           <div className="customer-quote-grand-total">
-            <span>TOTAL</span>
+            <span>TOTAL A PAGAR</span>
             <strong>{money(finalAmount)}</strong>
           </div>
         </section>
