@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getCurrentContext } from "../../_lib/current-organization";
-import { PRIORITY_LABELS, QUOTE_STATUSES, statusLabel } from "../quote-meta";
+import { QUOTE_STATUSES } from "../quote-meta";
 import {
   addQuoteServiceAction,
   deleteQuoteServiceAction,
@@ -19,15 +19,6 @@ const money = (value: number | null) =>
   value === null
     ? "—"
     : new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-
-const date = (value: string) =>
-  new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 
 const qty = (value: number) =>
   new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 }).format(value);
@@ -149,7 +140,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         <section className="orbiq-panel quote-items-section">
           <div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">PEÇAS / ITENS</span><h2>Itens para compra</h2></div><span className="orbiq-count-badge">{items.length}</span></div>
           <div className="quote-detail-table">
-            <div className="quote-detail-table-head item-table"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Especificação</span><span>Compra</span></div>
+            <div className="orbiq-detail-table-head item-table"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Especificação</span><span>Compra</span></div>
             {items.map((item) => <div key={item.id} className="quote-detail-table-row item-table"><div><strong>{item.description}</strong><span>{item.category}</span></div><span>{qty(item.quantity)} {item.unit}</span><span>{item.side ?? "—"}</span><span>{item.specification ?? "—"}</span><span>{item.purchase_status}</span></div>)}
           </div>
         </section>
