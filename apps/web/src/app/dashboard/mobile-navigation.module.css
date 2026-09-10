@@ -60,10 +60,16 @@
   font-size: 11px;
 }
 
+.headerActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .menuTrigger {
   width: 42px;
   height: 42px;
-  margin-left: auto;
   border: 1px solid var(--orbiq-border);
   border-radius: 13px;
   background: var(--orbiq-surface-soft);
