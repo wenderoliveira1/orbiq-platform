@@ -558,7 +558,7 @@ textarea {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm;
+    margin: 6mm;
   }
 
   html,
@@ -580,16 +580,21 @@ textarea {
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    font-size: 9pt !important;
-    line-height: 1.25 !important;
+    font-size: 8.5pt !important;
+    line-height: 1.2 !important;
   }
 
   .public-decision,
   .public-decision-actions,
   .public-decision-complete,
   .public-alert,
-  .public-hero {
+  .public-hero,
+  .no-print {
     display: none !important;
+  }
+
+  a[href]::after {
+    content: none !important;
   }
 
   .public-quote-header,
@@ -621,21 +626,22 @@ textarea {
   }
 
   .public-section {
-    margin: 0 0 7px !important;
+    margin: 0 0 5px !important;
     break-inside: auto;
   }
 
   .public-section-heading h2 {
-    font-size: 10pt !important;
+    font-size: 9.5pt !important;
   }
 
+  .public-section-heading > div > span,
   .public-section-help {
     display: none !important;
   }
 
   .public-service-row,
   .public-part-row {
-    padding: 3px 0 !important;
+    padding: 2px 0 !important;
     break-inside: avoid;
     page-break-inside: avoid;
   }

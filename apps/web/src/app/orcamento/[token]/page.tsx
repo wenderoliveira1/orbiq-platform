@@ -265,32 +265,20 @@ export default async function PublicQuotePage({
           </div>
         </section>
 
-        <section
-          className="public-section public-quote-labor"
-          data-testid="public-quote-labor"
-        >
-          <div className="public-section-heading">
-            <div>
-              <span>MÃO DE OBRA</span>
-              <h2>Mão de obra</h2>
-              <p className="public-section-help">
-                Somente o valor de mão de obra — separado das peças.
-              </p>
-            </div>
-            <strong>{money(laborTotal)}</strong>
-          </div>
-
-          <div className="public-list">
-            {quote.services.length === 0 ? (
-              <div className="public-service-row">
-                <span>—</span>
-                <div>
-                  <strong>Sem mão de obra neste orçamento</strong>
-                </div>
-                <strong>{money(0)}</strong>
+        {quote.services.length > 0 ? (
+          <section
+            className="public-section public-quote-labor"
+            data-testid="public-quote-labor"
+          >
+            <div className="public-section-heading">
+              <div>
+                <h2>Mão de obra</h2>
               </div>
-            ) : (
-              quote.services.map((service, index) => (
+              <strong>{money(laborTotal)}</strong>
+            </div>
+
+            <div className="public-list">
+              {quote.services.map((service, index) => (
                 <div key={service.id} className="public-service-row">
                   <span>{String(index + 1).padStart(2, "0")}</span>
                   <div>
@@ -299,10 +287,10 @@ export default async function PublicQuotePage({
                   </div>
                   <strong>{money(service.amount)}</strong>
                 </div>
-              ))
-            )}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {quote.items.length > 0 ? (
           <section
@@ -311,11 +299,7 @@ export default async function PublicQuotePage({
           >
             <div className="public-section-heading">
               <div>
-                <span>PEÇAS</span>
                 <h2>Peças</h2>
-                <p className="public-section-help">
-                  Valores de venda das peças deste orçamento.
-                </p>
               </div>
               <strong>{money(partsTotal)}</strong>
             </div>
@@ -352,17 +336,20 @@ export default async function PublicQuotePage({
           data-testid="public-quote-totals"
         >
           <div className="public-totals-heading">
-            <span>TOTAIS</span>
             <h2>Totais (venda)</h2>
           </div>
-          <div>
-            <span>Mão de obra</span>
-            <strong>{money(laborTotal)}</strong>
-          </div>
-          <div>
-            <span>Peças</span>
-            <strong>{money(partsTotal)}</strong>
-          </div>
+          {quote.services.length > 0 ? (
+            <div>
+              <span>Mão de obra</span>
+              <strong>{money(laborTotal)}</strong>
+            </div>
+          ) : null}
+          {quote.items.length > 0 ? (
+            <div>
+              <span>Peças</span>
+              <strong>{money(partsTotal)}</strong>
+            </div>
+          ) : null}
           <div>
             <span>Subtotal</span>
             <strong>{money(quote.subtotal_amount)}</strong>
@@ -382,7 +369,7 @@ export default async function PublicQuotePage({
         </section>
 
         {canDecide ? (
-          <section className="public-decision">
+          <section className="public-decision no-print">
             <div>
               <span>SUA DECISÃO</span>
               <h2>Deseja aprovar este orçamento?</h2>
@@ -413,7 +400,7 @@ export default async function PublicQuotePage({
           </section>
         ) : (
           <section
-            className={`public-decision-complete complete-${quote.commercial_status}`}
+            className={`public-decision-complete complete-${quote.commercial_status} no-print`}
           >
             <strong>
               {quote.commercial_status === "approved"
