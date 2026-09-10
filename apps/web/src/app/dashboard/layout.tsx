@@ -15,6 +15,7 @@ import {
 import { MobileNavigation } from "./mobile-navigation";
 import { DashboardNav } from "./nav";
 import { OrganizationSwitcher } from "./organization-switcher";
+import { ThemeToggle } from "./theme-toggle";
 
 import "./dashboard.css";
 import "./mobile-navigation-shell.css";
@@ -77,6 +78,8 @@ export default async function DashboardLayout({
               <span>Sessão protegida</span>
             </div>
           </div>
+
+          <ThemeToggle className="orbiq-theme-toggle full-width" />
 
           <Link
             href="/instalar"

@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 
 import { getPublicEnvironment } from "@/lib/public-environment";
+import { parseThemePreference, THEME_COOKIE } from "@/lib/theme";
 
 import { ConnectivityStatus } from "./connectivity-status";
 import { PwaRegistration } from "./pwa-registration";
@@ -48,9 +50,16 @@ export const viewport: Viewport = {
   width: "device-width",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const cookieStore = await cookies();
+  const theme = parseThemePreference(cookieStore.get(THEME_COOKIE)?.value);
+
   return (
-    <html lang="pt-BR">
+    <html
+      lang="pt-BR"
+      {...(theme ? { "data-theme": theme } : {})}
+      style={theme ? { colorScheme: theme } : undefined}
+    >
       <body>
         <ConnectivityStatus />
         {children}

@@ -17,6 +17,7 @@ import {
   NAVIGATION_GROUPS,
 } from "./navigation-items";
 import { OrganizationSwitcher } from "./organization-switcher";
+import { ThemeToggle } from "./theme-toggle";
 
 import styles from "./mobile-navigation.module.css";
 
@@ -149,17 +150,20 @@ export function MobileNavigation({
           <span>{currentOrganizationName}</span>
         </div>
 
-        <button
-          ref={triggerRef}
-          type="button"
-          className={styles.menuTrigger}
-          aria-controls={dialogId}
-          aria-expanded={open}
-          aria-label="Abrir menu principal"
-          onClick={(event) => openMenu(event.currentTarget)}
-        >
-          <span aria-hidden="true">☰</span>
-        </button>
+        <div className={styles.headerActions}>
+          <ThemeToggle className="orbiq-theme-toggle compact" compact />
+          <button
+            ref={triggerRef}
+            type="button"
+            className={styles.menuTrigger}
+            aria-controls={dialogId}
+            aria-expanded={open}
+            aria-label="Abrir menu principal"
+            onClick={(event) => openMenu(event.currentTarget)}
+          >
+            <span aria-hidden="true">☰</span>
+          </button>
+        </div>
       </header>
 
       <nav className={styles.dock} aria-label="Atalhos móveis">
