@@ -1774,18 +1774,6 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { target_org_id: string }; Returns: boolean }
-      lookup_ai_help_memory: {
-        Args: {
-          target_org_id: string
-          target_question_normalized: string
-        }
-        Returns: {
-          answer_text: string
-          hit_count: number
-          memory_id: string
-          source: string
-        }[]
-      }
       list_organization_invites: {
         Args: { target_org_id: string }
         Returns: {
@@ -1794,6 +1782,15 @@ export type Database = {
           expires_at: string
           invite_id: string
           role: string
+        }[]
+      }
+      lookup_ai_help_memory: {
+        Args: { target_org_id: string; target_question_normalized: string }
+        Returns: {
+          answer_text: string
+          hit_count: number
+          memory_id: string
+          source: string
         }[]
       }
       list_organization_team: {
@@ -1902,10 +1899,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      reopen_quote_commercial: {
-        Args: { target_org_id: string; target_quote_id: string }
-        Returns: undefined
-      }
       remember_ai_help_memory: {
         Args: {
           target_answer_text: string
@@ -1918,6 +1911,10 @@ export type Database = {
           hit_count: number
           memory_id: string
         }[]
+      }
+      reopen_quote_commercial: {
+        Args: { target_org_id: string; target_quote_id: string }
+        Returns: undefined
       }
       report_application_incident: {
         Args: {
