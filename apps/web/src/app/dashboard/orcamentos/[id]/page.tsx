@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ConfirmSubmitButton } from "../../_components/confirm-submit-button";
 import { ReopenLockedQuote } from "../../_components/reopen-locked-quote";
 import { getCurrentContext } from "../../_lib/current-organization";
 import { hasPermissionForRole } from "../../_lib/permissions";
@@ -8,6 +9,7 @@ import { QUOTE_STATUSES } from "../quote-meta";
 import {
   addQuoteItemAction,
   addQuoteServiceAction,
+  deleteQuoteItemAction,
   deleteQuoteServiceAction,
   duplicateQuoteAction,
   updateQuoteIdentityAction,
@@ -351,7 +353,13 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
                     <form action={deleteQuoteServiceAction} className="no-print">
                       <input type="hidden" name="quote_id" value={quote.id} />
                       <input type="hidden" name="service_id" value={service.id} />
-                      <button type="submit" className="orbiq-secondary-button">Excluir</button>
+                      <ConfirmSubmitButton
+                        className="orbiq-secondary-button"
+                        message={`Remover o serviço "${service.description}" deste orçamento?`}
+                        data-testid="quote-remove-service"
+                      >
+                        Remover
+                      </ConfirmSubmitButton>
                     </form>
                   )}
                 </div>
@@ -389,7 +397,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             <div className="orbiq-empty compact"><strong>Nenhuma peça registrada.</strong></div>
           ) : (
             <div className="quote-detail-table">
-              <div className="quote-detail-table-head item-table quote-item-price-grid"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Preço</span><span>Compra</span></div>
+              <div className="quote-detail-table-head item-table quote-item-price-grid"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Preço</span><span>Compra</span><span className="no-print">Ação</span></div>
               {items.map((item) => {
                 const quantity = Number(item.quantity ?? 1) || 1;
                 const unitCost =
@@ -498,6 +506,21 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
                     )}
                   </div>
                   <span>{item.purchase_status}</span>
+                  {locked ? (
+                    <span className="no-print">—</span>
+                  ) : (
+                    <form action={deleteQuoteItemAction} className="no-print">
+                      <input type="hidden" name="quote_id" value={quote.id} />
+                      <input type="hidden" name="item_id" value={item.id} />
+                      <ConfirmSubmitButton
+                        className="orbiq-secondary-button"
+                        message={`Remover a peça "${item.description}" deste orçamento?`}
+                        data-testid="quote-remove-item"
+                      >
+                        Remover
+                      </ConfirmSubmitButton>
+                    </form>
+                  )}
                 </div>
                 );
               })}

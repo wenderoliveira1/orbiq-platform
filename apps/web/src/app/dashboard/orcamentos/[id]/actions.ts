@@ -93,6 +93,23 @@ export async function deleteQuoteServiceAction(formData: FormData): Promise<neve
   redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Serviço excluído e valor atualizado.")}`);
 }
 
+export async function deleteQuoteItemAction(formData: FormData): Promise<never> {
+  const { supabase, organization } = await getCurrentContext();
+  const quoteId = text(formData.get("quote_id"));
+  const itemId = text(formData.get("item_id"));
+  if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
+  if (!itemId) return fail(quoteId, "Peça inválida.");
+  const { data, error } = await supabase.from("quote_items").delete().eq("id", itemId).eq("quote_id", quoteId).eq("organization_id", organization.id).select("id").maybeSingle();
+  if (error) return fail(quoteId, `Não foi possível excluir a peça: ${error.message}`);
+  if (!data) return fail(quoteId, "Peça não encontrada.");
+  const totalError = await refreshQuoteTotal(supabase, organization.id, quoteId);
+  if (totalError) return fail(quoteId, `Peça excluída, mas não foi possível atualizar o total: ${totalError}`);
+  refreshQuotePaths(quoteId);
+  redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Peça excluída e valor atualizado.")}`);
+}
+
 export async function addQuoteServiceAction(formData: FormData): Promise<never> {
   const { supabase, organization } = await getCurrentContext();
   const quoteId = text(formData.get("quote_id"));

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 import {
   createQuoteV2Action,
   discardQuoteBuilderServerDraftAction,
@@ -78,6 +78,8 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   const [serviceLimit, setServiceLimit] = useState(CATALOG_PAGE_SIZE);
   const [draftReady, setDraftReady] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [missingPriceAcknowledged, setMissingPriceAcknowledged] = useState(false);
+  const [showMissingPriceGuard, setShowMissingPriceGuard] = useState(false);
   const [serverDraftQuoteId, setServerDraftQuoteId] = useState<string | null>(null);
   const [serverDraftProtocol, setServerDraftProtocol] = useState<string | null>(null);
   const [serverDraftStatus, setServerDraftStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -217,6 +219,14 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   }, [organizationId, userId]);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setMissingPriceAcknowledged(false);
+      setShowMissingPriceGuard(false);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [selectedServices, extraItems]);
+
+  useEffect(() => {
     if (!draftReady) return;
     const timer = window.setTimeout(() => {
       writeQuoteBuilderDraft({
@@ -339,10 +349,6 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
     }
   }
 
-  function handleFormSubmit() {
-    clearQuoteBuilderDraft(organizationId, userId);
-  }
-
   const step1Ready = Boolean(customerId && vehicleId);
   const step1Complete = Boolean(customerId && vehicleId && mileage.trim());
 
@@ -404,9 +410,38 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   }
 
   const generatedPartMissing = selectedServices.some((service) => service.needsPart && service.partDescription.trim().length < 2);
-  const manualCostMissing = selectedServices.some((service) => service.needsPart && service.hasManualPrice && (parseMoney(service.partCost) === null || parseMoney(service.partCost)! < 0 || !service.partCost.trim()))
-    || extraItems.some((item) => item.hasManualPrice && (parseMoney(item.partCost) === null || parseMoney(item.partCost)! < 0 || !item.partCost.trim()));
-  const canSave = Boolean(customerId && vehicleId && mileage.trim() && selectedServices.length > 0 && !generatedPartMissing && !manualCostMissing);
+  const invalidManualCost = selectedServices.some((service) => {
+      if (!service.needsPart || !service.hasManualPrice) return false;
+      const raw = service.partCost.trim();
+      if (!raw) return false;
+      const parsed = parseMoney(raw);
+      return parsed === null || parsed < 0;
+    })
+    || extraItems.some((item) => {
+      if (!item.hasManualPrice) return false;
+      const raw = item.partCost.trim();
+      if (!raw) return false;
+      const parsed = parseMoney(raw);
+      return parsed === null || parsed < 0;
+    });
+  const partsWithoutPrice = [
+    ...selectedServices
+      .filter((service) => service.needsPart && (!service.hasManualPrice || !service.partCost.trim()))
+      .map((service) => service.partDescription.trim() || service.description),
+    ...extraItems
+      .filter((item) => !item.hasManualPrice || !item.partCost.trim())
+      .map((item) => item.description),
+  ];
+  const canSave = Boolean(customerId && vehicleId && mileage.trim() && selectedServices.length > 0 && !generatedPartMissing && !invalidManualCost);
+
+  function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
+    if (partsWithoutPrice.length > 0 && !missingPriceAcknowledged) {
+      event.preventDefault();
+      setShowMissingPriceGuard(true);
+      return;
+    }
+    clearQuoteBuilderDraft(organizationId, userId);
+  }
 
   return (
     <form action={createQuoteV2Action} className="quote-builder" onSubmit={handleFormSubmit}>
@@ -983,8 +1018,55 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
           <span>Mão de obra</span>
           <strong>{money(laborTotal)}</strong>
         </div>
-        <button type="submit" className="orbiq-primary-button quote-save-button" disabled={!canSave || saving}>
-          {saving ? "SALVANDO..." : "SALVAR ORÇAMENTO"}
+        {(showMissingPriceGuard || partsWithoutPrice.length > 0) && partsWithoutPrice.length > 0 ? (
+          <div
+            className={`quote-missing-price-guard${showMissingPriceGuard ? " is-visible" : ""}`}
+            role="status"
+            data-testid="quote-missing-price-guard"
+          >
+            <strong>Peças sem custo/preço</strong>
+            <span>
+              {partsWithoutPrice.length === 1
+                ? "1 peça ficará sem preço e poderá ser cotada depois."
+                : `${partsWithoutPrice.length} peças ficarão sem preço e poderão ser cotadas depois.`}
+              {" "}Confirme para evitar salvar sem perceber.
+            </span>
+            <ul>
+              {partsWithoutPrice.slice(0, 6).map((label, index) => (
+                <li key={`${index}-${label}`}>{label}</li>
+              ))}
+              {partsWithoutPrice.length > 6 ? <li>… e mais {partsWithoutPrice.length - 6}</li> : null}
+            </ul>
+            <label className="quote-missing-price-ack">
+              <input
+                type="checkbox"
+                checked={missingPriceAcknowledged}
+                onChange={(event) => {
+                  setMissingPriceAcknowledged(event.target.checked);
+                  if (event.target.checked) setShowMissingPriceGuard(true);
+                }}
+                data-testid="quote-missing-price-ack"
+              />
+              <span>Entendi — posso salvar sem preço nestas peças</span>
+            </label>
+          </div>
+        ) : null}
+        {invalidManualCost ? (
+          <div className="orbiq-alert error" role="alert">
+            Informe um custo válido nas peças marcadas com &quot;Já tenho o preço&quot;, ou desmarque essa opção.
+          </div>
+        ) : null}
+        <button
+          type="submit"
+          className="orbiq-primary-button quote-save-button"
+          disabled={!canSave || saving}
+          data-testid="quote-save-button"
+        >
+          {saving
+            ? "SALVANDO..."
+            : partsWithoutPrice.length > 0 && !missingPriceAcknowledged
+              ? "CONFIRMAR E SALVAR"
+              : "SALVAR ORÇAMENTO"}
         </button>
       </section>
     </form>

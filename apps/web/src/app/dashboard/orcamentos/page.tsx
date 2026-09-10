@@ -223,6 +223,14 @@ export default async function QuotesPage({
     );
 
 
+  const draftQuotes =
+    allQuotes.filter(
+      (quote) =>
+        quote.status ===
+        "estimating",
+    ).length;
+
+
   const awaitingQuotes =
     allQuotes.filter(
       (quote) =>
@@ -287,6 +295,16 @@ export default async function QuotesPage({
 
           <strong>
             {allQuotes.length}
+          </strong>
+        </article>
+
+        <article>
+          <span>
+            Rascunhos
+          </span>
+
+          <strong>
+            {draftQuotes}
           </strong>
         </article>
 
@@ -467,6 +485,11 @@ export default async function QuotesPage({
                         <span
                           className={
                             `quote-status status-${quote.status}`
+                          }
+                          data-testid={
+                            quote.status === "estimating"
+                              ? "quote-draft-badge"
+                              : undefined
                           }
                         >
                           {statusLabel(

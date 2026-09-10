@@ -417,6 +417,16 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
     finalizedQuoteId = String(created.quote_id);
   }
 
+  const needsSupplierQuote = payload.items.some((item) => item.chosen_amount === null);
+  const finalizedStatus = needsSupplierQuote ? "awaiting_quote" : "awaiting_evaluation";
+  if (finalizedQuoteId) {
+    await supabase
+      .from("quotes")
+      .update({ status: finalizedStatus })
+      .eq("id", finalizedQuoteId)
+      .eq("organization_id", organization.id);
+  }
+
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/orcamentos");
   revalidatePath("/dashboard/cotacoes");

@@ -1576,6 +1576,12 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   color: #a16207;
 }
 
+.status-estimating {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+}
+
 .quote-detail-page {
   padding-bottom: 40px;
 }
@@ -9290,7 +9296,7 @@ a.ops-pipeline-step:hover {
 
 
 .quote-item-price-grid {
-  grid-template-columns: 1.6fr 200px 90px minmax(220px, 1.4fr) 90px;
+  grid-template-columns: 1.6fr 200px 90px minmax(220px, 1.4fr) 90px 100px;
 }
 
 .quote-item-price-form {
@@ -9408,4 +9414,48 @@ a.ops-pipeline-step:hover {
 
 .quote-append-form > .orbiq-primary-button {
   min-height: 40px;
+}
+
+
+.quote-missing-price-guard {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(234, 179, 8, 0.45);
+  background: rgba(234, 179, 8, 0.1);
+  color: #854d0e;
+}
+
+.quote-missing-price-guard.is-visible {
+  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.25);
+}
+
+.quote-missing-price-guard strong {
+  font-size: 13px;
+}
+
+.quote-missing-price-guard span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.quote-missing-price-guard ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+.quote-missing-price-ack {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.quote-missing-price-ack input {
+  margin-top: 2px;
 }
