@@ -152,7 +152,7 @@ if (supabaseStatus.status !== 0) {
   console.log("Supabase desligado. Iniciando...");
   run("Supabase Start", "pnpm", ["exec", "supabase", "start"], {
     capture: true,
-    sensitive: true,
+    sensitive: false,
   });
   supabaseStatus = capture("pnpm", ["exec", "supabase", "status"]);
 }
