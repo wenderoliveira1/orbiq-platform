@@ -101,3 +101,69 @@ export async function addQuoteServiceAction(formData: FormData): Promise<never> 
   refreshQuotePaths(quoteId);
   redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Serviço adicionado e valor atualizado.")}`);
 }
+
+export async function updateQuoteServiceQuantityAction(formData: FormData): Promise<never> {
+  const { supabase, organization } = await getCurrentContext();
+  const quoteId = text(formData.get("quote_id"));
+  const serviceId = text(formData.get("service_id"));
+  const quantityRaw = text(formData.get("quantity"));
+  if (!quoteId) redirect("/dashboard/orcamentos");
+  if (!serviceId) return fail(quoteId, "Serviço inválido.");
+
+  const normalizedQuantity = quantityRaw.includes(",")
+    ? quantityRaw.replace(/\./g, "").replace(",", ".")
+    : quantityRaw;
+  const quantity = Number(normalizedQuantity);
+  if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 100_000) {
+    return fail(quoteId, "Quantidade do serviço inválida.");
+  }
+
+  const { data, error } = await supabase
+    .from("quote_services")
+    .update({ quantity })
+    .eq("id", serviceId)
+    .eq("quote_id", quoteId)
+    .eq("organization_id", organization.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return fail(quoteId, `Não foi possível atualizar a quantidade: ${error.message}`);
+  if (!data) return fail(quoteId, "Serviço não encontrado.");
+
+  const totalError = await refreshQuoteTotal(supabase, organization.id, quoteId);
+  if (totalError) return fail(quoteId, `Quantidade atualizada, mas não foi possível atualizar o total: ${totalError}`);
+  refreshQuotePaths(quoteId);
+  redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Quantidade do serviço atualizada.")}`);
+}
+
+export async function updateQuoteItemQuantityAction(formData: FormData): Promise<never> {
+  const { supabase, organization } = await getCurrentContext();
+  const quoteId = text(formData.get("quote_id"));
+  const itemId = text(formData.get("item_id"));
+  const quantityRaw = text(formData.get("quantity"));
+  if (!quoteId) redirect("/dashboard/orcamentos");
+  if (!itemId) return fail(quoteId, "Item inválido.");
+
+  const normalizedQuantity = quantityRaw.includes(",")
+    ? quantityRaw.replace(/\./g, "").replace(",", ".")
+    : quantityRaw;
+  const quantity = Number(normalizedQuantity);
+  if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 100_000) {
+    return fail(quoteId, "Quantidade do item inválida.");
+  }
+
+  const { data, error } = await supabase
+    .from("quote_items")
+    .update({ quantity })
+    .eq("id", itemId)
+    .eq("quote_id", quoteId)
+    .eq("organization_id", organization.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return fail(quoteId, `Não foi possível atualizar a quantidade: ${error.message}`);
+  if (!data) return fail(quoteId, "Item não encontrado.");
+
+  const totalError = await refreshQuoteTotal(supabase, organization.id, quoteId);
+  if (totalError) return fail(quoteId, `Quantidade atualizada, mas não foi possível atualizar o total: ${totalError}`);
+  refreshQuotePaths(quoteId);
+  redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Quantidade do item atualizada.")}`);
+}

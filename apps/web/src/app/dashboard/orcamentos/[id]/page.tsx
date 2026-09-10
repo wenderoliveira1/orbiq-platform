@@ -6,6 +6,8 @@ import { QUOTE_STATUSES } from "../quote-meta";
 import {
   addQuoteServiceAction,
   deleteQuoteServiceAction,
+  updateQuoteItemQuantityAction,
+  updateQuoteServiceQuantityAction,
   updateQuoteStatusAction,
 } from "./actions";
 import { PrintButton } from "./print-button";
@@ -122,16 +124,34 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
           <div className="orbiq-empty compact"><strong>Nenhum serviço registrado.</strong></div>
         ) : (
           <div className="quote-detail-table">
-            <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 120px 120px 90px" }}><span>Categoria</span><span>Serviço</span><span>Qtd.</span><span>Peça?</span><span>Valor unit.</span><span>Total</span><span>Ação</span></div>
+            <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 200px 70px 120px 120px 90px" }}><span>Categoria</span><span>Serviço</span><span>Qtd.</span><span>Peça?</span><span>Valor unit.</span><span>Total</span><span>Ação</span></div>
             {services.map((service) => {
               const quantity = service.quantity ?? 1;
               const unitLabor = service.labor_amount ?? 0;
               const lineTotal = unitLabor * quantity;
               return (
-                <div key={service.id} className="quote-detail-table-row service-table" style={{ gridTemplateColumns: "1fr 2fr 70px 70px 120px 120px 90px" }}>
+                <div key={service.id} className="quote-detail-table-row service-table" style={{ gridTemplateColumns: "1fr 2fr 200px 70px 120px 120px 90px" }}>
                   <span>{service.category}</span>
                   <strong>{service.description}</strong>
-                  <span>{qty(quantity)}</span>
+                  <div>
+                    <span className="print-only">{qty(quantity)}</span>
+                    <form action={updateQuoteServiceQuantityAction} className="no-print" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <input type="hidden" name="quote_id" value={quote.id} />
+                      <input type="hidden" name="service_id" value={service.id} />
+                      <input
+                        name="quantity"
+                        type="number"
+                        min="0.001"
+                        step="0.001"
+                        max="100000"
+                        defaultValue={quantity}
+                        aria-label={`Quantidade de ${service.description}`}
+                        required
+                        style={{ width: 78, minHeight: 40, padding: "0 8px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }}
+                      />
+                      <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar qtd.</button>
+                    </form>
+                  </div>
                   <span>{service.needs_part ? "Sim" : "Não"}</span>
                   <span>{money(unitLabor)}</span>
                   <strong>{money(lineTotal)}</strong>
@@ -151,8 +171,35 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         <section className="orbiq-panel quote-items-section">
           <div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">PEÇAS / ITENS</span><h2>Itens para compra</h2></div><span className="orbiq-count-badge">{items.length}</span></div>
           <div className="quote-detail-table">
-            <div className="quote-detail-table-head item-table"><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Especificação</span><span>Compra</span></div>
-            {items.map((item) => <div key={item.id} className="quote-detail-table-row item-table"><div><strong>{item.description}</strong><span>{item.category}</span></div><span>{qty(item.quantity)} {item.unit}</span><span>{item.side ?? "—"}</span><span>{item.specification ?? "—"}</span><span>{item.purchase_status}</span></div>)}
+            <div className="quote-detail-table-head item-table" style={{ gridTemplateColumns: "1.7fr 220px 130px 1fr 100px" }}><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Especificação</span><span>Compra</span></div>
+            {items.map((item) => (
+              <div key={item.id} className="quote-detail-table-row item-table" style={{ gridTemplateColumns: "1.7fr 220px 130px 1fr 100px" }}>
+                <div><strong>{item.description}</strong><span>{item.category}</span></div>
+                <div>
+                  <span className="print-only">{qty(item.quantity)} {item.unit}</span>
+                  <form action={updateQuoteItemQuantityAction} className="no-print" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <input type="hidden" name="quote_id" value={quote.id} />
+                    <input type="hidden" name="item_id" value={item.id} />
+                    <input
+                      name="quantity"
+                      type="number"
+                      min="0.001"
+                      step="0.001"
+                      max="100000"
+                      defaultValue={item.quantity}
+                      aria-label={`Quantidade de ${item.description}`}
+                      required
+                      style={{ width: 78, minHeight: 40, padding: "0 8px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }}
+                    />
+                    <span style={{ fontSize: 10 }}>{item.unit}</span>
+                    <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar qtd.</button>
+                  </form>
+                </div>
+                <span>{item.side ?? "—"}</span>
+                <span>{item.specification ?? "—"}</span>
+                <span>{item.purchase_status}</span>
+              </div>
+            ))}
           </div>
         </section>
       ) : null}
