@@ -9818,3 +9818,122 @@ a.ops-pipeline-step:hover {
     justify-content: center;
   }
 }
+
+
+/* ORBIQ FUNILARIA VOICE POLISH 20260910 */
+
+.quote-voice-phase-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--orbiq-border);
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--orbiq-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.quote-voice-phase-badge.is-listening {
+  border-color: rgba(227, 6, 19, 0.45);
+  background: rgba(227, 6, 19, 0.1);
+  color: #e30613;
+}
+
+.quote-voice-phase-badge.is-review {
+  border-color: rgba(14, 116, 144, 0.35);
+  background: rgba(14, 116, 144, 0.08);
+  color: #0e7490;
+}
+
+.quote-voice-mic-wrap {
+  display: flex;
+  justify-content: stretch;
+}
+
+.quote-voice-mic.is-large {
+  width: 100%;
+  min-height: 72px;
+  padding: 12px 18px 12px 14px;
+  justify-content: flex-start;
+  gap: 14px;
+}
+
+.quote-voice-mic.is-large .quote-voice-mic-icon {
+  width: 48px;
+  height: 48px;
+  font-size: 22px;
+}
+
+.quote-voice-mic-copy {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  min-width: 0;
+}
+
+.quote-voice-mic-hint {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.78;
+}
+
+.quote-voice-mic.is-active {
+  animation: quote-voice-pulse 1.4s ease-in-out infinite;
+}
+
+.quote-voice-mic.is-secondary {
+  min-height: 44px;
+  padding: 0 12px 0 8px;
+  background: var(--orbiq-surface);
+}
+
+.quote-voice-mic.is-secondary .quote-voice-mic-icon {
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+}
+
+.quote-voice-review-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.quote-voice-review-kicker {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--orbiq-text);
+}
+
+.quote-voice-live {
+  min-height: 40px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(227, 6, 19, 0.35);
+  background: rgba(227, 6, 19, 0.04);
+  color: var(--orbiq-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@keyframes quote-voice-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(227, 6, 19, 0.28);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(227, 6, 19, 0);
+  }
+}
+
+.quote-voice-capture.is-review {
+  border-color: rgba(14, 116, 144, 0.35);
+  box-shadow: 0 0 0 2px rgba(14, 116, 144, 0.08);
+}
