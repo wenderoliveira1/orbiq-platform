@@ -283,8 +283,7 @@ export function QuoteVoiceCapture({
           </span>
           <strong>Falar serviço com as mãos ocupadas</strong>
           <small>
-            Captura → revisa → Confirmar → próximo. Nada é salvo só por falar. Vários serviços na
-            mesma sessão.
+            Captura → revisa → Confirmar → próximo. Nada é salvo só por falar. Vários serviços na mesma sessão.
           </small>
         </div>
         <span
