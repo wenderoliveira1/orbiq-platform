@@ -34,7 +34,8 @@ test.describe("Fase 2.1BC — lista de orçamentos: busca/filtro denso", () => {
     expect(list).toContain("quote-metric-drafts");
     expect(list).toContain("data-testid={metric.testId}");
     expect(list).toContain("Rascunhos");
-    expect(list).toContain('data-testid="quote-draft-badge"');
+    // Badge uses conditional data-testid={... ? "quote-draft-badge" : undefined}
+    expect(list).toContain("quote-draft-badge");
     expect(list).toContain("QUOTE_STATUSES.map");
     expect(list).not.toContain("RESULTADOS");
 
