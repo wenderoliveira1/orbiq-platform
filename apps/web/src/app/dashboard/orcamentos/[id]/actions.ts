@@ -96,21 +96,49 @@ export async function deleteQuoteServiceAction(formData: FormData): Promise<neve
 export async function addQuoteServiceAction(formData: FormData): Promise<never> {
   const { supabase, organization } = await getCurrentContext();
   const quoteId = text(formData.get("quote_id"));
-  const category = text(formData.get("category"));
-  const description = text(formData.get("description"));
+  const catalogId = text(formData.get("service_catalog_id"));
+  let category = text(formData.get("category")).toLocaleUpperCase("pt-BR");
+  let description = text(formData.get("description")).toLocaleUpperCase("pt-BR");
   const laborRaw = text(formData.get("labor_amount"));
   const quantityRaw = text(formData.get("quantity"));
-  const needsPart = formData.get("needs_part") === "on";
+  let needsPart = formData.get("needs_part") === "on";
   if (!quoteId) redirect("/dashboard/orcamentos");
   const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
   if (lockError) return fail(quoteId, lockError);
-  if (!description) return fail(quoteId, "Informe a descrição do serviço.");
+
+  let unitLabor: number | null = null;
+  if (catalogId) {
+    const { data: catalog, error: catalogError } = await supabase
+      .from("service_catalog")
+      .select("id, category, description, default_labor_amount, requires_part")
+      .eq("id", catalogId)
+      .eq("organization_id", organization.id)
+      .eq("active", true)
+      .maybeSingle();
+    if (catalogError) return fail(quoteId, `Não foi possível carregar o catálogo: ${catalogError.message}`);
+    if (!catalog) return fail(quoteId, "Serviço do catálogo não encontrado.");
+    if (!category) category = String(catalog.category ?? "GERAL").toLocaleUpperCase("pt-BR");
+    if (!description) description = String(catalog.description ?? "").toLocaleUpperCase("pt-BR");
+    unitLabor = Number(catalog.default_labor_amount ?? 0);
+    if (formData.get("needs_part") === null) needsPart = Boolean(catalog.requires_part);
+  }
+
+  if (!description) return fail(quoteId, "Informe a descrição do serviço ou escolha no catálogo.");
   if (description.length > 500) return fail(quoteId, "A descrição do serviço é muito longa.");
   if (category.length > 120) return fail(quoteId, "A categoria do serviço é muito longa.");
 
-  const normalizedLabor = laborRaw.replace(/\./g, "").replace(",", ".");
-  const unitLabor = normalizedLabor ? Number(normalizedLabor) : 0;
-  const normalizedQuantity = quantityRaw.replace(/\./g, "").replace(",", ".");
+  if (laborRaw) {
+    const normalizedLabor = laborRaw.includes(",")
+      ? laborRaw.replace(/\./g, "").replace(",", ".")
+      : laborRaw;
+    unitLabor = Number(normalizedLabor);
+  } else if (unitLabor === null) {
+    unitLabor = 0;
+  }
+
+  const normalizedQuantity = quantityRaw.includes(",")
+    ? quantityRaw.replace(/\./g, "").replace(",", ".")
+    : quantityRaw;
   const quantity = normalizedQuantity ? Number(normalizedQuantity) : 1;
   if (!Number.isFinite(unitLabor) || unitLabor < 0 || unitLabor > 1_000_000) return fail(quoteId, "Valor de mão de obra inválido.");
   if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 100_000) return fail(quoteId, "Quantidade do serviço inválida.");
@@ -119,7 +147,15 @@ export async function addQuoteServiceAction(formData: FormData): Promise<never> 
   if (quoteError) return fail(quoteId, `Não foi possível validar o orçamento: ${quoteError.message}`);
   if (!quote) return fail(quoteId, "Orçamento não encontrado.");
 
-  const { error } = await supabase.from("quote_services").insert({ organization_id: organization.id, quote_id: quoteId, category: category || "Geral", description, needs_part: needsPart, quantity, labor_amount: Math.round(unitLabor * 100) / 100 });
+  const { error } = await supabase.from("quote_services").insert({
+    organization_id: organization.id,
+    quote_id: quoteId,
+    category: category || "GERAL",
+    description,
+    needs_part: needsPart,
+    quantity,
+    labor_amount: Math.round(unitLabor * 100) / 100,
+  });
   if (error) return fail(quoteId, `Não foi possível adicionar o serviço: ${error.message}`);
 
   const totalError = await refreshQuoteTotal(supabase, organization.id, quoteId);
@@ -443,4 +479,171 @@ export async function updateQuoteIdentityAction(formData: FormData): Promise<nev
   }
 
   return fail(quoteId, "Seção de identidade inválida.");
+}
+
+
+export async function addQuoteItemAction(formData: FormData): Promise<never> {
+  const { supabase, organization } = await getCurrentContext();
+  const quoteId = text(formData.get("quote_id"));
+  const category = text(formData.get("category")).toLocaleUpperCase("pt-BR");
+  const description = text(formData.get("description")).toLocaleUpperCase("pt-BR");
+  const quantityRaw = text(formData.get("quantity"));
+  const unit = text(formData.get("unit")).toLocaleUpperCase("pt-BR") || "UN";
+  const side = optionalUpper(formData.get("side"));
+  const specification = optionalUpper(formData.get("specification"));
+  const chosenRaw = text(formData.get("chosen_amount"));
+
+  if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
+  if (description.length < 2) return fail(quoteId, "Informe a descrição da peça.");
+  if (description.length > 300) return fail(quoteId, "A descrição da peça é muito longa.");
+  if (category.length > 80) return fail(quoteId, "A categoria da peça é muito longa.");
+  if (unit.length > 40) return fail(quoteId, "Unidade inválida.");
+
+  const normalizedQuantity = quantityRaw.includes(",")
+    ? quantityRaw.replace(/\./g, "").replace(",", ".")
+    : quantityRaw;
+  const quantity = normalizedQuantity ? Number(normalizedQuantity) : 1;
+  if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 100_000) {
+    return fail(quoteId, "Quantidade da peça inválida.");
+  }
+
+  let chosenAmount: number | null = null;
+  if (chosenRaw) {
+    const normalizedChosen = chosenRaw.includes(",")
+      ? chosenRaw.replace(/\./g, "").replace(",", ".")
+      : chosenRaw;
+    chosenAmount = Number(normalizedChosen);
+    if (!Number.isFinite(chosenAmount) || chosenAmount < 0 || chosenAmount > 1_000_000) {
+      return fail(quoteId, "Custo da peça inválido.");
+    }
+    chosenAmount = Math.round(chosenAmount * 100) / 100;
+  }
+
+  const { data: quote, error: quoteError } = await supabase
+    .from("quotes")
+    .select("id")
+    .eq("id", quoteId)
+    .eq("organization_id", organization.id)
+    .maybeSingle();
+  if (quoteError) return fail(quoteId, `Não foi possível validar o orçamento: ${quoteError.message}`);
+  if (!quote) return fail(quoteId, "Orçamento não encontrado.");
+
+  const { error } = await supabase.from("quote_items").insert({
+    organization_id: organization.id,
+    quote_id: quoteId,
+    category: category || "OUTROS",
+    description,
+    quantity,
+    unit,
+    side,
+    specification,
+    purchase_status: chosenAmount !== null ? "approved" : "pending",
+    chosen_amount: chosenAmount,
+  });
+  if (error) return fail(quoteId, `Não foi possível adicionar a peça: ${error.message}`);
+
+  const totalError = await refreshQuoteTotal(supabase, organization.id, quoteId);
+  if (totalError) return fail(quoteId, `Peça adicionada, mas não foi possível atualizar o total: ${totalError}`);
+  refreshQuotePaths(quoteId);
+  redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Peça adicionada e valor atualizado.")}`);
+}
+
+export async function duplicateQuoteAction(formData: FormData): Promise<never> {
+  const { supabase, organization } = await getCurrentContext();
+  const quoteId = text(formData.get("quote_id"));
+  const returnTo = text(formData.get("return_to"));
+
+  const failList = (message: string): never => {
+    redirect(`/dashboard/orcamentos?error=${encodeURIComponent(message)}`);
+  };
+  const failSource = (message: string): never => {
+    if (returnTo === "list") return failList(message);
+    if (!quoteId) return failList(message);
+    return fail(quoteId, message);
+  };
+
+  if (!quoteId) return failList("Orçamento inválido para duplicar.");
+
+  const { data: source, error: sourceError } = await supabase
+    .from("quotes")
+    .select("id, customer_id, vehicle_id, priority, mileage, notes")
+    .eq("id", quoteId)
+    .eq("organization_id", organization.id)
+    .maybeSingle();
+  if (sourceError) return failSource(`Não foi possível carregar o orçamento: ${sourceError.message}`);
+  if (!source) return failSource("Orçamento não encontrado.");
+
+  const [servicesResult, itemsResult] = await Promise.all([
+    supabase
+      .from("quote_services")
+      .select("category, description, needs_part, quantity, labor_amount")
+      .eq("organization_id", organization.id)
+      .eq("quote_id", quoteId)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("quote_items")
+      .select("category, description, quantity, unit, side, specification, notes")
+      .eq("organization_id", organization.id)
+      .eq("quote_id", quoteId)
+      .order("created_at", { ascending: true }),
+  ]);
+  if (servicesResult.error) return failSource(`Não foi possível carregar os serviços: ${servicesResult.error.message}`);
+  if (itemsResult.error) return failSource(`Não foi possível carregar as peças: ${itemsResult.error.message}`);
+
+  const services = servicesResult.data ?? [];
+  const items = itemsResult.data ?? [];
+  if (services.length === 0) {
+    return failSource("Não é possível duplicar: o orçamento original não tem serviços.");
+  }
+
+  const priority = ["normal", "customer_waiting", "vehicle_stopped"].includes(source.priority)
+    ? source.priority
+    : "normal";
+
+  const servicesPayload = services.map((service) => ({
+    labor_service_id: null,
+    service_catalog_id: null,
+    category: service.category || "GERAL",
+    description: service.description,
+    labor_amount: Number(service.labor_amount ?? 0),
+    quantity: Number(service.quantity ?? 1),
+    needs_part: Boolean(service.needs_part),
+  }));
+
+  // Reset purchase/commercial: no chosen/sale amounts → pending purchase; RPC creates draft commercial.
+  const itemsPayload = items.map((item) => ({
+    category: item.category || "OUTROS",
+    description: item.description,
+    quantity: Number(item.quantity ?? 1),
+    unit: item.unit || "UN",
+    side: item.side,
+    specification: item.specification,
+    notes: item.notes,
+    chosen_amount: null,
+    sale_unit_amount: null,
+  }));
+
+  const { data, error } = await supabase.rpc("create_quote_with_quantities", {
+    target_org_id: organization.id,
+    target_customer_id: source.customer_id,
+    target_vehicle_id: source.vehicle_id,
+    target_priority: priority,
+    target_mileage: source.mileage,
+    target_notes: source.notes ?? "",
+    services: servicesPayload,
+    items: itemsPayload,
+  });
+  if (error) return failSource(`Não foi possível duplicar o orçamento: ${error.message}`);
+  const created = data?.[0];
+  if (!created?.quote_id) return failSource("Duplicação falhou: resultado inválido.");
+
+  refreshQuotePaths(created.quote_id);
+  revalidatePath("/dashboard/comercial");
+  redirect(
+    `/dashboard/orcamentos/${created.quote_id}?ok=${encodeURIComponent(
+      `Orçamento duplicado como rascunho (${created.protocol ?? "novo"}).`,
+    )}`,
+  );
 }

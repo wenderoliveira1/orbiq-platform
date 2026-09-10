@@ -1400,6 +1400,17 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   min-height: 54px;
   padding: 7px 4px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--orbiq-border);
+  border-radius: 8px;
+}
+
+.quote-history-main {
+  min-width: 0;
+  min-height: 54px;
+  display: grid;
   grid-template-columns:
     minmax(150px, 0.9fr)
     minmax(180px, 1.3fr)
@@ -1408,10 +1419,19 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
     24px;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid var(--orbiq-border);
   color: inherit;
   text-decoration: none;
-  border-radius: 8px;
+}
+
+.quote-history-duplicate {
+  display: flex;
+  align-items: center;
+}
+
+.quote-history-duplicate .orbiq-secondary-button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 11px;
 }
 
 .quote-history-row:last-child {
@@ -1420,6 +1440,10 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 
 .quote-history-row:hover {
   background: var(--orbiq-surface-soft);
+}
+
+.quote-history-main:hover {
+  color: inherit;
 }
 
 .quote-history-protocol,
@@ -1747,7 +1771,7 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 
 @media (max-width: 1050px) {
 
-  .quote-history-row {
+  .quote-history-main {
     grid-template-columns:
       1fr
       1.2fr
@@ -1781,6 +1805,11 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   }
 
   .quote-history-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .quote-history-main {
     grid-template-columns: 1fr auto;
     gap: 10px;
   }
@@ -1795,6 +1824,10 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   .quote-history-arrow {
     grid-column: 2;
     grid-row: 1 / 5;
+  }
+
+  .quote-history-duplicate {
+    justify-content: flex-start;
   }
 
   .quote-detail-heading {
@@ -9156,6 +9189,10 @@ a.ops-pipeline-step:hover {
 }
 
 .quote-history-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.quote-history-main {
   grid-template-columns:
     minmax(180px, 1.3fr)
     minmax(170px, 1.1fr)
@@ -9199,4 +9236,72 @@ a.ops-pipeline-step:hover {
   .quote-locked-banner {
     flex-direction: column;
   }
+}
+
+
+/* Compact append lines on quote detail */
+.quote-append-panel {
+  margin-bottom: 14px;
+}
+
+.quote-append-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.quote-append-form input,
+.quote-append-form select {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 11px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-text);
+  font: inherit;
+}
+
+.quote-append-form select {
+  flex: 1 1 220px;
+  max-width: 360px;
+}
+
+.quote-append-form input[name="category"] {
+  flex: 0 1 130px;
+}
+
+.quote-append-form input[name="description"] {
+  flex: 1 1 220px;
+}
+
+.quote-append-form input[name="labor_amount"],
+.quote-append-form input[name="chosen_amount"] {
+  flex: 0 1 140px;
+}
+
+.quote-append-form input[name="quantity"],
+.quote-append-form input[name="unit"] {
+  flex: 0 1 88px;
+}
+
+.quote-append-form input[name="side"] {
+  flex: 0 1 100px;
+}
+
+.quote-append-form input[name="specification"] {
+  flex: 1 1 160px;
+}
+
+.quote-append-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--orbiq-muted);
+}
+
+.quote-append-form > .orbiq-primary-button {
+  min-height: 40px;
 }
