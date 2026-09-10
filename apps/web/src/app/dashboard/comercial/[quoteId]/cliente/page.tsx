@@ -225,7 +225,7 @@ export default async function CustomerQuotePage({ params }: PageProps) {
       />
 
       <article className="customer-quote-document">
-        <header className="customer-quote-header">
+        <header className="customer-quote-header customer-quote-letterhead">
           <div className="customer-quote-brand">
             <span
               data-testid="workshop-logo"
@@ -242,38 +242,36 @@ export default async function CustomerQuotePage({ params }: PageProps) {
               {logoUrl ? null : "O"}
             </span>
 
-            <div>
+            <div className="customer-quote-letterhead-copy">
               <strong>{workshop.organization_name}</strong>
               <small>
                 {branding.tagline ??
                   workshop.legal_name ??
                   "Documento comercial para o cliente"}
               </small>
+              {workshop.organization_cnpj ? (
+                <small>CNPJ {workshop.organization_cnpj}</small>
+              ) : null}
+              {workshopContacts ? <small>{workshopContacts}</small> : null}
+              {workshopAddress ? <small>{workshopAddress}</small> : null}
+              <small>Orçamento {quote.protocol}</small>
+              <small>
+                Validade comercial: {workshop.quote_validity_days} dias
+              </small>
+              <small className="workshop-letterhead-powered">Powered by Orbiq</small>
             </div>
           </div>
 
           <div className="customer-quote-number">
-            <span>ORÇAMENTO</span>
+            <span
+              className={`customer-quote-status customer-status-${quote.commercial_status}`}
+            >
+              {statusLabel(quote.commercial_status)}
+            </span>
             <strong>{quote.protocol}</strong>
             <small>Emitido em {date(quote.created_at)}</small>
           </div>
         </header>
-
-        <section className="customer-quote-title">
-          <div>
-            <span style={{ color: branding.primaryColor }}>
-              ORÇAMENTO AUTOMOTIVO
-            </span>
-            <h1>Serviços e peças</h1>
-            <p>Proposta preparada especialmente para este veículo.</p>
-          </div>
-
-          <span
-            className={`customer-quote-status customer-status-${quote.commercial_status}`}
-          >
-            {statusLabel(quote.commercial_status)}
-          </span>
-        </section>
 
         <section className="customer-quote-info-grid">
           <div>
@@ -395,21 +393,6 @@ export default async function CustomerQuotePage({ params }: PageProps) {
         </section>
 
         <footer className="customer-quote-footer">
-          <div>
-            <strong>{workshop.organization_name}</strong>
-            {workshop.legal_name ? <span>{workshop.legal_name}</span> : null}
-            {workshop.organization_cnpj ? (
-              <span>CNPJ {workshop.organization_cnpj}</span>
-            ) : null}
-            {workshopContacts ? <span>{workshopContacts}</span> : null}
-            {workshopAddress ? <span>{workshopAddress}</span> : null}
-            <span>Orçamento {quote.protocol}</span>
-            <span>
-              Validade comercial: {workshop.quote_validity_days} dias
-            </span>
-            <span>Powered by Orbiq</span>
-          </div>
-
           <p>
             {workshop.default_quote_notes ??
               "Valores sujeitos à disponibilidade das peças e à confirmação dos serviços pela oficina."}

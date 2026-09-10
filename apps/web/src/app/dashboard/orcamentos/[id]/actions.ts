@@ -31,6 +31,26 @@ async function refreshQuoteTotal(
   return error?.message ?? null;
 }
 
+
+async function assertQuoteNotCommerciallyLocked(
+  supabase: Awaited<ReturnType<typeof getCurrentContext>>["supabase"],
+  organizationId: string,
+  quoteId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("quotes")
+    .select("commercial_status")
+    .eq("id", quoteId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+  if (error) return `Não foi possível validar o orçamento: ${error.message}`;
+  if (!data) return "Orçamento não encontrado.";
+  if (data.commercial_status === "approved") {
+    return 'Orçamento bloqueado após aprovação comercial. Digite "sim" em Reabrir para editar.';
+  }
+  return null;
+}
+
 function refreshQuotePaths(quoteId: string) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/orcamentos");
@@ -45,6 +65,8 @@ export async function updateQuoteStatusAction(formData: FormData): Promise<never
   const quoteId = text(formData.get("quote_id"));
   const status = text(formData.get("status"));
   if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
   const validStatus = QUOTE_STATUSES.some((item) => item.value === status);
   if (!validStatus) return fail(quoteId, "Status inválido.");
   const { data, error } = await supabase.from("quotes").update({ status }).eq("id", quoteId).eq("organization_id", organization.id).select("id").maybeSingle();
@@ -59,6 +81,8 @@ export async function deleteQuoteServiceAction(formData: FormData): Promise<neve
   const quoteId = text(formData.get("quote_id"));
   const serviceId = text(formData.get("service_id"));
   if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
   if (!serviceId) return fail(quoteId, "Serviço inválido.");
   const { data, error } = await supabase.from("quote_services").delete().eq("id", serviceId).eq("quote_id", quoteId).eq("organization_id", organization.id).select("id").maybeSingle();
   if (error) return fail(quoteId, `Não foi possível excluir o serviço: ${error.message}`);
@@ -78,6 +102,8 @@ export async function addQuoteServiceAction(formData: FormData): Promise<never> 
   const quantityRaw = text(formData.get("quantity"));
   const needsPart = formData.get("needs_part") === "on";
   if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
   if (!description) return fail(quoteId, "Informe a descrição do serviço.");
   if (description.length > 500) return fail(quoteId, "A descrição do serviço é muito longa.");
   if (category.length > 120) return fail(quoteId, "A categoria do serviço é muito longa.");
@@ -108,6 +134,8 @@ export async function updateQuoteServiceQuantityAction(formData: FormData): Prom
   const serviceId = text(formData.get("service_id"));
   const quantityRaw = text(formData.get("quantity"));
   if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
   if (!serviceId) return fail(quoteId, "Serviço inválido.");
 
   const normalizedQuantity = quantityRaw.includes(",")
@@ -141,6 +169,8 @@ export async function updateQuoteItemQuantityAction(formData: FormData): Promise
   const itemId = text(formData.get("item_id"));
   const quantityRaw = text(formData.get("quantity"));
   if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
   if (!itemId) return fail(quoteId, "Item inválido.");
 
   const normalizedQuantity = quantityRaw.includes(",")
@@ -175,6 +205,8 @@ export async function updateQuoteServiceLaborAction(formData: FormData): Promise
   const serviceId = text(formData.get("service_id"));
   const laborRaw = text(formData.get("labor_amount"));
   if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
   if (!serviceId) return fail(quoteId, "Serviço inválido.");
 
   const normalizedLabor = laborRaw.includes(",")
@@ -207,6 +239,8 @@ export async function updateQuoteNotesAction(formData: FormData): Promise<never>
   const quoteId = text(formData.get("quote_id"));
   const notes = text(formData.get("notes")).toLocaleUpperCase("pt-BR");
   if (!quoteId) redirect("/dashboard/orcamentos");
+  const lockError = await assertQuoteNotCommerciallyLocked(supabase, organization.id, quoteId);
+  if (lockError) return fail(quoteId, lockError);
   if (notes.length > 4000) return fail(quoteId, "Observações muito longas.");
 
   const { data, error } = await supabase

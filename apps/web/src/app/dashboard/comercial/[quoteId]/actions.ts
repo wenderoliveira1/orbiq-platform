@@ -477,10 +477,73 @@ export async function reopenCommercialAction(
     );
 
 
+  const returnTo =
+    text(
+      formData.get(
+        "return_to",
+      ),
+    );
+
+
+  const confirmation =
+    text(
+      formData.get(
+        "confirmation",
+      ),
+    ).toLowerCase();
+
+
+  const destinationBase =
+    returnTo ===
+      "orcamentos"
+      ? `/dashboard/orcamentos/${quoteId}`
+      : `/dashboard/comercial/${quoteId}`;
+
+
+  function reopenFail(
+    message:
+      string,
+  ): never {
+
+    redirect(
+      `${destinationBase}?error=${encodeURIComponent(
+        message,
+      )}`,
+    );
+  }
+
+
+  function reopenSuccess(
+    message:
+      string,
+  ): never {
+
+    redirect(
+      `${destinationBase}?ok=${encodeURIComponent(
+        message,
+      )}`,
+    );
+  }
+
+
   if (!quoteId) {
 
     redirect(
-      "/dashboard/comercial",
+      returnTo ===
+        "orcamentos"
+        ? "/dashboard/orcamentos"
+        : "/dashboard/comercial",
+    );
+  }
+
+
+  if (
+    confirmation !==
+      "sim"
+  ) {
+
+    return reopenFail(
+      'Digite "sim" para confirmar a reabertura do orçamento.',
     );
   }
 
@@ -502,9 +565,20 @@ export async function reopenCommercialAction(
 
   if (error) {
 
-    return fail(
-      quoteId,
-      `Não foi possível reabrir: ${error.message}`,
+    const message =
+      error.message.includes(
+        "active purchase orders",
+      )
+        ? "Não é possível reabrir: já existem pedidos de compra ativos neste orçamento."
+        : error.message.includes(
+            "workshop execution",
+          )
+          ? "Não é possível reabrir: o orçamento já entrou em execução na oficina."
+          : `Não foi possível reabrir: ${error.message}`;
+
+
+    return reopenFail(
+      message,
     );
   }
 
@@ -514,8 +588,7 @@ export async function reopenCommercialAction(
   );
 
 
-  return success(
-    quoteId,
-    "Orçamento comercial reaberto para negociação.",
+  return reopenSuccess(
+    "Orçamento reaberto para edição. Você já pode alterar valores, quantidades e serviços.",
   );
 }

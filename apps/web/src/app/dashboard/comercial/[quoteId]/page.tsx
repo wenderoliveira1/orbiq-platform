@@ -15,8 +15,19 @@ import {
 import {
   approveCommercialAction,
   rejectCommercialAction,
-  reopenCommercialAction,
 } from "./actions";
+
+import {
+  ReopenLockedQuote,
+} from "../../_components/reopen-locked-quote";
+
+import {
+  WorkshopLetterhead,
+} from "../../_components/workshop-letterhead";
+
+import {
+  loadWorkshopBranding,
+} from "@/lib/workshop-branding";
 
 import {
   CommercialForm,
@@ -285,6 +296,110 @@ export default async function CommercialDetailPage({
     } | null;
 
 
+  const {
+    data: workshopProfileData,
+    error: workshopProfileError,
+  } =
+    await supabase.rpc(
+      "get_organization_document_profile",
+      {
+        target_org_id:
+          organization.id,
+      },
+    );
+
+
+  if (
+    workshopProfileError ||
+    !workshopProfileData
+  ) {
+
+    throw new Error(
+      `Falha ao carregar os dados da oficina: ${
+        workshopProfileError?.message ??
+        "perfil não encontrado"
+      }`,
+    );
+  }
+
+
+  const workshop =
+    workshopProfileData as unknown as {
+      organization_name:
+        string;
+      organization_cnpj:
+        string | null;
+      legal_name:
+        string | null;
+      phone:
+        string | null;
+      whatsapp:
+        string | null;
+      email:
+        string | null;
+      postal_code:
+        string | null;
+      address_line:
+        string | null;
+      address_number:
+        string | null;
+      address_complement:
+        string | null;
+      district:
+        string | null;
+      city:
+        string | null;
+      state:
+        string | null;
+      quote_validity_days:
+        number;
+    };
+
+
+  const branding =
+    await loadWorkshopBranding(
+      organization.id,
+    );
+
+
+  const workshopContacts =
+    [
+      workshop.phone
+        ? `Telefone ${workshop.phone}`
+        : null,
+      workshop.whatsapp
+        ? `WhatsApp ${workshop.whatsapp}`
+        : null,
+      workshop.email,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+
+  const workshopAddress =
+    [
+      [
+        workshop.address_line,
+        workshop.address_number,
+      ]
+        .filter(Boolean)
+        .join(", "),
+      workshop.address_complement,
+      workshop.district,
+      [
+        workshop.city,
+        workshop.state,
+      ]
+        .filter(Boolean)
+        .join(" / "),
+      workshop.postal_code
+        ? `CEP ${workshop.postal_code}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(" - ");
+
+
   const customer =
     customerResult.data;
 
@@ -385,9 +500,9 @@ export default async function CommercialDetailPage({
   return (
     <div className="orbiq-page">
 
-      <section className="commercial-detail-heading">
+      <section className="commercial-sheet-header">
 
-        <div>
+        <div className="commercial-sheet-toolbar">
 
           <Link
             href="/dashboard/comercial"
@@ -396,72 +511,88 @@ export default async function CommercialDetailPage({
             ← Comercial
           </Link>
 
-          <span className="orbiq-eyebrow">
-            ORÇAMENTO COMERCIAL
-          </span>
+          <div className="commercial-detail-heading-actions">
 
-          <h1>
-            {quote.protocol}
-          </h1>
+            <PublicQuoteShare
+              quoteId={
+                quote.id
+              }
+            />
 
-          <p>
-            {customer?.name ??
-              "Cliente"}{" · "}
+            <span
+              className={
+                `commercial-status commercial-${quote.commercial_status}`
+              }
+            >
+              {commercialLabel(
+                quote.commercial_status,
+              )}
+            </span>
 
-            {vehicle?.plate ??
-              "Sem placa"}{" · "}
+            <Link
+              href={
+                `/dashboard/comercial/${quote.id}/cliente`
+              }
+              className="orbiq-primary-button"
+            >
+              Versão do cliente
+            </Link>
 
-            {[
-              vehicle?.brand,
-              vehicle?.model,
-              vehicle?.version,
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          </p>
+            <Link
+              href={
+                `/dashboard/orcamentos/${quote.id}`
+              }
+              className="orbiq-secondary-button"
+            >
+              Ver orçamento técnico
+            </Link>
 
-        </div>
-
-
-        <div className="commercial-detail-heading-actions">
-
-          <PublicQuoteShare
-            quoteId={
-              quote.id
-            }
-          />
-
-          <span
-            className={
-              `commercial-status commercial-${quote.commercial_status}`
-            }
-          >
-            {commercialLabel(
-              quote.commercial_status,
-            )}
-          </span>
-
-
-          <Link
-            href={
-              `/dashboard/comercial/${quote.id}/cliente`
-            }
-            className="orbiq-primary-button"
-          >
-            Versão do cliente
-          </Link>
-
-
-          <Link
-            href={
-              `/dashboard/orcamentos/${quote.id}`
-            }
-            className="orbiq-secondary-button"
-          >
-            Ver orçamento técnico
-          </Link>
+          </div>
 
         </div>
+
+        <WorkshopLetterhead
+          organizationName={
+            workshop.organization_name
+          }
+          legalName={
+            workshop.legal_name
+          }
+          tagline={
+            branding.tagline
+          }
+          cnpj={
+            workshop.organization_cnpj
+          }
+          contacts={
+            workshopContacts ||
+            null
+          }
+          address={
+            workshopAddress ||
+            null
+          }
+          protocol={
+            quote.protocol
+          }
+          validityDays={
+            workshop.quote_validity_days
+          }
+        />
+
+        <p className="commercial-sheet-context">
+          {customer?.name ??
+            "Cliente"}{" · "}
+          {vehicle?.plate ??
+            "Sem placa"}{" · "}
+          {[
+            vehicle?.brand,
+            vehicle?.model,
+            vehicle?.version,
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        </p>
 
       </section>
 
@@ -860,20 +991,32 @@ export default async function CommercialDetailPage({
           </div>
 
 
-          <Link
-            href={
-              items.length >
+          <div className="commercial-approved-actions">
+
+            <ReopenLockedQuote
+              quoteId={
+                quote.id
+              }
+              returnTo="comercial"
+              buttonLabel="Reabrir para editar"
+            />
+
+            <Link
+              href={
+                items.length >
+                0
+                  ? "/dashboard/compras"
+                  : "/dashboard/execucao"
+              }
+              className="orbiq-primary-button"
+            >
+              {items.length >
               0
-                ? "/dashboard/compras"
-                : "/dashboard/execucao"
-            }
-            className="orbiq-primary-button"
-          >
-            {items.length >
-            0
-              ? "Ir para Compras"
-              : "Ir para Execução"}
-          </Link>
+                ? "Ir para Compras"
+                : "Ir para Execução"}
+            </Link>
+
+          </div>
 
         </section>
 
@@ -907,28 +1050,13 @@ export default async function CommercialDetailPage({
           </div>
 
 
-          <form
-            action={
-              reopenCommercialAction
+          <ReopenLockedQuote
+            quoteId={
+              quote.id
             }
-          >
-
-            <input
-              type="hidden"
-              name="quote_id"
-              value={
-                quote.id
-              }
-            />
-
-            <button
-              type="submit"
-              className="orbiq-secondary-button"
-            >
-              Reabrir negociação
-            </button>
-
-          </form>
+            returnTo="comercial"
+            buttonLabel="Reabrir negociação"
+          />
 
         </section>
 
