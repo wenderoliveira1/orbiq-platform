@@ -24,6 +24,10 @@ export type QuoteItemPayload = {
   side: string | null;
   specification: string | null;
   notes: string | null;
+  /** Line total cost when workshop already has the price (no supplier). */
+  chosen_amount: number | null;
+  /** Optional unit sale; commercial can apply default margin later. */
+  sale_unit_amount: number | null;
 };
 
 export type QuotePayload = {
@@ -73,7 +77,23 @@ export function parseQuotePayload(servicesRaw: string, itemsRaw: string, priorit
   for (const value of itemsValue) {
     if (!isPlainObject(value)) return null;
     if (!boundedText(value.category, 80) || !boundedText(value.description, 300) || !validQuantity(value.quantity) || !boundedText(value.unit, 40) || !nullableBoundedText(value.side, 80) || !nullableBoundedText(value.specification, 300) || !nullableBoundedText(value.notes, 500)) return null;
-    items.push({ category: value.category.trim(), description: value.description.trim(), quantity: value.quantity, unit: value.unit.trim(), side: value.side === null ? null : value.side.trim() || null, specification: value.specification === null ? null : value.specification.trim() || null, notes: value.notes === null ? null : value.notes.trim() || null });
+    const chosenAmount = value.chosen_amount === undefined || value.chosen_amount === null ? null : value.chosen_amount;
+    const saleUnit = value.sale_unit_amount === undefined || value.sale_unit_amount === null ? null : value.sale_unit_amount;
+    if (!(chosenAmount === null || validMoney(chosenAmount))) return null;
+    if (!(saleUnit === null || validMoney(saleUnit))) return null;
+    // Manual price path requires cost; sale remains optional.
+    if (value.has_manual_price === true && chosenAmount === null) return null;
+    items.push({
+      category: value.category.trim(),
+      description: value.description.trim(),
+      quantity: value.quantity,
+      unit: value.unit.trim(),
+      side: value.side === null ? null : value.side.trim() || null,
+      specification: value.specification === null ? null : value.specification.trim() || null,
+      notes: value.notes === null ? null : value.notes.trim() || null,
+      chosen_amount: chosenAmount,
+      sale_unit_amount: saleUnit,
+    });
   }
   return { priority, services, items };
 }

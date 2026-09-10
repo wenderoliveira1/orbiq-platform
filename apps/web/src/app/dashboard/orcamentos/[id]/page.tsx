@@ -7,6 +7,8 @@ import {
   addQuoteServiceAction,
   deleteQuoteServiceAction,
   updateQuoteItemQuantityAction,
+  updateQuoteNotesAction,
+  updateQuoteServiceLaborAction,
   updateQuoteServiceQuantityAction,
   updateQuoteStatusAction,
 } from "./actions";
@@ -59,7 +61,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
   const laborTotal = Math.round(
     services.reduce((sum, service) => sum + (service.labor_amount ?? 0) * (service.quantity ?? 1), 0) * 100,
   ) / 100;
-  const partsTotal = items.reduce((sum, item) => sum + (item.chosen_amount ?? 0) * (item.quantity ?? 1), 0);
+  const partsTotal = items.reduce((sum, item) => sum + (item.chosen_amount ?? 0), 0);
   const finalTotal = Math.round((laborTotal + partsTotal) * 100) / 100;
 
   return (
@@ -153,7 +155,25 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
                     </form>
                   </div>
                   <span>{service.needs_part ? "Sim" : "Não"}</span>
-                  <span>{money(unitLabor)}</span>
+                  <div>
+                    <span className="print-only">{money(unitLabor)}</span>
+                    <form action={updateQuoteServiceLaborAction} className="no-print" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <input type="hidden" name="quote_id" value={quote.id} />
+                      <input type="hidden" name="service_id" value={service.id} />
+                      <input
+                        name="labor_amount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        max="1000000"
+                        defaultValue={unitLabor}
+                        aria-label={`Mão de obra unitária de ${service.description}`}
+                        required
+                        style={{ width: 90, minHeight: 40, padding: "0 8px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }}
+                      />
+                      <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar</button>
+                    </form>
+                  </div>
                   <strong>{money(lineTotal)}</strong>
                   <form action={deleteQuoteServiceAction} className="no-print">
                     <input type="hidden" name="quote_id" value={quote.id} />
@@ -204,7 +224,22 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         </section>
       ) : null}
 
-      {quote.notes ? <section className="orbiq-panel"><span className="orbiq-eyebrow">OBSERVAÇÕES</span><p className="quote-detail-notes">{quote.notes}</p></section> : null}
+      <section className="orbiq-panel">
+        <span className="orbiq-eyebrow">OBSERVAÇÕES</span>
+        <p className="quote-detail-notes print-only">{quote.notes || "—"}</p>
+        <form action={updateQuoteNotesAction} className="no-print" style={{ display: "grid", gap: 8, marginTop: 8 }}>
+          <input type="hidden" name="quote_id" value={quote.id} />
+          <textarea
+            name="notes"
+            rows={4}
+            defaultValue={quote.notes ?? ""}
+            placeholder="Observações do orçamento..."
+            aria-label="Observações do orçamento"
+            style={{ width: "100%", padding: 10, border: "1px solid var(--orbiq-border)", borderRadius: 11, resize: "vertical" }}
+          />
+          <button type="submit" className="orbiq-secondary-button" style={{ justifySelf: "start" }}>Salvar observações</button>
+        </form>
+      </section>
 
       <section className="quote-detail-totals">
         <div><span>Mão de obra</span><strong>{money(laborTotal)}</strong></div>

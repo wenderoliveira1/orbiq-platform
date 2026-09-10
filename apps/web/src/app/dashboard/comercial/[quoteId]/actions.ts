@@ -347,9 +347,12 @@ export async function approveCommercialAction(
 
     const message =
       error.message.includes(
+        "Part cost is incomplete",
+      ) ||
+      error.message.includes(
         "Supplier selection is incomplete",
       )
-        ? "Ainda existe peça sem fornecedor vencedor. Finalize a cotação dos fornecedores antes da aprovação do cliente."
+        ? "Ainda existe peça sem custo. Informe o preço direto no comercial ou finalize a cotação dos fornecedores."
         : error.message.includes(
             "must be saved",
           )

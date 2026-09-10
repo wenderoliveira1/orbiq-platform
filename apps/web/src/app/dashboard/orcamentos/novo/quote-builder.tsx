@@ -6,8 +6,8 @@ import { createQuoteV2Action, saveServiceCatalogAction, saveServiceLaborAction }
 type Customer = { id: string; name: string; phone: string | null };
 type Vehicle = { id: string; customer_id: string; plate: string; brand: string | null; model: string | null; version: string | null; model_year: number | null; mileage: number | null };
 type ServiceCatalogItem = { id: string; category: string; description: string; default_labor_amount: number; requires_part: boolean };
-type SelectedService = { key: string; serviceCatalogId: string | null; category: string; description: string; laborAmount: number; quantity: string; needsPart: boolean; partDescription: string; partCategory: string; partQuantity: string; partUnit: string; partSide: string; partSpecification: string };
-type ExtraItem = { key: string; category: string; description: string; quantity: string; unit: string; side: string; specification: string };
+type SelectedService = { key: string; serviceCatalogId: string | null; category: string; description: string; laborAmount: number; quantity: string; needsPart: boolean; partDescription: string; partCategory: string; partQuantity: string; partUnit: string; partSide: string; partSpecification: string; hasManualPrice: boolean; partCost: string; partSale: string };
+type ExtraItem = { key: string; category: string; description: string; quantity: string; unit: string; side: string; specification: string; hasManualPrice: boolean; partCost: string; partSale: string };
 type Props = { customers: Customer[]; vehicles: Vehicle[]; serviceCatalog: ServiceCatalogItem[]; errorMessage?: string };
 type StepId = 1 | 2 | 3 | 4;
 
@@ -48,8 +48,42 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   const availableCategories = useMemo(() => Array.from(new Set([...serviceCategories, ...serviceCatalog.map((service) => service.category.toLocaleUpperCase("pt-BR"))])), [serviceCatalog]);
   const filteredServices = useMemo(() => serviceCategory ? serviceCatalog.filter((service) => normalizeCategory(service.category) === normalizeCategory(serviceCategory)) : [], [serviceCatalog, serviceCategory]);
   const laborTotal = useMemo(() => selectedServices.reduce((total, service) => total + service.laborAmount * parseQuantity(service.quantity), 0), [selectedServices]);
-  const generatedItems = useMemo(() => selectedServices.filter((service) => service.needsPart).map((service) => ({ category: service.partCategory || "MECÂNICA", description: service.partDescription.trim(), quantity: parseQuantity(service.partQuantity), unit: service.partUnit || "UN", side: service.partSide || null, specification: service.partSpecification.trim() || null, notes: `GERADO PELO SERVIÇO: ${service.description}` })), [selectedServices]);
-  const extraItemsPayload = useMemo(() => extraItems.map((item) => ({ category: item.category, description: item.description, quantity: parseQuantity(item.quantity), unit: item.unit, side: item.side || null, specification: item.specification || null, notes: null })), [extraItems]);
+  const generatedItems = useMemo(() => selectedServices.filter((service) => service.needsPart).map((service) => {
+    const quantity = parseQuantity(service.partQuantity);
+    const unitCost = service.hasManualPrice ? parseMoney(service.partCost) : null;
+    const saleUnit = service.hasManualPrice ? parseMoney(service.partSale) : null;
+    const chosenAmount = unitCost !== null && service.hasManualPrice ? Math.round(unitCost * quantity * 100) / 100 : null;
+    return {
+      category: service.partCategory || "MECÂNICA",
+      description: service.partDescription.trim(),
+      quantity,
+      unit: service.partUnit || "UN",
+      side: service.partSide || null,
+      specification: service.partSpecification.trim() || null,
+      notes: `GERADO PELO SERVIÇO: ${service.description}`,
+      chosen_amount: chosenAmount,
+      sale_unit_amount: saleUnit !== null && service.hasManualPrice && service.partSale.trim() ? saleUnit : null,
+      has_manual_price: service.hasManualPrice,
+    };
+  }), [selectedServices]);
+  const extraItemsPayload = useMemo(() => extraItems.map((item) => {
+    const quantity = parseQuantity(item.quantity);
+    const unitCost = item.hasManualPrice ? parseMoney(item.partCost) : null;
+    const saleUnit = item.hasManualPrice ? parseMoney(item.partSale) : null;
+    const chosenAmount = unitCost !== null && item.hasManualPrice ? Math.round(unitCost * quantity * 100) / 100 : null;
+    return {
+      category: item.category,
+      description: item.description,
+      quantity,
+      unit: item.unit,
+      side: item.side || null,
+      specification: item.specification || null,
+      notes: null,
+      chosen_amount: chosenAmount,
+      sale_unit_amount: saleUnit !== null && item.hasManualPrice && item.partSale.trim() ? saleUnit : null,
+      has_manual_price: item.hasManualPrice,
+    };
+  }), [extraItems]);
   const itemsPayload = useMemo(() => [...generatedItems, ...extraItemsPayload], [generatedItems, extraItemsPayload]);
   const servicesPayload = useMemo(() => selectedServices.map((service) => ({ labor_service_id: null, service_catalog_id: service.serviceCatalogId, category: service.category, description: service.description, labor_amount: service.laborAmount, quantity: parseQuantity(service.quantity), needs_part: service.needsPart })), [selectedServices]);
 
@@ -61,7 +95,7 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   function addCatalogService(service: ServiceCatalogItem) {
     const serviceKey = `catalog-${service.id}`;
     if (selectedServices.some((item) => item.key === serviceKey)) return;
-    setSelectedServices((current) => [...current, { key: serviceKey, serviceCatalogId: service.id, category: service.category.toLocaleUpperCase("pt-BR"), description: service.description.toLocaleUpperCase("pt-BR"), laborAmount: Number(service.default_labor_amount) || 0, quantity: "1", needsPart: Boolean(service.requires_part), partDescription: service.description.toLocaleUpperCase("pt-BR"), partCategory: "MECÂNICA", partQuantity: "1", partUnit: "UN", partSide: "", partSpecification: "" }]);
+    setSelectedServices((current) => [...current, { key: serviceKey, serviceCatalogId: service.id, category: service.category.toLocaleUpperCase("pt-BR"), description: service.description.toLocaleUpperCase("pt-BR"), laborAmount: Number(service.default_labor_amount) || 0, quantity: "1", needsPart: Boolean(service.requires_part), partDescription: service.description.toLocaleUpperCase("pt-BR"), partCategory: "MECÂNICA", partQuantity: "1", partUnit: "UN", partSide: "", partSpecification: "", hasManualPrice: false, partCost: "", partSale: "" }]);
   }
   function addManualService() {
     const description = manualDescription.trim().toLocaleUpperCase("pt-BR");
@@ -71,7 +105,7 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
     startSaving(async () => {
       try {
         const id = await saveServiceCatalogAction(manualCategory, description, amount);
-        setSelectedServices((current) => [...current, { key: key("manual"), serviceCatalogId: id, category: manualCategory, description, laborAmount: amount, quantity: "1", needsPart: false, partDescription: "", partCategory: "MECÂNICA", partQuantity: "1", partUnit: "UN", partSide: "", partSpecification: "" }]);
+        setSelectedServices((current) => [...current, { key: key("manual"), serviceCatalogId: id, category: manualCategory, description, laborAmount: amount, quantity: "1", needsPart: false, partDescription: "", partCategory: "MECÂNICA", partQuantity: "1", partUnit: "UN", partSide: "", partSpecification: "", hasManualPrice: false, partCost: "", partSale: "" }]);
         setServiceCategory(manualCategory); setManualDescription(""); setManualAmount("");
       } catch { window.alert("NÃO FOI POSSÍVEL SALVAR O SERVIÇO NO CATÁLOGO."); }
     });
@@ -85,10 +119,11 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   function addExtraItem() {
     const description = itemDescription.trim().toLocaleUpperCase("pt-BR");
     if (description.length < 2) return window.alert("INFORME O NOME DA PEÇA.");
-    setExtraItems((current) => [...current, { key: key("item"), category: itemCategory, description, quantity: itemQuantity || "1", unit: itemUnit || "UN", side: itemSide, specification: itemSpecification.trim().toLocaleUpperCase("pt-BR") }]);
+    setExtraItems((current) => [...current, { key: key("item"), category: itemCategory, description, quantity: itemQuantity || "1", unit: itemUnit || "UN", side: itemSide, specification: itemSpecification.trim().toLocaleUpperCase("pt-BR"), hasManualPrice: false, partCost: "", partSale: "" }]);
     setItemDescription(""); setItemQuantity("1"); setItemSide(""); setItemSpecification("");
   }
   function removeExtraItem(itemKey: string) { setExtraItems((current) => current.filter((item) => item.key !== itemKey)); }
+  function patchExtraItem(itemKey: string, patch: Partial<ExtraItem>) { setExtraItems((current) => current.map((item) => item.key === itemKey ? { ...item, ...patch } : item)); }
 
   function toggleStep(step: StepId) {
     setOpenStep((current) => (current === step ? current : step));
@@ -103,7 +138,9 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   }
 
   const generatedPartMissing = selectedServices.some((service) => service.needsPart && service.partDescription.trim().length < 2);
-  const canSave = Boolean(customerId && vehicleId && mileage.trim() && selectedServices.length > 0 && !generatedPartMissing);
+  const manualCostMissing = selectedServices.some((service) => service.needsPart && service.hasManualPrice && (parseMoney(service.partCost) === null || parseMoney(service.partCost)! < 0 || !service.partCost.trim()))
+    || extraItems.some((item) => item.hasManualPrice && (parseMoney(item.partCost) === null || parseMoney(item.partCost)! < 0 || !item.partCost.trim()));
+  const canSave = Boolean(customerId && vehicleId && mileage.trim() && selectedServices.length > 0 && !generatedPartMissing && !manualCostMissing);
 
   return (
     <form action={createQuoteV2Action} className="quote-builder">
@@ -312,10 +349,10 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
                       ) : null}
                     </div>
                     <label className="quote-needs-part">
-                      <input type="checkbox" checked={service.needsPart} onChange={(event) => patchService(service.key, { needsPart: event.target.checked })} />
+                      <input type="checkbox" checked={service.needsPart} onChange={(event) => patchService(service.key, { needsPart: event.target.checked, ...(event.target.checked ? {} : { hasManualPrice: false, partCost: "", partSale: "" }) })} />
                       <span>
                         <strong>Precisa comprar peça</strong>
-                        <small>O valor da peça será informado depois da cotação com os fornecedores.</small>
+                        <small>Você pode informar o preço agora (Preço direto) ou cotar fornecedores depois.</small>
                       </span>
                     </label>
                     {service.needsPart ? (
@@ -339,9 +376,48 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
                           <span>Qtd.</span>
                           <input value={service.partQuantity} onChange={(event) => patchService(service.key, { partQuantity: event.target.value })} inputMode="decimal" />
                         </label>
-                        <div className="quote-part-pending-price">
-                          <span>VALOR DA PEÇA</span>
-                          <strong>SERÁ COTADO</strong>
+                        <div className="quote-part-price-path">
+                          <label className="quote-manual-price-toggle">
+                            <input
+                              type="checkbox"
+                              checked={service.hasManualPrice}
+                              onChange={(event) => patchService(service.key, { hasManualPrice: event.target.checked, ...(event.target.checked ? {} : { partCost: "", partSale: "" }) })}
+                            />
+                            <span>
+                              <strong>Já tenho o preço</strong>
+                              <small>Preço direto — sem cotar fornecedor</small>
+                            </span>
+                          </label>
+                          {service.hasManualPrice ? (
+                            <div className="quote-manual-price-fields">
+                              <label>
+                                <span>Custo unit. R$ *</span>
+                                <input
+                                  value={service.partCost}
+                                  onChange={(event) => patchService(service.key, { partCost: event.target.value })}
+                                  inputMode="decimal"
+                                  required
+                                  placeholder="0,00"
+                                  aria-label={`Custo unitário de ${service.partDescription || "peça"}`}
+                                />
+                              </label>
+                              <label>
+                                <span>Venda unit. R$ (opcional)</span>
+                                <input
+                                  value={service.partSale}
+                                  onChange={(event) => patchService(service.key, { partSale: event.target.value })}
+                                  inputMode="decimal"
+                                  placeholder="Margem no Comercial"
+                                  aria-label={`Preço de venda unitário de ${service.partDescription || "peça"}`}
+                                />
+                              </label>
+                            </div>
+                          ) : (
+                            <div className="quote-part-pending-price">
+                              <span>VALOR DA PEÇA</span>
+                              <strong>SERÁ COTADO</strong>
+                            </div>
+                          )}
                         </div>
                         <div className="quote-part-details">
                           <button type="button" className="quote-part-details-toggle" aria-expanded={detailsOpen} onClick={() => togglePartDetails(service.key)}>
@@ -452,13 +528,13 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
                   <div>
                     <span className="orbiq-eyebrow">AUTOMÁTICO</span>
                     <strong>{item.description || "PEÇA AINDA NÃO INFORMADA"}</strong>
-                    <small>{item.category}</small>
+                    <small>{item.category}{item.chosen_amount !== null ? " · Preço direto" : " · Será cotado"}</small>
                   </div>
                   <span>{item.quantity} {item.unit}</span>
                 </article>
               ))}
               {extraItems.map((item) => (
-                <article key={item.key}>
+                <article key={item.key} className="quote-extra-item-card">
                   <div>
                     <span className="orbiq-eyebrow">ADICIONAL</span>
                     <strong>{item.description}</strong>
@@ -466,6 +542,29 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
                   </div>
                   <span>{item.quantity} {item.unit}</span>
                   <button type="button" className="quote-remove-button" onClick={() => removeExtraItem(item.key)}>×</button>
+                  <label className="quote-manual-price-toggle">
+                    <input
+                      type="checkbox"
+                      checked={item.hasManualPrice}
+                      onChange={(event) => patchExtraItem(item.key, { hasManualPrice: event.target.checked, ...(event.target.checked ? {} : { partCost: "", partSale: "" }) })}
+                    />
+                    <span>
+                      <strong>Já tenho o preço</strong>
+                      <small>Preço direto</small>
+                    </span>
+                  </label>
+                  {item.hasManualPrice ? (
+                    <div className="quote-manual-price-fields">
+                      <label>
+                        <span>Custo unit. R$ *</span>
+                        <input value={item.partCost} onChange={(event) => patchExtraItem(item.key, { partCost: event.target.value })} inputMode="decimal" required placeholder="0,00" />
+                      </label>
+                      <label>
+                        <span>Venda unit. (opc.)</span>
+                        <input value={item.partSale} onChange={(event) => patchExtraItem(item.key, { partSale: event.target.value })} inputMode="decimal" placeholder="Margem no Comercial" />
+                      </label>
+                    </div>
+                  ) : null}
                 </article>
               ))}
             </div>

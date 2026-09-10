@@ -361,12 +361,18 @@ export default async function CommercialDetailPage({
     );
 
 
-  const supplierPending =
+  const costPending =
+    items.some(
+      (item) =>
+        item.chosen_amount ===
+          null,
+    );
+
+
+  const supplierOptional =
     items.some(
       (item) =>
         item.supplier_id ===
-          null ||
-        item.chosen_amount ===
           null,
     );
 
@@ -572,7 +578,7 @@ export default async function CommercialDetailPage({
       </section>
 
 
-      {supplierPending &&
+      {costPending &&
       items.length >
       0 ? (
 
@@ -581,15 +587,35 @@ export default async function CommercialDetailPage({
           <div>
 
             <strong>
-              {hasPreparedSupplierRequests
-                ? "Existe peça sem fornecedor definido"
-                : "Cotação de fornecedores ainda não preparada"}
+              Já tenho o preço — informe o custo das peças
             </strong>
 
             <span>
-              {hasPreparedSupplierRequests
-                ? "A cotação já foi preparada. Registre as respostas recebidas e escolha um fornecedor vencedor para cada peça."
-                : "Antes de apresentar este orçamento ao cliente, prepare os fornecedores que receberão a solicitação das peças."}
+              Preencha o custo (Preço direto) e o preço de venda no formulário abaixo para salvar e enviar ao cliente. Cotar fornecedor é opcional.
+            </span>
+
+          </div>
+
+        </section>
+
+      ) : null}
+
+
+      {!costPending &&
+      supplierOptional &&
+      items.length >
+      0 ? (
+
+        <section className="commercial-warning commercial-warning-optional">
+
+          <div>
+
+            <strong>
+              Fornecedor opcional
+            </strong>
+
+            <span>
+              O custo já está definido. Você pode enviar ao cliente agora. Se quiser, ainda pode cotar fornecedores depois para a compra.
             </span>
 
           </div>
@@ -604,8 +630,8 @@ export default async function CommercialDetailPage({
             className="orbiq-secondary-button"
           >
             {hasPreparedSupplierRequests
-              ? "Registrar / comparar respostas"
-              : "Preparar fornecedores"}
+              ? "Cotar / comparar (opcional)"
+              : "Preparar fornecedores (opcional)"}
           </Link>
 
         </section>
