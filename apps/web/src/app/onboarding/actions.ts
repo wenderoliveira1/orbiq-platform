@@ -205,9 +205,9 @@ export async function completeOrganizationSetup(
     );
   }
 
-  if (partsMargin < 0 || partsMargin > 1000) {
+  if (partsMargin < 0 || partsMargin >= 100) {
     onboardingError(
-      "A margem padrão deve ficar entre 0% e 1000%.",
+      "O lucro padrão das peças deve ficar entre 0% e menos de 100% (lucro sobre a venda).",
       "profile",
     );
   }

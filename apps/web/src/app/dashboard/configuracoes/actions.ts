@@ -181,9 +181,11 @@ export async function updateOrganizationSettingsAction(
 
   if (
     partsMargin < 0 ||
-    partsMargin > 1000
+    partsMargin >= 100
   ) {
-    fail("A margem padrão deve ficar entre 0% e 1000%.");
+    fail(
+      "O lucro padrão das peças deve ficar entre 0% e menos de 100% (lucro sobre a venda).",
+    );
   }
 
   const rawBrandColor = text(

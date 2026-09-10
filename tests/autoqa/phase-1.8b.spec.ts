@@ -100,7 +100,7 @@ test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
     });
 
     await expect(row).toBeVisible();
-    await expectMoneyInput(row.locator(".commercial-sale-input input"), 135);
+    await expectMoneyInput(row.locator(".commercial-sale-input input"), 153.85);
     await expect(row).toContainText("R$ 100,00");
   });
 
@@ -298,7 +298,7 @@ test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
       });
 
       await expect(row).toBeVisible();
-      await expectMoneyInput(row.locator(".commercial-sale-input input"), 140);
+      await expectMoneyInput(row.locator(".commercial-sale-input input"), 166.67);
 
       await page.goto(`/dashboard/comercial/${state.savedQuoteId}`);
       const savedRow = page.locator(".commercial-item-row").filter({

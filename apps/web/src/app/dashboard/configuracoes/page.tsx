@@ -608,19 +608,23 @@ export default async function SettingsPage({
 
               <label>
                 <span>
-                  MARGEM PADRÃO DAS PEÇAS (%)
+                  LUCRO PADRÃO DAS PEÇAS (% SOBRE A VENDA)
                 </span>
 
                 <input
                   name="default_parts_margin_percent"
                   type="number"
                   min={0}
-                  max={1000}
+                  max={99.99}
                   step="0.01"
                   defaultValue={
                     settings.default_parts_margin_percent
                   }
                 />
+                <small>
+                  Percentual de lucro sobre o preço de venda (ex.: 35% com
+                  custo 100 → venda ≈ 153,85). Deve ser menor que 100%.
+                </small>
               </label>
             </div>
 
