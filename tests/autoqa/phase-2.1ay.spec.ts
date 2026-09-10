@@ -36,7 +36,7 @@ test.describe("Fase 2.1AY — duplicar orçamento + adicionar linhas no detalhe"
     );
     expect(append).toContain('name="service_catalog_id"');
     expect(append).toContain("+ Serviço");
-    expect(append).toContain("+ Peça");
+    expect(detail).toContain("+ Peça");
     expect(detail).toContain('commercial_status === "approved"');
 
     expect(list).toContain("duplicateQuoteAction");
