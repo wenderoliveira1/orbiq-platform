@@ -144,7 +144,14 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/orcamentos");
   revalidatePath("/dashboard/cotacoes");
+  revalidatePath("/dashboard/comercial");
   revalidatePath("/dashboard/compras");
   revalidatePath("/dashboard/execucao");
+
+  const hasManualPrice = payload.items.some((item) => item.chosen_amount !== null);
+  if (hasManualPrice) {
+    redirect(`/dashboard/comercial/${created.quote_id}?ok=direct_price`);
+  }
+
   redirect(`/dashboard/orcamentos/${created.quote_id}?created=1`);
 }

@@ -5740,7 +5740,8 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   font-size: 7px;
 }
 
-.commercial-sale-input {
+.commercial-sale-input,
+.commercial-cost-input {
   min-height: 38px;
   display: flex !important;
   grid-template-columns: auto 1fr;
@@ -5751,11 +5752,13 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   background: var(--orbiq-surface);
 }
 
-.commercial-sale-input > span {
+.commercial-sale-input,
+.commercial-cost-input > span {
   padding-left: 8px;
 }
 
-.commercial-sale-input input {
+.commercial-sale-input,
+.commercial-cost-input input {
   width: 100%;
   min-width: 0;
   padding: 8px;
@@ -8741,3 +8744,94 @@ a.ops-pipeline-step:hover {
 }
 
 /* ORBIQ PHASE 1.7A END */
+
+
+/* Quote commercial / builder — Preço direto (fast path) */
+.commercial-fast-path {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(34, 197, 94, .28);
+  border-radius: 14px;
+  background: rgba(34, 197, 94, .07);
+}
+
+.commercial-fast-path strong {
+  color: #15803d;
+  font-size: 11px;
+}
+
+.commercial-fast-path span {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.commercial-warning-optional {
+  border-color: rgba(59, 130, 246, .28);
+  background: rgba(59, 130, 246, .06);
+}
+
+.commercial-warning-optional strong {
+  color: #1d4ed8;
+}
+
+.quote-part-price-path {
+  display: grid;
+  gap: 8px;
+}
+
+.quote-manual-price-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+}
+
+.quote-manual-price-toggle input {
+  margin-top: 2px;
+}
+
+.quote-manual-price-toggle span {
+  display: grid;
+  gap: 2px;
+}
+
+.quote-manual-price-toggle strong {
+  font-size: 10px;
+}
+
+.quote-manual-price-toggle small {
+  color: var(--orbiq-muted);
+  font-size: 8px;
+}
+
+.quote-manual-price-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.quote-manual-price-fields label {
+  display: grid;
+  gap: 4px;
+}
+
+.quote-manual-price-fields span {
+  font-size: 8px;
+  color: var(--orbiq-muted);
+}
+
+.quote-manual-price-fields input {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 11px;
+  background: var(--orbiq-surface, #fff);
+}
+
+.quote-extra-item-card {
+  display: grid;
+  gap: 8px;
+}

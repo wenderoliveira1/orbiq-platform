@@ -100,8 +100,8 @@ test.describe("Fase 1.8B - configurações aplicadas ao produto", () => {
     });
 
     await expect(row).toBeVisible();
+    await expectMoneyInput(row.locator(".commercial-cost-input input"), 100);
     await expectMoneyInput(row.locator(".commercial-sale-input input"), 153.85);
-    await expect(row).toContainText("R$ 100,00");
   });
 
   test("preserva preço comercial já salvo", async ({ page }) => {

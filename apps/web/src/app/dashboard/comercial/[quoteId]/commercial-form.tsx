@@ -18,6 +18,7 @@ type Item = {
   unit: string;
   side: string | null;
   specification: string | null;
+  supplier_id: string | null;
   chosen_amount: number | null;
   sale_unit_amount: number | null;
   sale_total_amount: number | null;
@@ -243,6 +244,26 @@ export function CommercialForm({
 
 
   const [
+    costTotals,
+    setCostTotals,
+  ] =
+    useState<
+      Record<string, string>
+    >(
+      Object.fromEntries(
+        items.map(
+          (item) => [
+            item.id,
+            numberInput(
+              item.chosen_amount,
+            ),
+          ],
+        ),
+      ),
+    );
+
+
+  const [
     marginPercent,
     setMarginPercent,
   ] =
@@ -295,8 +316,12 @@ export function CommercialForm({
 
 
             const costTotal =
-              item.chosen_amount ??
-              0;
+              parseMoney(
+                costTotals[
+                  item.id
+                ] ??
+                "",
+              );
 
 
             const unitCost =
@@ -337,6 +362,7 @@ export function CommercialForm({
       [
         items,
         salePrices,
+        costTotals,
       ],
     );
 
@@ -440,6 +466,9 @@ export function CommercialForm({
 
         sale_unit_amount:
           item.unitSale,
+
+        cost_total_amount:
+          item.costTotal,
       }),
     );
 
@@ -473,9 +502,18 @@ export function CommercialForm({
       of items
     ) {
 
+      const lineCost =
+        parseMoney(
+          costTotals[
+            item.id
+          ] ??
+          "",
+        );
+
+
       if (
-        item.chosen_amount ===
-          null ||
+        lineCost <=
+          0 ||
         item.quantity <=
           0
       ) {
@@ -493,7 +531,7 @@ export function CommercialForm({
 
 
       const unitCost =
-        item.chosen_amount /
+        lineCost /
         item.quantity;
 
 
@@ -584,12 +622,30 @@ export function CommercialForm({
             </h2>
 
             <p className="commercial-help">
-              O custo vem do fornecedor escolhido. O preço de venda é definido pela oficina.
+              Preço direto: informe o custo da peça e o preço de venda. Cotar fornecedor é opcional.
             </p>
 
           </div>
 
         </div>
+
+
+        {items.length >
+        0 &&
+        !locked ? (
+
+          <div className="commercial-fast-path">
+            <div>
+              <strong>
+                Já tenho o preço
+              </strong>
+              <span>
+                Preencha o custo em cada peça abaixo e o preço de venda. Depois salve o comercial para enviar ao cliente — sem precisar cotar fornecedor.
+              </span>
+            </div>
+          </div>
+
+        ) : null}
 
 
         {items.length >
@@ -743,31 +799,50 @@ export function CommercialForm({
 
                   <div>
 
-                    <strong>
-                      {item.chosen_amount ===
-                      null
-                        ? "Pendente"
-                        : money(
-                            item.costTotal,
-                          )}
-                    </strong>
-
-                    {item.chosen_amount !==
-                    null ? (
+                    <div className="commercial-cost-input">
 
                       <span>
-                        {money(
-                          item.unitCost,
-                        )} / {item.unit}
+                        R$
                       </span>
 
-                    ) : (
+                      <input
+                        value={
+                          costTotals[
+                            item.id
+                          ] ??
+                          ""
+                        }
+                        onChange={
+                          (event) =>
+                            setCostTotals(
+                              (
+                                current,
+                              ) => ({
+                                ...current,
 
-                      <span className="commercial-pending">
-                        Cotação incompleta
-                      </span>
+                                [item.id]:
+                                  event.target.value,
+                              }),
+                            )
+                        }
+                        inputMode="decimal"
+                        disabled={
+                          locked
+                        }
+                        required
+                        aria-label={
+                          `Custo total de ${item.description}`
+                        }
+                        placeholder="Custo total"
+                      />
 
-                    )}
+                    </div>
+
+                    <span>
+                      {item.supplier_id
+                        ? "Do fornecedor (editável)"
+                        : "Preço direto · total da linha"}
+                    </span>
 
                   </div>
 

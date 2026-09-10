@@ -26,7 +26,7 @@ async function refreshQuoteTotal(
   if (servicesResult.error) return servicesResult.error.message;
   if (itemsResult.error) return itemsResult.error.message;
   const laborTotal = (servicesResult.data ?? []).reduce((total, service) => total + Number(service.labor_amount ?? 0) * Number(service.quantity ?? 1), 0);
-  const partsTotal = (itemsResult.data ?? []).reduce((total, item) => total + Number(item.chosen_amount ?? 0) * Number(item.quantity ?? 1), 0);
+  const partsTotal = (itemsResult.data ?? []).reduce((total, item) => total + Number(item.chosen_amount ?? 0), 0);
   const { error } = await supabase.from("quotes").update({ final_amount: Math.round((laborTotal + partsTotal) * 100) / 100 }).eq("id", quoteId).eq("organization_id", organizationId);
   return error?.message ?? null;
 }
@@ -166,4 +166,59 @@ export async function updateQuoteItemQuantityAction(formData: FormData): Promise
   if (totalError) return fail(quoteId, `Quantidade atualizada, mas não foi possível atualizar o total: ${totalError}`);
   refreshQuotePaths(quoteId);
   redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Quantidade do item atualizada.")}`);
+}
+
+
+export async function updateQuoteServiceLaborAction(formData: FormData): Promise<never> {
+  const { supabase, organization } = await getCurrentContext();
+  const quoteId = text(formData.get("quote_id"));
+  const serviceId = text(formData.get("service_id"));
+  const laborRaw = text(formData.get("labor_amount"));
+  if (!quoteId) redirect("/dashboard/orcamentos");
+  if (!serviceId) return fail(quoteId, "Serviço inválido.");
+
+  const normalizedLabor = laborRaw.includes(",")
+    ? laborRaw.replace(/\./g, "").replace(",", ".")
+    : laborRaw;
+  const unitLabor = Number(normalizedLabor);
+  if (!Number.isFinite(unitLabor) || unitLabor < 0 || unitLabor > 1_000_000) {
+    return fail(quoteId, "Valor de mão de obra inválido.");
+  }
+
+  const { data, error } = await supabase
+    .from("quote_services")
+    .update({ labor_amount: Math.round(unitLabor * 100) / 100 })
+    .eq("id", serviceId)
+    .eq("quote_id", quoteId)
+    .eq("organization_id", organization.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return fail(quoteId, `Não foi possível atualizar a mão de obra: ${error.message}`);
+  if (!data) return fail(quoteId, "Serviço não encontrado.");
+
+  const totalError = await refreshQuoteTotal(supabase, organization.id, quoteId);
+  if (totalError) return fail(quoteId, `Mão de obra atualizada, mas não foi possível atualizar o total: ${totalError}`);
+  refreshQuotePaths(quoteId);
+  redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Mão de obra atualizada.")}`);
+}
+
+export async function updateQuoteNotesAction(formData: FormData): Promise<never> {
+  const { supabase, organization } = await getCurrentContext();
+  const quoteId = text(formData.get("quote_id"));
+  const notes = text(formData.get("notes")).toLocaleUpperCase("pt-BR");
+  if (!quoteId) redirect("/dashboard/orcamentos");
+  if (notes.length > 4000) return fail(quoteId, "Observações muito longas.");
+
+  const { data, error } = await supabase
+    .from("quotes")
+    .update({ notes: notes || null })
+    .eq("id", quoteId)
+    .eq("organization_id", organization.id)
+    .select("id")
+    .maybeSingle();
+  if (error) return fail(quoteId, `Não foi possível atualizar as observações: ${error.message}`);
+  if (!data) return fail(quoteId, "Orçamento não encontrado.");
+
+  refreshQuotePaths(quoteId);
+  redirect(`/dashboard/orcamentos/${quoteId}?ok=${encodeURIComponent("Observações atualizadas.")}`);
 }
