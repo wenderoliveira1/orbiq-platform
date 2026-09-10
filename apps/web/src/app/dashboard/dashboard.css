@@ -1680,7 +1680,8 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 }
 
 .print-header,
-.print-footer {
+.print-footer,
+.print-only {
   display: none;
 }
 
@@ -1780,6 +1781,10 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   .orbiq-mobile-header,
   .no-print {
     display: none !important;
+  }
+
+  .print-only {
+    display: inline !important;
   }
 
   .orbiq-shell,
