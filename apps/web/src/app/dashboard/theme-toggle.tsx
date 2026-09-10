@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import {
   THEME_COLORS,
@@ -8,6 +8,12 @@ import {
   themeCookieClientMaxAge,
   type ThemePreference,
 } from "@/lib/theme";
+
+const themeListeners = new Set<() => void>();
+
+function emitThemeChange() {
+  themeListeners.forEach((listener) => listener());
+}
 
 function readDocumentTheme(): ThemePreference | null {
   const attr = document.documentElement.getAttribute("data-theme");
@@ -48,34 +54,42 @@ function applyTheme(theme: ThemePreference) {
   document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=${themeCookieClientMaxAge()}; samesite=lax${secure}`;
 
   syncThemeColor(theme);
+  emitThemeChange();
+}
+
+function subscribeTheme(listener: () => void) {
+  themeListeners.add(listener);
+  const media = window.matchMedia("(prefers-color-scheme: dark)");
+  media.addEventListener("change", listener);
+  return () => {
+    themeListeners.delete(listener);
+    media.removeEventListener("change", listener);
+  };
+}
+
+function getThemeSnapshot(): ThemePreference {
+  return readDocumentTheme() ?? systemTheme();
 }
 
 type ThemeToggleProps = {
   className?: string;
   compact?: boolean;
+  initialTheme?: ThemePreference;
 };
 
 export function ThemeToggle({
   className = "orbiq-theme-toggle",
   compact = false,
+  initialTheme,
 }: ThemeToggleProps) {
-  const [theme, setTheme] = useState<ThemePreference>("light");
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const current = readDocumentTheme() ?? systemTheme();
-    setTheme(current);
-    setReady(true);
-
-    if (readDocumentTheme()) {
-      syncThemeColor(current);
-    }
-  }, []);
+  const theme = useSyncExternalStore(
+    subscribeTheme,
+    getThemeSnapshot,
+    () => initialTheme ?? "light",
+  );
 
   function toggle() {
-    const next: ThemePreference = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    applyTheme(next);
+    applyTheme(theme === "dark" ? "light" : "dark");
   }
 
   const label =
@@ -90,7 +104,7 @@ export function ThemeToggle({
       onClick={toggle}
       aria-label={label}
       title={label}
-      aria-pressed={ready ? theme === "dark" : undefined}
+      aria-pressed={theme === "dark"}
     >
       <span aria-hidden="true">{icon}</span>
       {compact ? null : <span>{visibleLabel}</span>}

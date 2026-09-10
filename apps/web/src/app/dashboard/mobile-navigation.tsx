@@ -18,6 +18,7 @@ import {
 } from "./navigation-items";
 import { OrganizationSwitcher } from "./organization-switcher";
 import { ThemeToggle } from "./theme-toggle";
+import type { ThemePreference } from "@/lib/theme";
 
 import styles from "./mobile-navigation.module.css";
 
@@ -41,6 +42,7 @@ type MobileNavigationProps = {
   organizations: OrganizationOption[];
   permissions: string[];
   userEmail: string;
+  initialTheme?: ThemePreference;
 };
 
 export function MobileNavigation({
@@ -49,6 +51,7 @@ export function MobileNavigation({
   organizations,
   permissions,
   userEmail,
+  initialTheme,
 }: MobileNavigationProps) {
   const pathname = usePathname();
   const [openedAtPath, setOpenedAtPath] = useState<string | null>(null);
@@ -151,7 +154,7 @@ export function MobileNavigation({
         </div>
 
         <div className={styles.headerActions}>
-          <ThemeToggle className="orbiq-theme-toggle compact" compact />
+          <ThemeToggle className="orbiq-theme-toggle compact" compact initialTheme={initialTheme} />
           <button
             ref={triggerRef}
             type="button"

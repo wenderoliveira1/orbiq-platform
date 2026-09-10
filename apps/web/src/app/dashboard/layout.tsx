@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { cookies } from "next/headers";
+
 import Link from "next/link";
 
 import {
@@ -16,6 +18,7 @@ import { MobileNavigation } from "./mobile-navigation";
 import { DashboardNav } from "./nav";
 import { OrganizationSwitcher } from "./organization-switcher";
 import { ThemeToggle } from "./theme-toggle";
+import { parseThemePreference, THEME_COOKIE } from "@/lib/theme";
 
 import "./dashboard.css";
 import "./mobile-navigation-shell.css";
@@ -31,6 +34,11 @@ export default async function DashboardLayout({
     user,
     availableOrganizations,
   } = await getCurrentContext();
+
+  const cookieStore = await cookies();
+  const themePreference = parseThemePreference(
+    cookieStore.get(THEME_COOKIE)?.value,
+  );
 
   const permissions = permissionsForRole(membership.role);
   const organizationOptions = availableOrganizations.map((item) => ({
@@ -79,7 +87,7 @@ export default async function DashboardLayout({
             </div>
           </div>
 
-          <ThemeToggle className="orbiq-theme-toggle full-width" />
+          <ThemeToggle className="orbiq-theme-toggle full-width" initialTheme={themePreference} />
 
           <Link
             href="/instalar"
@@ -106,6 +114,7 @@ export default async function DashboardLayout({
           currentOrganizationName={organization.name}
           permissions={permissions}
           userEmail={user.email ?? "Usuário Orbiq"}
+          initialTheme={themePreference}
         />
 
         <div className="orbiq-content">{children}</div>
