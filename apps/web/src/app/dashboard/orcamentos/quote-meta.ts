@@ -9,7 +9,7 @@ export const QUOTE_STATUSES = [
   },
   {
     value: "estimating",
-    label: "Em orçamento",
+    label: "Rascunho",
   },
   {
     value: "approved",
