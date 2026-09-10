@@ -175,7 +175,7 @@ export default async function PublicQuotePage({
   return (
     <main className="public-quote-shell">
       <article className="public-quote-card">
-        <header className="public-quote-header">
+        <header className="public-quote-header public-quote-letterhead">
           <div className="public-brand">
             <span
               data-testid="workshop-logo"
@@ -192,16 +192,28 @@ export default async function PublicQuotePage({
               {logoUrl ? null : "O"}
             </span>
 
-            <div>
+            <div className="public-letterhead-copy">
               <strong>{workshop.organization_name}</strong>
               <small>
                 {branding.tagline ?? workshop.legal_name ?? "Orçamento digital"}
               </small>
+              {workshop.organization_cnpj ? (
+                <small>CNPJ {workshop.organization_cnpj}</small>
+              ) : null}
+              {workshopContacts ? <small>{workshopContacts}</small> : null}
+              {workshopAddress ? <small>{workshopAddress}</small> : null}
+              <small>Orçamento {quote.protocol}</small>
+              <small>
+                Validade comercial: {workshop.quote_validity_days} dias
+              </small>
+              <small className="workshop-letterhead-powered">Powered by Orbiq</small>
             </div>
           </div>
 
           <div className="public-protocol">
-            <span>ORÇAMENTO</span>
+            <span className={`public-status status-${quote.commercial_status}`}>
+              {statusLabel(quote.commercial_status)}
+            </span>
             <strong>{quote.protocol}</strong>
             <small>{date(quote.created_at)}</small>
           </div>
@@ -384,20 +396,11 @@ export default async function PublicQuotePage({
         )}
 
         <footer className="public-footer">
-          <strong>{workshop.organization_name}</strong>
-          {workshop.legal_name ? <span>{workshop.legal_name}</span> : null}
-          {workshop.organization_cnpj ? (
-            <span>CNPJ {workshop.organization_cnpj}</span>
-          ) : null}
-          {workshopContacts ? <span>{workshopContacts}</span> : null}
-          {workshopAddress ? <span>{workshopAddress}</span> : null}
-          <span>Validade comercial: {workshop.quote_validity_days} dias</span>
           <span>Link válido até {date(quote.expires_at)}</span>
           <small>
             {workshop.default_quote_notes ??
               "Valores sujeitos à disponibilidade das peças e à confirmação dos serviços pela oficina."}
           </small>
-          <small>Powered by Orbiq</small>
         </footer>
       </article>
     </main>

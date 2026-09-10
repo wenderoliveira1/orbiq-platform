@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ReopenLockedQuote } from "../../_components/reopen-locked-quote";
 import { getCurrentContext } from "../../_lib/current-organization";
+import { hasPermissionForRole } from "../../_lib/permissions";
 import { QUOTE_STATUSES } from "../quote-meta";
 import {
   addQuoteServiceAction,
@@ -30,11 +32,12 @@ const qty = (value: number) =>
 export default async function QuoteDetailPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const query = await searchParams;
-  const { supabase, organization } = await getCurrentContext();
+  const { supabase, organization, membership } = await getCurrentContext();
+  const canReopenCommercial = hasPermissionForRole(membership.role, "commercial.manage");
 
   const { data: quote, error: quoteError } = await supabase
     .from("quotes")
-    .select("id, customer_id, vehicle_id, protocol, priority, status, mileage, notes, final_amount, created_at")
+    .select("id, customer_id, vehicle_id, protocol, priority, status, commercial_status, mileage, notes, final_amount, created_at")
     .eq("organization_id", organization.id)
     .eq("id", id)
     .maybeSingle();
@@ -63,6 +66,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
   ) / 100;
   const partsTotal = items.reduce((sum, item) => sum + (item.chosen_amount ?? 0), 0);
   const finalTotal = Math.round((laborTotal + partsTotal) * 100) / 100;
+  const locked = quote.commercial_status === "approved";
 
   return (
     <div className="orbiq-page quote-detail-page">
@@ -82,6 +86,36 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
       {query.ok ? <div className="orbiq-alert success no-print">{query.ok}</div> : null}
       {query.error ? <div className="orbiq-alert error no-print">{query.error}</div> : null}
 
+      {locked ? (
+        <section className="quote-locked-banner no-print">
+          <div>
+            <span className="orbiq-eyebrow">ORÇAMENTO BLOQUEADO</span>
+            <strong>Aprovado no comercial — edição pausada</strong>
+            <span>
+              Este orçamento pode já ter sido enviado ao cliente. Para alterar
+              serviços, quantidades ou valores, reabra o mesmo orçamento com
+              confirmação explícita.
+            </span>
+          </div>
+          <div className="quote-locked-banner-actions">
+            {canReopenCommercial ? (
+              <ReopenLockedQuote
+                quoteId={quote.id}
+                returnTo="orcamentos"
+                buttonLabel="Reabrir para editar"
+              />
+            ) : (
+              <span className="quote-locked-banner-hint">
+                Peça a um usuário do comercial para reabrir.
+              </span>
+            )}
+            <Link href={`/dashboard/comercial/${quote.id}`} className="orbiq-secondary-button">
+              Ver comercial
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       <section className="quote-detail-grid">
         <article className="orbiq-panel">
           <span className="orbiq-eyebrow">CLIENTE</span>
@@ -97,11 +131,15 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
 
       <section className="orbiq-panel no-print">
         <div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">ANDAMENTO</span><h2>Status do orçamento</h2></div></div>
-        <form action={updateQuoteStatusAction} className="quote-status-form">
-          <input type="hidden" name="quote_id" value={quote.id} />
-          <select name="status" defaultValue={quote.status}>{QUOTE_STATUSES.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select>
-          <button type="submit" className="orbiq-primary-button">Atualizar status</button>
-        </form>
+        {locked ? (
+          <p className="quote-locked-inline">Status bloqueado enquanto o comercial estiver aprovado.</p>
+        ) : (
+          <form action={updateQuoteStatusAction} className="quote-status-form">
+            <input type="hidden" name="quote_id" value={quote.id} />
+            <select name="status" defaultValue={quote.status}>{QUOTE_STATUSES.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}</select>
+            <button type="submit" className="orbiq-primary-button">Atualizar status</button>
+          </form>
+        )}
       </section>
 
       <section className="orbiq-panel">
@@ -110,17 +148,19 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
           <span className="orbiq-count-badge">{services.length}</span>
         </div>
 
-        <div className="no-print" style={{ marginBottom: 16 }}>
-          <form action={addQuoteServiceAction} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-            <input type="hidden" name="quote_id" value={quote.id} />
-            <input name="category" placeholder="Categoria" aria-label="Categoria do serviço" style={{ flex: "0 1 150px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
-            <input name="description" placeholder="Novo serviço" aria-label="Descrição do serviço" required style={{ flex: "1 1 240px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
-            <input name="labor_amount" type="number" min="0" step="0.01" placeholder="Mão de obra unitária (R$)" aria-label="Valor unitário da mão de obra" style={{ flex: "0 1 170px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
-            <input name="quantity" type="number" min="0.001" step="0.001" defaultValue="1" placeholder="Qtd." aria-label="Quantidade do serviço" style={{ flex: "0 1 95px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
-            <label style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", fontSize: 11 }}><input name="needs_part" type="checkbox" /> Peça?</label>
-            <button type="submit" className="orbiq-primary-button">+ Adicionar serviço</button>
-          </form>
-        </div>
+        {!locked ? (
+          <div className="no-print" style={{ marginBottom: 16 }}>
+            <form action={addQuoteServiceAction} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+              <input type="hidden" name="quote_id" value={quote.id} />
+              <input name="category" placeholder="Categoria" aria-label="Categoria do serviço" style={{ flex: "0 1 150px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
+              <input name="description" placeholder="Novo serviço" aria-label="Descrição do serviço" required style={{ flex: "1 1 240px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
+              <input name="labor_amount" type="number" min="0" step="0.01" placeholder="Mão de obra unitária (R$)" aria-label="Valor unitário da mão de obra" style={{ flex: "0 1 170px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
+              <input name="quantity" type="number" min="0.001" step="0.001" defaultValue="1" placeholder="Qtd." aria-label="Quantidade do serviço" style={{ flex: "0 1 95px", minHeight: 42, padding: "0 10px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }} />
+              <label style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", fontSize: 11 }}><input name="needs_part" type="checkbox" /> Peça?</label>
+              <button type="submit" className="orbiq-primary-button">+ Adicionar serviço</button>
+            </form>
+          </div>
+        ) : null}
 
         {services.length === 0 ? (
           <div className="orbiq-empty compact"><strong>Nenhum serviço registrado.</strong></div>
@@ -136,50 +176,66 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
                   <span>{service.category}</span>
                   <strong>{service.description}</strong>
                   <div>
-                    <span className="print-only">{qty(quantity)}</span>
-                    <form action={updateQuoteServiceQuantityAction} className="no-print" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <input type="hidden" name="quote_id" value={quote.id} />
-                      <input type="hidden" name="service_id" value={service.id} />
-                      <input
-                        name="quantity"
-                        type="number"
-                        min="0.001"
-                        step="0.001"
-                        max="100000"
-                        defaultValue={quantity}
-                        aria-label={`Quantidade de ${service.description}`}
-                        required
-                        style={{ width: 78, minHeight: 40, padding: "0 8px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }}
-                      />
-                      <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar qtd.</button>
-                    </form>
+                    {locked ? (
+                      <span>{qty(quantity)}</span>
+                    ) : (
+                      <>
+                        <span className="print-only">{qty(quantity)}</span>
+                        <form action={updateQuoteServiceQuantityAction} className="no-print" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <input type="hidden" name="quote_id" value={quote.id} />
+                          <input type="hidden" name="service_id" value={service.id} />
+                          <input
+                            name="quantity"
+                            type="number"
+                            min="0.001"
+                            step="0.001"
+                            max="100000"
+                            defaultValue={quantity}
+                            aria-label={`Quantidade de ${service.description}`}
+                            required
+                            style={{ width: 78, minHeight: 40, padding: "0 8px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }}
+                          />
+                          <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar qtd.</button>
+                        </form>
+                      </>
+                    )}
                   </div>
                   <span>{service.needs_part ? "Sim" : "Não"}</span>
                   <div>
-                    <span className="print-only">{money(unitLabor)}</span>
-                    <form action={updateQuoteServiceLaborAction} className="no-print" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <input type="hidden" name="quote_id" value={quote.id} />
-                      <input type="hidden" name="service_id" value={service.id} />
-                      <input
-                        name="labor_amount"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        max="1000000"
-                        defaultValue={unitLabor}
-                        aria-label={`Mão de obra unitária de ${service.description}`}
-                        required
-                        style={{ width: 90, minHeight: 40, padding: "0 8px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }}
-                      />
-                      <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar</button>
-                    </form>
+                    {locked ? (
+                      <span>{money(unitLabor)}</span>
+                    ) : (
+                      <>
+                        <span className="print-only">{money(unitLabor)}</span>
+                        <form action={updateQuoteServiceLaborAction} className="no-print" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <input type="hidden" name="quote_id" value={quote.id} />
+                          <input type="hidden" name="service_id" value={service.id} />
+                          <input
+                            name="labor_amount"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            max="1000000"
+                            defaultValue={unitLabor}
+                            aria-label={`Mão de obra unitária de ${service.description}`}
+                            required
+                            style={{ width: 90, minHeight: 40, padding: "0 8px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }}
+                          />
+                          <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar</button>
+                        </form>
+                      </>
+                    )}
                   </div>
                   <strong>{money(lineTotal)}</strong>
-                  <form action={deleteQuoteServiceAction} className="no-print">
-                    <input type="hidden" name="quote_id" value={quote.id} />
-                    <input type="hidden" name="service_id" value={service.id} />
-                    <button type="submit" className="orbiq-secondary-button">Excluir</button>
-                  </form>
+                  {locked ? (
+                    <span className="no-print">—</span>
+                  ) : (
+                    <form action={deleteQuoteServiceAction} className="no-print">
+                      <input type="hidden" name="quote_id" value={quote.id} />
+                      <input type="hidden" name="service_id" value={service.id} />
+                      <button type="submit" className="orbiq-secondary-button">Excluir</button>
+                    </form>
+                  )}
                 </div>
               );
             })}
@@ -196,24 +252,30 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
               <div key={item.id} className="quote-detail-table-row item-table" style={{ gridTemplateColumns: "1.7fr 220px 130px 1fr 100px" }}>
                 <div><strong>{item.description}</strong><span>{item.category}</span></div>
                 <div>
-                  <span className="print-only">{qty(item.quantity)} {item.unit}</span>
-                  <form action={updateQuoteItemQuantityAction} className="no-print" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <input type="hidden" name="quote_id" value={quote.id} />
-                    <input type="hidden" name="item_id" value={item.id} />
-                    <input
-                      name="quantity"
-                      type="number"
-                      min="0.001"
-                      step="0.001"
-                      max="100000"
-                      defaultValue={item.quantity}
-                      aria-label={`Quantidade de ${item.description}`}
-                      required
-                      style={{ width: 78, minHeight: 40, padding: "0 8px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }}
-                    />
-                    <span style={{ fontSize: 10 }}>{item.unit}</span>
-                    <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar qtd.</button>
-                  </form>
+                  {locked ? (
+                    <span>{qty(item.quantity)} {item.unit}</span>
+                  ) : (
+                    <>
+                      <span className="print-only">{qty(item.quantity)} {item.unit}</span>
+                      <form action={updateQuoteItemQuantityAction} className="no-print" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                        <input type="hidden" name="quote_id" value={quote.id} />
+                        <input type="hidden" name="item_id" value={item.id} />
+                        <input
+                          name="quantity"
+                          type="number"
+                          min="0.001"
+                          step="0.001"
+                          max="100000"
+                          defaultValue={item.quantity}
+                          aria-label={`Quantidade de ${item.description}`}
+                          required
+                          style={{ width: 78, minHeight: 40, padding: "0 8px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }}
+                        />
+                        <span style={{ fontSize: 10 }}>{item.unit}</span>
+                        <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar qtd.</button>
+                      </form>
+                    </>
+                  )}
                 </div>
                 <span>{item.side ?? "—"}</span>
                 <span>{item.specification ?? "—"}</span>
@@ -227,18 +289,22 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
       <section className="orbiq-panel">
         <span className="orbiq-eyebrow">OBSERVAÇÕES</span>
         <p className="quote-detail-notes print-only">{quote.notes || "—"}</p>
-        <form action={updateQuoteNotesAction} className="no-print" style={{ display: "grid", gap: 8, marginTop: 8 }}>
-          <input type="hidden" name="quote_id" value={quote.id} />
-          <textarea
-            name="notes"
-            rows={4}
-            defaultValue={quote.notes ?? ""}
-            placeholder="Observações do orçamento..."
-            aria-label="Observações do orçamento"
-            style={{ width: "100%", padding: 10, border: "1px solid var(--orbiq-border)", borderRadius: 11, resize: "vertical" }}
-          />
-          <button type="submit" className="orbiq-secondary-button" style={{ justifySelf: "start" }}>Salvar observações</button>
-        </form>
+        {locked ? (
+          <p className="quote-detail-notes no-print">{quote.notes || "—"}</p>
+        ) : (
+          <form action={updateQuoteNotesAction} className="no-print" style={{ display: "grid", gap: 8, marginTop: 8 }}>
+            <input type="hidden" name="quote_id" value={quote.id} />
+            <textarea
+              name="notes"
+              rows={4}
+              defaultValue={quote.notes ?? ""}
+              placeholder="Observações do orçamento..."
+              aria-label="Observações do orçamento"
+              style={{ width: "100%", padding: 10, border: "1px solid var(--orbiq-border)", borderRadius: 11, resize: "vertical" }}
+            />
+            <button type="submit" className="orbiq-secondary-button" style={{ justifySelf: "start" }}>Salvar observações</button>
+          </form>
+        )}
       </section>
 
       <section className="quote-detail-totals">

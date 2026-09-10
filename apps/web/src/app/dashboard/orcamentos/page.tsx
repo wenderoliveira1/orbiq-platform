@@ -372,19 +372,11 @@ export default async function QuotesPage({
       </section>
 
 
-      <section className="orbiq-panel">
-        <div className="orbiq-panel-heading">
-          <div>
-            <span className="orbiq-eyebrow">
-              RESULTADOS
-            </span>
-
-            <h2>
-              {quotes.length} orçamento(s)
-            </h2>
-          </div>
+      <section className="orbiq-panel quote-history-panel">
+        <div className="quote-history-count">
+          <strong>{quotes.length}</strong>
+          <span>orçamento(s)</span>
         </div>
-
 
         {quotes.length ===
         0 ? (
@@ -430,19 +422,6 @@ export default async function QuotesPage({
                     }
                     className="quote-history-row"
                   >
-                    <div className="quote-history-protocol">
-                      <strong>
-                        {quote.protocol}
-                      </strong>
-
-                      <span>
-                        {formatDate(
-                          quote.created_at,
-                        )}
-                      </span>
-                    </div>
-
-
                     <div className="quote-history-customer">
                       <strong>
                         {customer?.name ??
@@ -491,6 +470,19 @@ export default async function QuotesPage({
                         ] ??
                           quote.priority}
                       </small>
+                    </div>
+
+
+                    <div className="quote-history-protocol">
+                      <span>
+                        {formatDate(
+                          quote.created_at,
+                        )}
+                      </span>
+
+                      <strong>
+                        {quote.protocol}
+                      </strong>
                     </div>
 
 

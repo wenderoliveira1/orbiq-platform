@@ -1152,7 +1152,7 @@ export function CommercialForm({
         ) : (
 
           <span className="commercial-locked">
-            Valores bloqueados após aprovação
+            Valores bloqueados após aprovação — use &quot;Reabrir para editar&quot; abaixo
           </span>
 
         )}
