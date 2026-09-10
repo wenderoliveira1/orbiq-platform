@@ -1389,50 +1389,75 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 
 .quote-history-metrics {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
 }
 
-.quote-history-metrics article {
-  min-height: 100px;
-  padding: 17px;
+.quote-history-metric {
+  min-height: 68px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 6px;
   border: 1px solid var(--orbiq-border);
-  border-radius: 16px;
+  border-radius: 12px;
   background: var(--orbiq-surface);
   box-shadow: var(--orbiq-shadow);
+  color: inherit;
+  text-decoration: none;
 }
 
-.quote-history-metrics span {
+a.quote-history-metric:hover {
+  border-color: rgba(227, 6, 19, 0.35);
+  background: var(--orbiq-surface-soft);
+  color: inherit;
+}
+
+.quote-history-metric.is-active {
+  border-color: rgba(227, 6, 19, 0.55);
+  box-shadow: 0 0 0 3px rgba(227, 6, 19, 0.08);
+}
+
+.quote-history-metric span {
   color: var(--orbiq-muted);
   font-size: 10px;
   font-weight: 750;
+  line-height: 1.2;
 }
 
-.quote-history-metrics strong {
-  font-size: 27px;
+.quote-history-metric strong {
+  font-size: 22px;
+  letter-spacing: -0.03em;
 }
 
 .quote-history-search {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 220px auto auto;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 200px) auto auto;
   gap: 8px;
+  margin-bottom: 10px;
+  align-items: center;
 }
 
 .quote-history-search input,
 .quote-history-search select,
 .quote-status-form select {
-  min-height: 42px;
+  min-height: 36px;
   width: 100%;
-  padding: 0 11px;
+  padding: 0 10px;
   border: 1px solid var(--orbiq-border);
-  border-radius: 11px;
+  border-radius: 10px;
   outline: none;
   background: var(--orbiq-surface);
   color: var(--orbiq-text);
   font: inherit;
+  font-size: 13px;
+}
+
+.quote-history-search .orbiq-secondary-button {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 12px;
 }
 
 .quote-history-search input:focus,
@@ -1849,7 +1874,16 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 @media (max-width: 760px) {
 
   .quote-history-metrics {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quote-history-metric {
+    min-height: 60px;
+    padding: 10px 12px;
+  }
+
+  .quote-history-metric strong {
+    font-size: 20px;
   }
 
   .quote-history-search {
@@ -9458,4 +9492,13 @@ a.ops-pipeline-step:hover {
 
 .quote-missing-price-ack input {
   margin-top: 2px;
+}
+
+
+/* ORBIQ QUOTES LIST DENSE SEARCH 20260910 */
+
+.quote-history-panel .quote-history-search {
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--orbiq-border);
+  margin-bottom: 12px;
 }
