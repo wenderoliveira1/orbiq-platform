@@ -136,7 +136,7 @@ export function CategoryGuidedPicker({
           </span>
           <strong>Categoria → descrição livre</strong>
           <small>
-            Chips leves (MECÂNICA, ELÉTRICA…). Funilaria continua no fluxo estruturado abaixo.
+            Chips leves (MECÂNICA, ELÉTRICA…). Funilaria fica no atalho principal acima.
           </small>
         </div>
         {step === "describe" ? (
