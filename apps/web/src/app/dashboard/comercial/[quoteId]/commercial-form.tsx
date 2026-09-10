@@ -634,24 +634,6 @@ export function CommercialForm({
         0 &&
         !locked ? (
 
-          <div className="commercial-fast-path">
-            <div>
-              <strong>
-                Já tenho o preço
-              </strong>
-              <span>
-                Preencha o custo em cada peça abaixo e o preço de venda. Depois salve o comercial para enviar ao cliente — sem precisar cotar fornecedor.
-              </span>
-            </div>
-          </div>
-
-        ) : null}
-
-
-        {items.length >
-        0 &&
-        !locked ? (
-
           <div className="commercial-markup-bar">
 
             <div>
@@ -1144,9 +1126,9 @@ export function CommercialForm({
 
           <button
             type="submit"
-            className="orbiq-primary-button"
+            className="orbiq-primary-button commercial-save-button"
           >
-            Salvar orçamento comercial
+            Salvar comercial
           </button>
 
         ) : (

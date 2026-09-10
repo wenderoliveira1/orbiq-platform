@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Inter } from "next/font/google";
 import { cookies } from "next/headers";
 
 import { getPublicEnvironment } from "@/lib/public-environment";
@@ -9,6 +10,12 @@ import { ConnectivityStatus } from "./connectivity-status";
 import { PwaRegistration } from "./pwa-registration";
 
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-orbiq",
+});
 
 const publicEnvironment = getPublicEnvironment();
 
@@ -57,10 +64,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html
       lang="pt-BR"
+      className={inter.variable}
       {...(theme ? { "data-theme": theme } : {})}
       style={theme ? { colorScheme: theme } : undefined}
     >
-      <body>
+      <body className={inter.className}>
         <ConnectivityStatus />
         {children}
         <PwaRegistration />
