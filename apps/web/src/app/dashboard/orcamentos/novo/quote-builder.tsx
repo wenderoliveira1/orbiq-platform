@@ -9,6 +9,7 @@ type ServiceCatalogItem = { id: string; category: string; description: string; d
 type SelectedService = { key: string; serviceCatalogId: string | null; category: string; description: string; laborAmount: number; quantity: string; needsPart: boolean; partDescription: string; partCategory: string; partQuantity: string; partUnit: string; partSide: string; partSpecification: string };
 type ExtraItem = { key: string; category: string; description: string; quantity: string; unit: string; side: string; specification: string };
 type Props = { customers: Customer[]; vehicles: Vehicle[]; serviceCatalog: ServiceCatalogItem[]; errorMessage?: string };
+type StepId = 1 | 2 | 3 | 4;
 
 const serviceCategories = ["MECÂNICA", "SUSPENSÃO", "FREIOS", "DIREÇÃO", "MOTOR", "CÂMBIO", "ELÉTRICA", "ARREFECIMENTO", "AR-CONDICIONADO", "FUNILARIA", "PINTURA", "ALINHAMENTO", "OUTROS"];
 const itemCategories = ["MECÂNICA", "CHASSI - PARALELO/ORIGINAL", "CHASSI - FERRO VELHO", "PNEUS", "VIDROS", "ÓLEOS E LUBRIFICANTES", "FUNILARIA", "ELÉTRICA", "OUTROS"];
@@ -38,6 +39,9 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   const [itemSide, setItemSide] = useState("");
   const [itemSpecification, setItemSpecification] = useState("");
   const [saving, startSaving] = useTransition();
+  const [openStep, setOpenStep] = useState<StepId>(1);
+  const [partDetailsOpen, setPartDetailsOpen] = useState<Record<string, boolean>>({});
+  const [extraDetailsOpen, setExtraDetailsOpen] = useState(false);
 
   const filteredVehicles = useMemo(() => vehicles.filter((vehicle) => vehicle.customer_id === customerId), [vehicles, customerId]);
   const selectedVehicle = useMemo(() => vehicles.find((vehicle) => vehicle.id === vehicleId), [vehicles, vehicleId]);
@@ -48,6 +52,9 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   const extraItemsPayload = useMemo(() => extraItems.map((item) => ({ category: item.category, description: item.description, quantity: parseQuantity(item.quantity), unit: item.unit, side: item.side || null, specification: item.specification || null, notes: null })), [extraItems]);
   const itemsPayload = useMemo(() => [...generatedItems, ...extraItemsPayload], [generatedItems, extraItemsPayload]);
   const servicesPayload = useMemo(() => selectedServices.map((service) => ({ labor_service_id: null, service_catalog_id: service.serviceCatalogId, category: service.category, description: service.description, labor_amount: service.laborAmount, quantity: parseQuantity(service.quantity), needs_part: service.needsPart })), [selectedServices]);
+
+  const step1Ready = Boolean(customerId && vehicleId);
+  const step1Complete = Boolean(customerId && vehicleId && mileage.trim());
 
   function chooseCustomer(id: string) { setCustomerId(id); setVehicleId(""); setMileage(""); }
   function chooseVehicle(id: string) { setVehicleId(id); const vehicle = vehicles.find((item) => item.id === id); setMileage(vehicle?.mileage != null ? String(vehicle.mileage) : ""); }
@@ -83,6 +90,18 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
   }
   function removeExtraItem(itemKey: string) { setExtraItems((current) => current.filter((item) => item.key !== itemKey)); }
 
+  function toggleStep(step: StepId) {
+    setOpenStep((current) => (current === step ? current : step));
+  }
+
+  function continueTo(step: StepId) {
+    setOpenStep(step);
+  }
+
+  function togglePartDetails(serviceKey: string) {
+    setPartDetailsOpen((current) => ({ ...current, [serviceKey]: !current[serviceKey] }));
+  }
+
   const generatedPartMissing = selectedServices.some((service) => service.needsPart && service.partDescription.trim().length < 2);
   const canSave = Boolean(customerId && vehicleId && mileage.trim() && selectedServices.length > 0 && !generatedPartMissing);
 
@@ -91,20 +110,412 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, errorMessage
       <input type="hidden" name="services_json" value={JSON.stringify(servicesPayload)} />
       <input type="hidden" name="items_json" value={JSON.stringify(itemsPayload)} />
       {errorMessage ? <div className="orbiq-alert error">{errorMessage}</div> : null}
-      <section className="quote-builder-header"><div><span className="orbiq-eyebrow">NOVO ORÇAMENTO</span><h1>Atendimento</h1><p>Cliente, veículo, serviços, mão de obra e peças em um único fluxo.</p></div><div className="quote-builder-total"><span>Mão de obra</span><strong>{money(laborTotal)}</strong><small>{selectedServices.length} serviço(s)</small></div></section>
-      <section className="orbiq-panel"><div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">1 · ATENDIMENTO</span><h2>Cliente e veículo</h2></div></div><div className="quote-builder-grid">
-        <label><span>Cliente *</span><select name="customer_id" value={customerId} onChange={(event) => chooseCustomer(event.target.value)} required><option value="">Selecione o cliente</option>{customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}{customer.phone ? ` · ${customer.phone}` : ""}</option>)}</select></label>
-        <label><span>Veículo *</span><select name="vehicle_id" value={vehicleId} onChange={(event) => chooseVehicle(event.target.value)} disabled={!customerId} required><option value="">{customerId ? "Selecione o veículo" : "Selecione primeiro o cliente"}</option>{filteredVehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.plate} · {[vehicle.brand, vehicle.model, vehicle.version].filter(Boolean).join(" ")}</option>)}</select></label>
-        <label><span>Quilometragem *</span><input name="mileage" value={mileage} onChange={(event) => setMileage(event.target.value.replace(/\D/g, ""))} inputMode="numeric" required placeholder="87500" /></label>
-      </div>{selectedVehicle ? <div className="quote-builder-vehicle-preview"><span className="orbiq-plate">{selectedVehicle.plate}</span><div><strong>{[selectedVehicle.brand, selectedVehicle.model, selectedVehicle.version].filter(Boolean).join(" ")}</strong><span>{selectedVehicle.model_year ? `Ano ${selectedVehicle.model_year}` : "Ano não informado"}</span></div></div> : null}<div className="quote-priority-group"><span>Prioridade</span><div><label><input type="radio" name="priority" value="normal" defaultChecked /><strong>Normal</strong><small>Fluxo padrão</small></label><label><input type="radio" name="priority" value="customer_waiting" /><strong>Cliente aguardando</strong><small>Cliente permanece na oficina</small></label><label><input type="radio" name="priority" value="vehicle_stopped" /><strong>Veículo parado</strong><small>Prioridade operacional</small></label></div></div></section>
-      <section className="orbiq-panel"><div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">2 · SERVIÇOS</span><h2>Serviços realizados</h2><p className="quote-builder-section-description">Selecione a área e depois o serviço. O valor salvo no catálogo é o valor unitário.</p></div></div>
-        <div className="quote-labor-browser"><div className="quote-labor-search"><select value={serviceCategory} onChange={(event) => setServiceCategory(event.target.value)} aria-label="Área do serviço"><option value="">Selecione a área do serviço</option>{availableCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select><span>{filteredServices.length} serviço(s)</span></div>{serviceCategory ? <div className="quote-labor-catalog">{filteredServices.map((service) => { const added = selectedServices.some((item) => item.key === `catalog-${service.id}`); return <button key={service.id} type="button" className={`quote-labor-card${added ? " added" : ""}`} disabled={added} onClick={() => addCatalogService(service)}><span>{service.category}</span><strong>{service.description}</strong><b>{Number(service.default_labor_amount) > 0 ? money(Number(service.default_labor_amount)) : "MÃO DE OBRA A DEFINIR"}</b><small>{service.requires_part ? "PEÇA JÁ MARCADA PARA COMPRA" : added ? "ADICIONADO" : "+ ADICIONAR"}</small></button>; })}</div> : <div className="orbiq-empty compact"><strong>Escolha uma área.</strong><span>Os serviços dessa área aparecerão aqui.</span></div>}</div>
-        <div className="quote-manual-service"><div><span className="orbiq-eyebrow">ADICIONAR SERVIÇO</span><strong>Não encontrou na lista?</strong></div><select value={manualCategory} onChange={(event) => setManualCategory(event.target.value)}>{availableCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select><input value={manualDescription} onChange={(event) => setManualDescription(event.target.value)} placeholder="DESCRIÇÃO DO SERVIÇO" /><input value={manualAmount} onChange={(event) => setManualAmount(event.target.value)} inputMode="decimal" placeholder="MÃO DE OBRA R$ UNITÁRIA" /><button type="button" className="orbiq-secondary-button" onClick={addManualService} disabled={saving}>{saving ? "SALVANDO..." : "+ ADICIONAR SERVIÇO"}</button></div>
-        {selectedServices.length > 0 ? <div className="quote-selected-services"><div className="quote-selected-title"><strong>Serviços selecionados</strong><span>{selectedServices.length}</span></div>{selectedServices.map((service) => { const quantity = parseQuantity(service.quantity); const lineTotal = service.laborAmount * quantity; return <article key={service.key} className="quote-selected-service"><div className="quote-selected-service-heading"><div><span className="orbiq-eyebrow">{service.category}</span><h3>{service.description}</h3></div><div className="quote-selected-service-price"><strong>{money(lineTotal)}</strong><span>{quantity} × {money(service.laborAmount)}</span></div><button type="button" className="quote-remove-button" onClick={() => removeService(service.key)} aria-label="Remover serviço">×</button></div><div style={{ display: "flex", gap: 8, alignItems: "end", flexWrap: "wrap" }}><label style={{ flex: "1 1 130px" }}><span>Qtd. serviço</span><input value={service.quantity} onChange={(event) => patchService(service.key, { quantity: event.target.value })} inputMode="decimal" /></label><label style={{ flex: "1 1 180px" }}><span>Valor unitário</span><input value={service.laborAmount.toFixed(2).replace(".", ",")} onChange={(event) => { const parsed = parseMoney(event.target.value); if (parsed !== null) patchService(service.key, { laborAmount: parsed }); }} inputMode="decimal" /></label>{service.serviceCatalogId ? <button type="button" className="orbiq-secondary-button" onClick={() => saveLabor(service)} disabled={saving}>{saving ? "SALVANDO..." : "SALVAR VALOR UNITÁRIO"}</button> : null}</div><label className="quote-needs-part"><input type="checkbox" checked={service.needsPart} onChange={(event) => patchService(service.key, { needsPart: event.target.checked })} /><span><strong>Precisa comprar peça</strong><small>O valor da peça será informado depois da cotação com os fornecedores.</small></span></label>{service.needsPart ? <div className="quote-service-part-grid"><label><span>Peça *</span><input value={service.partDescription} onChange={(event) => patchService(service.key, { partDescription: event.target.value.toLocaleUpperCase("pt-BR") })} required placeholder="COXIM DO MOTOR" /></label><label><span>Categoria</span><select value={service.partCategory} onChange={(event) => patchService(service.key, { partCategory: event.target.value })}>{itemCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label><label><span>Qtd.</span><input value={service.partQuantity} onChange={(event) => patchService(service.key, { partQuantity: event.target.value })} inputMode="decimal" /></label><label><span>Unidade</span><select value={service.partUnit} onChange={(event) => patchService(service.key, { partUnit: event.target.value })}>{units.map((unit) => <option key={unit} value={unit}>{unit}</option>)}</select></label><label><span>Lado</span><select value={service.partSide} onChange={(event) => patchService(service.key, { partSide: event.target.value })}>{sides.map((side) => <option key={side || "none"} value={side}>{side || "NÃO SE APLICA"}</option>)}</select></label><label><span>Especificação</span><input value={service.partSpecification} onChange={(event) => patchService(service.key, { partSpecification: event.target.value.toLocaleUpperCase("pt-BR") })} placeholder="MARCA, MEDIDA..." /></label><div className="quote-part-pending-price"><span>VALOR DA PEÇA</span><strong>SERÁ COTADO</strong></div></div> : null}</article>; })}</div> : <div className="quote-builder-empty"><span>+</span><strong>Nenhum serviço selecionado</strong><small>Escolha uma área acima para começar.</small></div>}
+
+      <section className="quote-builder-header">
+        <div>
+          <span className="orbiq-eyebrow">NOVO ORÇAMENTO</span>
+          <h1>Atendimento</h1>
+          <p>Um passo de cada vez: cliente, serviços, peças e observações.</p>
+        </div>
+        <div className="quote-builder-total">
+          <span>Mão de obra</span>
+          <strong>{money(laborTotal)}</strong>
+          <small>{selectedServices.length} serviço(s)</small>
+        </div>
       </section>
-      <section className="orbiq-panel"><div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">3 · PEÇAS ADICIONAIS</span><h2>Itens para cotação</h2><p className="quote-builder-section-description">Para itens que não vieram diretamente de um serviço.</p></div></div><div className="quote-extra-item-form"><input value={itemDescription} onChange={(event) => setItemDescription(event.target.value)} placeholder="PEÇA / ITEM" /><select value={itemCategory} onChange={(event) => setItemCategory(event.target.value)}>{itemCategories.map((category) => <option key={category} value={category}>{category}</option>)}</select><input value={itemQuantity} onChange={(event) => setItemQuantity(event.target.value)} inputMode="decimal" placeholder="QTD." /><select value={itemUnit} onChange={(event) => setItemUnit(event.target.value)}>{units.map((unit) => <option key={unit} value={unit}>{unit}</option>)}</select><select value={itemSide} onChange={(event) => setItemSide(event.target.value)}>{sides.map((side) => <option key={side || "none"} value={side}>{side || "LADO: NÃO SE APLICA"}</option>)}</select><input value={itemSpecification} onChange={(event) => setItemSpecification(event.target.value)} placeholder="ESPECIFICAÇÃO" /><button type="button" onClick={addExtraItem} className="orbiq-secondary-button">+ PEÇA</button></div>{itemsPayload.length > 0 ? <div className="quote-parts-summary">{generatedItems.map((item, index) => <article key={`automatic-${index}`}><div><span className="orbiq-eyebrow">AUTOMÁTICO</span><strong>{item.description || "PEÇA AINDA NÃO INFORMADA"}</strong><small>{item.category}</small></div><span>{item.quantity} {item.unit}</span></article>)}{extraItems.map((item) => <article key={item.key}><div><span className="orbiq-eyebrow">ADICIONAL</span><strong>{item.description}</strong><small>{item.category}{item.side ? ` · ${item.side}` : ""}</small></div><span>{item.quantity} {item.unit}</span><button type="button" className="quote-remove-button" onClick={() => removeExtraItem(item.key)}>×</button></article>)}</div> : <div className="quote-builder-empty compact"><strong>Nenhuma peça adicionada.</strong><small>Um orçamento pode conter somente serviços.</small></div>}</section>
-      <section className="orbiq-panel"><div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">4 · OBSERVAÇÕES</span><h2>Informações do atendimento</h2></div></div><textarea name="notes" rows={5} className="quote-builder-notes" placeholder="OBSERVAÇÕES GERAIS DO ORÇAMENTO..." /></section>
-      <section className="quote-builder-finish"><div><span>Serviços</span><strong>{selectedServices.length}</strong></div><div><span>Itens para compra</span><strong>{itemsPayload.length}</strong></div><div><span>Mão de obra</span><strong>{money(laborTotal)}</strong></div><button type="submit" className="orbiq-primary-button quote-save-button" disabled={!canSave || saving}>{saving ? "SALVANDO..." : "SALVAR ORÇAMENTO"}</button></section>
+
+      <section className={`orbiq-panel quote-step${openStep === 1 ? " is-open" : ""}`}>
+        <button type="button" className="quote-step-toggle" aria-expanded={openStep === 1} onClick={() => toggleStep(1)}>
+          <div>
+            <span className="orbiq-eyebrow">1 · ATENDIMENTO</span>
+            <h2>Cliente e veículo</h2>
+          </div>
+          <span className="quote-step-chevron" aria-hidden="true">{openStep === 1 ? "−" : "+"}</span>
+        </button>
+        <div className="quote-step-body" hidden={openStep !== 1}>
+          <div className="quote-builder-grid">
+            <label>
+              <span>Cliente *</span>
+              <select name="customer_id" value={customerId} onChange={(event) => chooseCustomer(event.target.value)} required>
+                <option value="">Selecione o cliente</option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name}{customer.phone ? ` · ${customer.phone}` : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Veículo *</span>
+              <select name="vehicle_id" value={vehicleId} onChange={(event) => chooseVehicle(event.target.value)} disabled={!customerId} required>
+                <option value="">{customerId ? "Selecione o veículo" : "Selecione primeiro o cliente"}</option>
+                {filteredVehicles.map((vehicle) => (
+                  <option key={vehicle.id} value={vehicle.id}>
+                    {vehicle.plate} · {[vehicle.brand, vehicle.model, vehicle.version].filter(Boolean).join(" ")}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Quilometragem *</span>
+              <input name="mileage" value={mileage} onChange={(event) => setMileage(event.target.value.replace(/\D/g, ""))} inputMode="numeric" required placeholder="87500" />
+            </label>
+          </div>
+          {selectedVehicle ? (
+            <div className="quote-builder-vehicle-preview">
+              <span className="orbiq-plate">{selectedVehicle.plate}</span>
+              <div>
+                <strong>{[selectedVehicle.brand, selectedVehicle.model, selectedVehicle.version].filter(Boolean).join(" ")}</strong>
+                <span>{selectedVehicle.model_year ? `Ano ${selectedVehicle.model_year}` : "Ano não informado"}</span>
+              </div>
+            </div>
+          ) : null}
+          <div className="quote-priority-group">
+            <span>Prioridade</span>
+            <div>
+              <label>
+                <input type="radio" name="priority" value="normal" defaultChecked />
+                <strong>Normal</strong>
+                <small>Fluxo padrão</small>
+              </label>
+              <label>
+                <input type="radio" name="priority" value="customer_waiting" />
+                <strong>Cliente aguardando</strong>
+                <small>Cliente permanece na oficina</small>
+              </label>
+              <label>
+                <input type="radio" name="priority" value="vehicle_stopped" />
+                <strong>Veículo parado</strong>
+                <small>Prioridade operacional</small>
+              </label>
+            </div>
+          </div>
+          <div className="quote-step-actions">
+            <button
+              type="button"
+              className="orbiq-primary-button quote-step-continue"
+              disabled={!step1Complete}
+              onClick={() => continueTo(2)}
+            >
+              Continuar
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className={`orbiq-panel quote-step${openStep === 2 ? " is-open" : ""}${!step1Ready ? " is-soft-locked" : ""}`}>
+        <button type="button" className="quote-step-toggle" aria-expanded={openStep === 2} onClick={() => toggleStep(2)}>
+          <div>
+            <span className="orbiq-eyebrow">2 · SERVIÇOS</span>
+            <h2>Serviços realizados</h2>
+            {!step1Ready ? <p className="quote-builder-section-description">Preencha cliente e veículo no passo 1 (ou busque pelo telefone) para começar com tranquilidade.</p> : null}
+          </div>
+          <span className="quote-step-chevron" aria-hidden="true">{openStep === 2 ? "−" : "+"}</span>
+        </button>
+        <div className="quote-step-body" hidden={openStep !== 2}>
+          <p className="quote-builder-section-description">Selecione a área e depois o serviço. O valor salvo no catálogo é o valor unitário.</p>
+          <div className="quote-labor-browser">
+            <div className="quote-labor-search">
+              <select value={serviceCategory} onChange={(event) => setServiceCategory(event.target.value)} aria-label="Área do serviço">
+                <option value="">Selecione a área do serviço</option>
+                {availableCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
+              <span>{filteredServices.length} serviço(s)</span>
+            </div>
+            {serviceCategory ? (
+              <div className="quote-labor-catalog">
+                {filteredServices.map((service) => {
+                  const added = selectedServices.some((item) => item.key === `catalog-${service.id}`);
+                  return (
+                    <button key={service.id} type="button" className={`quote-labor-card${added ? " added" : ""}`} disabled={added} onClick={() => addCatalogService(service)}>
+                      <span>{service.category}</span>
+                      <strong>{service.description}</strong>
+                      <b>{Number(service.default_labor_amount) > 0 ? money(Number(service.default_labor_amount)) : "MÃO DE OBRA A DEFINIR"}</b>
+                      <small>{service.requires_part ? "PEÇA JÁ MARCADA PARA COMPRA" : added ? "ADICIONADO" : "+ ADICIONAR"}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="orbiq-empty compact">
+                <strong>Escolha uma área.</strong>
+                <span>Os serviços dessa área aparecerão aqui.</span>
+              </div>
+            )}
+          </div>
+
+          <div className="quote-manual-service">
+            <div>
+              <span className="orbiq-eyebrow">ADICIONAR SERVIÇO</span>
+              <strong>Não encontrou na lista?</strong>
+            </div>
+            <label>
+              <span>Área</span>
+              <select value={manualCategory} onChange={(event) => setManualCategory(event.target.value)}>
+                {availableCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Descrição do serviço</span>
+              <input value={manualDescription} onChange={(event) => setManualDescription(event.target.value)} placeholder="DESCRIÇÃO DO SERVIÇO" />
+            </label>
+            <label>
+              <span>Mão de obra R$ unitária</span>
+              <input value={manualAmount} onChange={(event) => setManualAmount(event.target.value)} inputMode="decimal" placeholder="0,00" />
+            </label>
+            <button type="button" className="orbiq-secondary-button" onClick={addManualService} disabled={saving}>{saving ? "SALVANDO..." : "+ ADICIONAR SERVIÇO"}</button>
+          </div>
+
+          {selectedServices.length > 0 ? (
+            <div className="quote-selected-services">
+              <div className="quote-selected-title">
+                <strong>Serviços selecionados</strong>
+                <span>{selectedServices.length}</span>
+              </div>
+              {selectedServices.map((service) => {
+                const quantity = parseQuantity(service.quantity);
+                const lineTotal = service.laborAmount * quantity;
+                const detailsOpen = Boolean(partDetailsOpen[service.key]);
+                return (
+                  <article key={service.key} className="quote-selected-service">
+                    <div className="quote-selected-service-heading">
+                      <div>
+                        <span className="orbiq-eyebrow">{service.category}</span>
+                        <h3>{service.description}</h3>
+                      </div>
+                      <div className="quote-selected-service-price">
+                        <strong>{money(lineTotal)}</strong>
+                        <span>{quantity} × {money(service.laborAmount)}</span>
+                      </div>
+                      <button type="button" className="quote-remove-button" onClick={() => removeService(service.key)} aria-label="Remover serviço">×</button>
+                    </div>
+                    <div className="quote-selected-service-controls">
+                      <label>
+                        <span>Qtd. serviço</span>
+                        <input value={service.quantity} onChange={(event) => patchService(service.key, { quantity: event.target.value })} inputMode="decimal" />
+                      </label>
+                      <label>
+                        <span>Valor unitário</span>
+                        <input
+                          value={service.laborAmount.toFixed(2).replace(".", ",")}
+                          onChange={(event) => {
+                            const parsed = parseMoney(event.target.value);
+                            if (parsed !== null) patchService(service.key, { laborAmount: parsed });
+                          }}
+                          inputMode="decimal"
+                        />
+                      </label>
+                      {service.serviceCatalogId ? (
+                        <button type="button" className="orbiq-secondary-button" onClick={() => saveLabor(service)} disabled={saving}>
+                          {saving ? "SALVANDO..." : "SALVAR VALOR UNITÁRIO"}
+                        </button>
+                      ) : null}
+                    </div>
+                    <label className="quote-needs-part">
+                      <input type="checkbox" checked={service.needsPart} onChange={(event) => patchService(service.key, { needsPart: event.target.checked })} />
+                      <span>
+                        <strong>Precisa comprar peça</strong>
+                        <small>O valor da peça será informado depois da cotação com os fornecedores.</small>
+                      </span>
+                    </label>
+                    {service.needsPart ? (
+                      <div className="quote-service-part-grid">
+                        <label>
+                          <span>Peça *</span>
+                          <input
+                            value={service.partDescription}
+                            onChange={(event) => patchService(service.key, { partDescription: event.target.value.toLocaleUpperCase("pt-BR") })}
+                            required
+                            placeholder="COXIM DO MOTOR"
+                          />
+                        </label>
+                        <label>
+                          <span>Categoria</span>
+                          <select value={service.partCategory} onChange={(event) => patchService(service.key, { partCategory: event.target.value })}>
+                            {itemCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+                          </select>
+                        </label>
+                        <label>
+                          <span>Qtd.</span>
+                          <input value={service.partQuantity} onChange={(event) => patchService(service.key, { partQuantity: event.target.value })} inputMode="decimal" />
+                        </label>
+                        <div className="quote-part-pending-price">
+                          <span>VALOR DA PEÇA</span>
+                          <strong>SERÁ COTADO</strong>
+                        </div>
+                        <div className="quote-part-details">
+                          <button type="button" className="quote-part-details-toggle" aria-expanded={detailsOpen} onClick={() => togglePartDetails(service.key)}>
+                            {detailsOpen ? "Ocultar detalhes da peça" : "Detalhes da peça"}
+                          </button>
+                          {detailsOpen ? (
+                            <div className="quote-part-details-body">
+                              <label>
+                                <span>Unidade</span>
+                                <select value={service.partUnit} onChange={(event) => patchService(service.key, { partUnit: event.target.value })}>
+                                  {units.map((unit) => <option key={unit} value={unit}>{unit}</option>)}
+                                </select>
+                              </label>
+                              <label>
+                                <span>Lado</span>
+                                <select value={service.partSide} onChange={(event) => patchService(service.key, { partSide: event.target.value })}>
+                                  {sides.map((side) => <option key={side || "none"} value={side}>{side || "NÃO SE APLICA"}</option>)}
+                                </select>
+                              </label>
+                              <label>
+                                <span>Especificação</span>
+                                <input
+                                  value={service.partSpecification}
+                                  onChange={(event) => patchService(service.key, { partSpecification: event.target.value.toLocaleUpperCase("pt-BR") })}
+                                  placeholder="MARCA, MEDIDA..."
+                                />
+                              </label>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="quote-builder-empty">
+              <span>+</span>
+              <strong>Nenhum serviço selecionado</strong>
+              <small>Escolha uma área acima para começar.</small>
+            </div>
+          )}
+          <div className="quote-step-actions">
+            <button type="button" className="orbiq-primary-button quote-step-continue" disabled={selectedServices.length === 0} onClick={() => continueTo(3)}>
+              Continuar
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className={`orbiq-panel quote-step${openStep === 3 ? " is-open" : ""}${!step1Ready ? " is-soft-locked" : ""}`}>
+        <button type="button" className="quote-step-toggle" aria-expanded={openStep === 3} onClick={() => toggleStep(3)}>
+          <div>
+            <span className="orbiq-eyebrow">3 · PEÇAS ADICIONAIS</span>
+            <h2>Itens para cotação</h2>
+          </div>
+          <span className="quote-step-chevron" aria-hidden="true">{openStep === 3 ? "−" : "+"}</span>
+        </button>
+        <div className="quote-step-body" hidden={openStep !== 3}>
+          <p className="quote-builder-section-description">Para itens que não vieram diretamente de um serviço.</p>
+          <div className="quote-extra-item-form">
+            <label>
+              <span>Peça / item</span>
+              <input value={itemDescription} onChange={(event) => setItemDescription(event.target.value)} placeholder="PEÇA / ITEM" />
+            </label>
+            <label>
+              <span>Categoria</span>
+              <select value={itemCategory} onChange={(event) => setItemCategory(event.target.value)}>
+                {itemCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Qtd.</span>
+              <input value={itemQuantity} onChange={(event) => setItemQuantity(event.target.value)} inputMode="decimal" placeholder="1" />
+            </label>
+            <div className="quote-part-details quote-extra-details">
+              <button type="button" className="quote-part-details-toggle" aria-expanded={extraDetailsOpen} onClick={() => setExtraDetailsOpen((current) => !current)}>
+                {extraDetailsOpen ? "Ocultar detalhes da peça" : "Detalhes da peça"}
+              </button>
+              {extraDetailsOpen ? (
+                <div className="quote-part-details-body">
+                  <label>
+                    <span>Unidade</span>
+                    <select value={itemUnit} onChange={(event) => setItemUnit(event.target.value)}>
+                      {units.map((unit) => <option key={unit} value={unit}>{unit}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Lado</span>
+                    <select value={itemSide} onChange={(event) => setItemSide(event.target.value)}>
+                      {sides.map((side) => <option key={side || "none"} value={side}>{side || "LADO: NÃO SE APLICA"}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Especificação</span>
+                    <input value={itemSpecification} onChange={(event) => setItemSpecification(event.target.value)} placeholder="ESPECIFICAÇÃO" />
+                  </label>
+                </div>
+              ) : null}
+            </div>
+            <button type="button" onClick={addExtraItem} className="orbiq-secondary-button">+ PEÇA</button>
+          </div>
+          {itemsPayload.length > 0 ? (
+            <div className="quote-parts-summary">
+              {generatedItems.map((item, index) => (
+                <article key={`automatic-${index}`}>
+                  <div>
+                    <span className="orbiq-eyebrow">AUTOMÁTICO</span>
+                    <strong>{item.description || "PEÇA AINDA NÃO INFORMADA"}</strong>
+                    <small>{item.category}</small>
+                  </div>
+                  <span>{item.quantity} {item.unit}</span>
+                </article>
+              ))}
+              {extraItems.map((item) => (
+                <article key={item.key}>
+                  <div>
+                    <span className="orbiq-eyebrow">ADICIONAL</span>
+                    <strong>{item.description}</strong>
+                    <small>{item.category}{item.side ? ` · ${item.side}` : ""}</small>
+                  </div>
+                  <span>{item.quantity} {item.unit}</span>
+                  <button type="button" className="quote-remove-button" onClick={() => removeExtraItem(item.key)}>×</button>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="quote-builder-empty compact">
+              <strong>Nenhuma peça adicionada.</strong>
+              <small>Um orçamento pode conter somente serviços.</small>
+            </div>
+          )}
+          <div className="quote-step-actions">
+            <button type="button" className="orbiq-primary-button quote-step-continue" onClick={() => continueTo(4)}>
+              Continuar
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className={`orbiq-panel quote-step${openStep === 4 ? " is-open" : ""}${!step1Ready ? " is-soft-locked" : ""}`}>
+        <button type="button" className="quote-step-toggle" aria-expanded={openStep === 4} onClick={() => toggleStep(4)}>
+          <div>
+            <span className="orbiq-eyebrow">4 · OBSERVAÇÕES</span>
+            <h2>Informações do atendimento</h2>
+          </div>
+          <span className="quote-step-chevron" aria-hidden="true">{openStep === 4 ? "−" : "+"}</span>
+        </button>
+        <div className="quote-step-body" hidden={openStep !== 4}>
+          <label>
+            <span>Observações gerais</span>
+            <textarea name="notes" rows={5} className="quote-builder-notes" placeholder="OBSERVAÇÕES GERAIS DO ORÇAMENTO..." />
+          </label>
+        </div>
+      </section>
+
+      <section className="quote-builder-finish">
+        <div>
+          <span>Serviços</span>
+          <strong>{selectedServices.length}</strong>
+        </div>
+        <div>
+          <span>Itens para compra</span>
+          <strong>{itemsPayload.length}</strong>
+        </div>
+        <div>
+          <span>Mão de obra</span>
+          <strong>{money(laborTotal)}</strong>
+        </div>
+        <button type="submit" className="orbiq-primary-button quote-save-button" disabled={!canSave || saving}>
+          {saving ? "SALVANDO..." : "SALVAR ORÇAMENTO"}
+        </button>
+      </section>
     </form>
   );
 }
