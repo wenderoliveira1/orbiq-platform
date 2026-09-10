@@ -743,11 +743,32 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
             )}
           </div>
 
-          <QuoteVoiceCapture
-            categories={availableCategories}
-            onConfirm={onVoiceConfirm}
-          />
+          <div
+            className="quote-ops-shortcuts"
+            data-testid="quote-ops-shortcuts"
+            aria-label="Atalhos de operação: voz e Funilaria"
+          >
+            <QuoteVoiceCapture
+              dense
+              className="quote-ops-voice"
+              categories={availableCategories}
+              onConfirm={onVoiceConfirm}
+            />
+            <FunilariaGuidedPicker
+              className="quote-ops-funilaria is-ops-primary"
+              onConfirm={(payload) =>
+                addVoiceOrGuidedService({
+                  category: payload.category,
+                  description: payload.description,
+                  laborAmount: payload.laborAmount,
+                  needsPart: payload.needsPartHint,
+                  partDescription: payload.partDescription,
+                })
+              }
+            />
+          </div>
           <CategoryGuidedPicker
+            className="is-ops-secondary"
             categories={availableCategories}
             onConfirm={(payload) =>
               addVoiceOrGuidedService({
@@ -755,17 +776,6 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
                 description: payload.description,
                 laborAmount: payload.laborAmount,
                 needsPart: payload.needsPart,
-                partDescription: payload.partDescription,
-              })
-            }
-          />
-          <FunilariaGuidedPicker
-            onConfirm={(payload) =>
-              addVoiceOrGuidedService({
-                category: payload.category,
-                description: payload.description,
-                laborAmount: payload.laborAmount,
-                needsPart: payload.needsPartHint,
                 partDescription: payload.partDescription,
               })
             }

@@ -185,12 +185,14 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     expect(append).toContain("onVoiceConfirm");
     expect(append).toContain("requestSubmit");
     expect(append).toContain("Human already confirmed");
+    expect(append).toContain("diga/toque o próximo");
+    expect(append).toContain("setTimeout");
 
     expect(css).toContain(".quote-voice-mic");
     expect(css).toContain(".funilaria-chip");
     expect(css).toContain(".quote-voice-group-kicker");
     expect(css).toContain("min-height: 52px");
-    expect(css).toContain("min-height: 64px");
+    expect(css).toContain("min-height: 72px");
     expect(css).toContain(".quote-voice-phase-badge");
     expect(css).toContain(".quote-voice-mic.is-large");
     expect(css).toContain("quote-voice-pulse");
@@ -216,7 +218,7 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     );
     expect(funilaria).toContain("funilaria-added-banner");
     expect(funilaria).toContain("reset(true)");
-    expect(funilaria).toContain("escolha a próxima ação");
+    expect(funilaria).toContain("diga/toque o próximo");
   });
 
   test("chips leves de categoria: MECÂNICA/ELÉTRICA sem catálogo fake 2-step", async () => {
@@ -246,5 +248,55 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     expect(picker).toMatch(/"FREIOS"/);
     // FUNILARIA must stay on the rich picker, not in light chips list
     expect(picker).toContain('const RICH_STRUCTURED = new Set(["FUNILARIA", "PINTURA"])');
+  });
+});
+
+test.describe("Fase 2.1BF — ops shortcuts sticky + Funilaria primary", () => {
+  test("Novo Orçamento: sticky voz+Funilaria e categoria secundária", async () => {
+    const builder = await readFile(
+      "apps/web/src/app/dashboard/orcamentos/novo/quote-builder.tsx",
+      "utf8",
+    );
+    const append = await readFile(
+      "apps/web/src/app/dashboard/orcamentos/_components/quote-append-with-voice.tsx",
+      "utf8",
+    );
+    const css = await readFile("apps/web/src/app/dashboard/dashboard.css", "utf8");
+    const funilaria = await readFile(
+      "apps/web/src/app/dashboard/orcamentos/_components/funilaria-guided-picker.tsx",
+      "utf8",
+    );
+    const category = await readFile(
+      "apps/web/src/app/dashboard/orcamentos/_components/category-guided-picker.tsx",
+      "utf8",
+    );
+
+    expect(builder).toContain('data-testid="quote-ops-shortcuts"');
+    expect(builder).toContain("quote-ops-shortcuts");
+    expect(builder).toContain("is-ops-primary");
+    expect(builder).toContain("is-ops-secondary");
+    expect(builder).toContain("dense");
+
+    // Funilaria before CategoryGuided on primary path
+    const funilariaIdx = builder.indexOf("<FunilariaGuidedPicker");
+    const categoryIdx = builder.indexOf("<CategoryGuidedPicker");
+    expect(funilariaIdx).toBeGreaterThan(-1);
+    expect(categoryIdx).toBeGreaterThan(funilariaIdx);
+
+    expect(append).toContain('data-testid="quote-ops-shortcuts"');
+    const appendFunilariaIdx = append.indexOf("<FunilariaGuidedPicker");
+    const appendCategoryIdx = append.indexOf("<CategoryGuidedPicker");
+    expect(appendFunilariaIdx).toBeGreaterThan(-1);
+    expect(appendCategoryIdx).toBeGreaterThan(appendFunilariaIdx);
+
+    expect(funilaria).toContain("diga/toque o próximo");
+    expect(funilaria).toContain('data-testid="funilaria-added-banner"');
+    expect(category).toContain("atalho principal acima");
+
+    expect(css).toContain(".quote-ops-shortcuts");
+    expect(css).toContain("position: sticky");
+    expect(css).toContain(".funilaria-guided-picker.is-ops-primary");
+    expect(css).toContain(".category-guided-picker.is-ops-secondary");
+    expect(css).toContain("min-height: 72px");
   });
 });

@@ -94,7 +94,7 @@ export function FunilariaGuidedPicker({ onConfirm, className = "" }: Props) {
             FUNILARIA GUIADA
           </span>
           <strong>2 passos: ação → peça/lado</strong>
-          <small>Chips grandes. Após adicionar, continua pronto para o próximo.</small>
+          <small>Caminho principal · chips grandes. Após adicionar: diga/toque o próximo.</small>
         </div>
         {step !== "action" ? (
           <button
@@ -120,7 +120,7 @@ export function FunilariaGuidedPicker({ onConfirm, className = "" }: Props) {
           data-testid="funilaria-added-banner"
           role="status"
         >
-          Adicionado: <strong>{lastAdded}</strong> — escolha a próxima ação
+          Adicionado: <strong>{lastAdded}</strong> — diga/toque o próximo
         </p>
       ) : null}
 

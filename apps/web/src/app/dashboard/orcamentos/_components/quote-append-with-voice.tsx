@@ -51,8 +51,12 @@ export function QuoteAppendWithVoice({ quoteId, serviceCatalog, addAction }: Pro
     needsPart?: boolean;
   }) {
     applyPayload(payload);
-    // Human already confirmed in voice/funilaria UI — safe to submit the form once.
-    formRef.current?.requestSubmit();
+    // Human already confirmed in voice/funilaria UI — safe to submit once.
+    // Brief delay so the shared "Adicionado — diga/toque o próximo" banner can paint
+    // before the server action remounts the detail panel.
+    window.setTimeout(() => {
+      formRef.current?.requestSubmit();
+    }, 420);
   }
 
   function onVoiceConfirm(payload: QuoteVoiceConfirmPayload) {
@@ -66,8 +70,26 @@ export function QuoteAppendWithVoice({ quoteId, serviceCatalog, addAction }: Pro
 
   return (
     <div className="no-print quote-append-panel" data-testid="quote-append-with-voice">
-      <QuoteVoiceCapture dense onConfirm={onVoiceConfirm} />
+      <div
+        className="quote-ops-shortcuts is-detail"
+        data-testid="quote-ops-shortcuts"
+        aria-label="Atalhos de operação: voz e Funilaria"
+      >
+        <QuoteVoiceCapture dense className="quote-ops-voice" onConfirm={onVoiceConfirm} />
+        <FunilariaGuidedPicker
+          className="quote-ops-funilaria is-ops-primary"
+          onConfirm={(payload) =>
+            submitAfterConfirm({
+              category: payload.category,
+              description: payload.description,
+              laborAmount: payload.laborAmount,
+              needsPart: payload.needsPartHint,
+            })
+          }
+        />
+      </div>
       <CategoryGuidedPicker
+        className="is-ops-secondary"
         categories={serviceCatalog.map((service) => service.category)}
         onConfirm={(payload) =>
           submitAfterConfirm({
@@ -75,16 +97,6 @@ export function QuoteAppendWithVoice({ quoteId, serviceCatalog, addAction }: Pro
             description: payload.description,
             laborAmount: payload.laborAmount,
             needsPart: payload.needsPart,
-          })
-        }
-      />
-      <FunilariaGuidedPicker
-        onConfirm={(payload) =>
-          submitAfterConfirm({
-            category: payload.category,
-            description: payload.description,
-            laborAmount: payload.laborAmount,
-            needsPart: payload.needsPartHint,
           })
         }
       />
