@@ -556,6 +556,20 @@ textarea {
 }
 
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   .public-quote-shell {
     padding: 0 !important;
     background: #fff !important;
@@ -566,17 +580,75 @@ textarea {
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
+    font-size: 9pt !important;
+    line-height: 1.25 !important;
   }
 
   .public-decision,
   .public-decision-actions,
-  .public-decision-complete {
+  .public-decision-complete,
+  .public-alert,
+  .public-hero {
     display: none !important;
   }
 
-  .public-section,
+  .public-quote-header,
+  .public-quote-letterhead {
+    padding: 0 0 6px !important;
+    gap: 8px !important;
+    border-bottom: 2px solid #111 !important;
+  }
+
+  .public-brand > span {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .public-letterhead-copy strong {
+    font-size: 12pt !important;
+  }
+
+  .public-letterhead-copy small,
+  .public-protocol small,
+  .public-protocol span {
+    font-size: 7.5pt !important;
+  }
+
+  .public-vehicle {
+    padding: 6px 0 !important;
+    gap: 6px !important;
+    margin: 0 0 6px !important;
+  }
+
+  .public-section {
+    margin: 0 0 7px !important;
+    break-inside: auto;
+  }
+
+  .public-section-heading h2 {
+    font-size: 10pt !important;
+  }
+
+  .public-section-help {
+    display: none !important;
+  }
+
   .public-service-row,
   .public-part-row {
+    padding: 3px 0 !important;
     break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .public-totals {
+    width: 78mm !important;
+    margin: 4px 0 6px auto !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .public-footer {
+    padding-top: 6px !important;
+    font-size: 7.5pt !important;
   }
 }

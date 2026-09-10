@@ -265,6 +265,45 @@ export default async function PublicQuotePage({
           </div>
         </section>
 
+        <section
+          className="public-section public-quote-labor"
+          data-testid="public-quote-labor"
+        >
+          <div className="public-section-heading">
+            <div>
+              <span>MÃO DE OBRA</span>
+              <h2>Mão de obra</h2>
+              <p className="public-section-help">
+                Somente o valor de mão de obra — separado das peças.
+              </p>
+            </div>
+            <strong>{money(laborTotal)}</strong>
+          </div>
+
+          <div className="public-list">
+            {quote.services.length === 0 ? (
+              <div className="public-service-row">
+                <span>—</span>
+                <div>
+                  <strong>Sem mão de obra neste orçamento</strong>
+                </div>
+                <strong>{money(0)}</strong>
+              </div>
+            ) : (
+              quote.services.map((service, index) => (
+                <div key={service.id} className="public-service-row">
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <strong>{service.description}</strong>
+                    <small>{service.category}</small>
+                  </div>
+                  <strong>{money(service.amount)}</strong>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
         {quote.items.length > 0 ? (
           <section
             className="public-section public-quote-parts"
@@ -309,45 +348,6 @@ export default async function PublicQuotePage({
         ) : null}
 
         <section
-          className="public-section public-quote-labor"
-          data-testid="public-quote-labor"
-        >
-          <div className="public-section-heading">
-            <div>
-              <span>MÃO DE OBRA</span>
-              <h2>Mão de obra</h2>
-              <p className="public-section-help">
-                Somente o valor de mão de obra — separado das peças.
-              </p>
-            </div>
-            <strong>{money(laborTotal)}</strong>
-          </div>
-
-          <div className="public-list">
-            {quote.services.length === 0 ? (
-              <div className="public-service-row">
-                <span>—</span>
-                <div>
-                  <strong>Sem mão de obra neste orçamento</strong>
-                </div>
-                <strong>{money(0)}</strong>
-              </div>
-            ) : (
-              quote.services.map((service, index) => (
-                <div key={service.id} className="public-service-row">
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <div>
-                    <strong>{service.description}</strong>
-                    <small>{service.category}</small>
-                  </div>
-                  <strong>{money(service.amount)}</strong>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section
           className="public-totals"
           data-testid="public-quote-totals"
         >
@@ -356,12 +356,12 @@ export default async function PublicQuotePage({
             <h2>Totais (venda)</h2>
           </div>
           <div>
-            <span>Peças</span>
-            <strong>{money(partsTotal)}</strong>
-          </div>
-          <div>
             <span>Mão de obra</span>
             <strong>{money(laborTotal)}</strong>
+          </div>
+          <div>
+            <span>Peças</span>
+            <strong>{money(partsTotal)}</strong>
           </div>
           <div>
             <span>Subtotal</span>

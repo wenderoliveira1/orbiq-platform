@@ -199,7 +199,18 @@ export function CustomerQuoteToolbar({
         <button
           type="button"
           className="orbiq-primary-button"
-          onClick={() => window.print()}
+          data-testid="customer-quote-print"
+          onClick={() => {
+            const previousTitle = document.title;
+            document.title = `Orçamento ${protocol} — ${workshopName}`;
+            const restore = () => {
+              document.title = previousTitle;
+              window.removeEventListener("afterprint", restore);
+            };
+            window.addEventListener("afterprint", restore);
+            window.print();
+            window.setTimeout(restore, 1000);
+          }}
         >
           Imprimir / Salvar PDF
         </button>
