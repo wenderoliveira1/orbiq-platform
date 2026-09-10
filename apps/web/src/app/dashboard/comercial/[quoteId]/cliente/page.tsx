@@ -298,6 +298,45 @@ export default async function CustomerQuotePage({ params }: PageProps) {
           </div>
         </section>
 
+        <section
+          className="customer-quote-section customer-quote-labor"
+          data-testid="customer-quote-labor"
+        >
+          <div className="customer-quote-section-heading">
+            <div>
+              <span className="customer-section-label">MÃO DE OBRA</span>
+              <h2>Mão de obra</h2>
+              <p className="customer-section-help">
+                Somente o valor de mão de obra — separado das peças.
+              </p>
+            </div>
+            <strong>{money(laborTotal)}</strong>
+          </div>
+
+          <div className="customer-service-table">
+            {services.length === 0 ? (
+              <div className="customer-service-row customer-service-empty">
+                <span>—</span>
+                <div>
+                  <strong>Sem mão de obra neste orçamento</strong>
+                </div>
+                <strong>{money(0)}</strong>
+              </div>
+            ) : (
+              services.map((service, index) => (
+                <div key={service.id} className="customer-service-row">
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <strong>{service.description}</strong>
+                    <small>{service.category}</small>
+                  </div>
+                  <strong>{money(service.labor_amount ?? 0)}</strong>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
         {items.length > 0 ? (
           <section
             className="customer-quote-section customer-quote-parts"
@@ -349,45 +388,6 @@ export default async function CustomerQuotePage({ params }: PageProps) {
         ) : null}
 
         <section
-          className="customer-quote-section customer-quote-labor"
-          data-testid="customer-quote-labor"
-        >
-          <div className="customer-quote-section-heading">
-            <div>
-              <span className="customer-section-label">MÃO DE OBRA</span>
-              <h2>Mão de obra</h2>
-              <p className="customer-section-help">
-                Somente o valor de mão de obra — separado das peças.
-              </p>
-            </div>
-            <strong>{money(laborTotal)}</strong>
-          </div>
-
-          <div className="customer-service-table">
-            {services.length === 0 ? (
-              <div className="customer-service-row customer-service-empty">
-                <span>—</span>
-                <div>
-                  <strong>Sem mão de obra neste orçamento</strong>
-                </div>
-                <strong>{money(0)}</strong>
-              </div>
-            ) : (
-              services.map((service, index) => (
-                <div key={service.id} className="customer-service-row">
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <div>
-                    <strong>{service.description}</strong>
-                    <small>{service.category}</small>
-                  </div>
-                  <strong>{money(service.labor_amount ?? 0)}</strong>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section
           className="customer-quote-totals"
           data-testid="customer-quote-totals"
         >
@@ -396,12 +396,12 @@ export default async function CustomerQuotePage({ params }: PageProps) {
             <h2>Totais (venda)</h2>
           </div>
           <div>
-            <span>Peças</span>
-            <strong>{money(partsTotal)}</strong>
-          </div>
-          <div>
             <span>Mão de obra</span>
             <strong>{money(laborTotal)}</strong>
+          </div>
+          <div>
+            <span>Peças</span>
+            <strong>{money(partsTotal)}</strong>
           </div>
           <div>
             <span>Subtotal</span>

@@ -52,10 +52,10 @@ test.describe("Fase 2.1BD — privacidade da folha do cliente (sem custo/lucro)"
     expect(cliente).toContain("sale_unit_amount");
     expect(cliente).toContain("sale_total_amount");
     expect(cliente).toContain("labor_amount");
-    expect(cliente.indexOf("customer-quote-parts")).toBeLessThan(
-      cliente.indexOf("customer-quote-labor"),
-    );
     expect(cliente.indexOf("customer-quote-labor")).toBeLessThan(
+      cliente.indexOf("customer-quote-parts"),
+    );
+    expect(cliente.indexOf("customer-quote-parts")).toBeLessThan(
       cliente.indexOf("customer-quote-totals"),
     );
 
@@ -64,8 +64,8 @@ test.describe("Fase 2.1BD — privacidade da folha do cliente (sem custo/lucro)"
     expect(publico).toContain('data-testid="public-quote-totals"');
     expect(publico).toContain("Totais (venda)");
     expect(publico).toContain("TOTAL A PAGAR");
-    expect(publico.indexOf("public-quote-parts")).toBeLessThan(
-      publico.indexOf("public-quote-labor"),
+    expect(publico.indexOf("public-quote-labor")).toBeLessThan(
+      publico.indexOf("public-quote-parts"),
     );
   });
 

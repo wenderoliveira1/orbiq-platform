@@ -1958,13 +1958,18 @@ a.quote-history-metric:hover {
 @media print {
 
   @page {
-    size: A4;
-    margin: 14mm;
+    size: A4 portrait;
+    margin: 8mm;
   }
 
+  html,
   body {
+    margin: 0 !important;
+    padding: 0 !important;
     background: #fff !important;
     color: #111 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .orbiq-sidebar,
@@ -1977,10 +1982,18 @@ a.quote-history-metric:hover {
     display: inline !important;
   }
 
+  .print-hide-empty,
+  .quote-detail-page .orbiq-panel:has(> .orbiq-empty.compact),
+  .quote-detail-page .quote-items-section:has(.orbiq-empty.compact) {
+    display: none !important;
+  }
+
   .orbiq-shell,
   .orbiq-main {
     display: block !important;
     width: 100% !important;
+    min-height: 0 !important;
+    background: #fff !important;
   }
 
   .orbiq-content {
@@ -1992,58 +2005,149 @@ a.quote-history-metric:hover {
 
   .quote-detail-page {
     display: block !important;
+    padding: 0 !important;
+    font-size: 9pt !important;
+    line-height: 1.25 !important;
+    color: #111 !important;
   }
 
   .print-header {
-    margin-bottom: 18px;
-    padding-bottom: 10px;
+    margin: 0 0 8px !important;
+    padding: 0 0 6px !important;
     display: flex !important;
     align-items: flex-end;
     justify-content: space-between;
+    gap: 12px;
     border-bottom: 2px solid #111;
   }
 
   .print-header strong {
-    font-size: 24px;
+    font-size: 16pt !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.02em;
   }
 
   .print-header span {
-    font-size: 11px;
+    font-size: 8pt !important;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #444 !important;
   }
 
   .print-footer {
-    margin-top: 18px;
-    padding-top: 9px;
+    margin-top: 8px !important;
+    padding-top: 5px !important;
     display: flex !important;
     justify-content: space-between;
+    gap: 8px;
     border-top: 1px solid #bbb;
-    font-size: 8px;
+    font-size: 7pt !important;
+    color: #444 !important;
   }
 
   .quote-detail-heading {
-    margin-bottom: 14px;
+    display: none !important;
   }
 
-  .quote-detail-heading h1 {
-    font-size: 25px;
+  .quote-detail-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+    margin: 0 0 7px !important;
   }
 
-  .orbiq-panel,
+  .quote-detail-page .orbiq-panel,
   .quote-detail-totals > div {
-    break-inside: avoid;
     box-shadow: none !important;
     border: 1px solid #ccc !important;
+    border-radius: 0 !important;
     background: #fff !important;
     color: #111 !important;
   }
 
-  .quote-detail-grid {
-    margin: 14px 0;
+  .quote-detail-page .orbiq-panel {
+    padding: 6px 8px !important;
+    margin: 0 0 6px !important;
+    break-inside: auto;
+  }
+
+  .quote-detail-grid > .orbiq-panel {
+    margin: 0 !important;
+    break-inside: avoid;
+  }
+
+  .quote-detail-grid h2 {
+    margin: 2px 0 0 !important;
+    font-size: 11pt !important;
+    line-height: 1.15 !important;
+  }
+
+  .quote-detail-page .orbiq-eyebrow {
+    font-size: 7px !important;
+    letter-spacing: 0.1em !important;
+  }
+
+  .quote-detail-page .orbiq-panel-heading {
+    margin-bottom: 4px !important;
+    gap: 6px !important;
+  }
+
+  .quote-detail-page .orbiq-panel-heading h2 {
+    font-size: 11pt !important;
+  }
+
+  .quote-detail-page .orbiq-count-badge {
+    min-width: 18px !important;
+    height: 18px !important;
+    font-size: 8px !important;
+  }
+
+  .quote-detail-info {
+    margin-top: 4px !important;
+    gap: 2px 8px !important;
+  }
+
+  .quote-detail-info span,
+  .quote-detail-info strong {
+    font-size: 8pt !important;
+  }
+
+  .quote-detail-vehicle-title {
+    margin-top: 2px !important;
+    gap: 6px !important;
+  }
+
+  .quote-detail-vehicle-title h2 {
+    font-size: 10pt !important;
+  }
+
+  .quote-detail-table {
+    font-size: 8pt !important;
+    overflow: visible !important;
   }
 
   .quote-detail-table-head {
     background: #eee !important;
     color: #111 !important;
+  }
+
+  .quote-detail-table-head,
+  .quote-detail-table-row {
+    gap: 4px !important;
+    padding: 3px 0 !important;
+  }
+
+  .quote-detail-table-head.service-table,
+  .quote-detail-table-row.service-table {
+    grid-template-columns: 0.85fr 2.2fr 0.45fr 0.4fr 0.75fr 0.75fr !important;
+  }
+
+  .quote-detail-table-head.item-table,
+  .quote-detail-table-row.item-table,
+  .quote-detail-table-head.quote-item-price-grid,
+  .quote-detail-table-row.quote-item-price-grid {
+    grid-template-columns: 2fr 0.55fr 0.55fr 0.9fr !important;
   }
 
   .quote-detail-table-row,
@@ -2054,8 +2158,35 @@ a.quote-history-metric:hover {
     color: #333 !important;
   }
 
+  .quote-detail-table-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .quote-detail-notes {
+    margin: 2px 0 0 !important;
+    font-size: 8pt !important;
+  }
+
   .quote-detail-totals {
-    margin-top: 14px;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin-top: 6px !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .quote-detail-totals > div {
+    padding: 6px 8px !important;
+  }
+
+  .quote-detail-totals span {
+    font-size: 7.5pt !important;
+  }
+
+  .quote-detail-totals strong {
+    font-size: 10pt !important;
   }
 
   .quote-detail-totals .main-total {
@@ -2063,10 +2194,22 @@ a.quote-history-metric:hover {
     color: #111 !important;
   }
 
+  .quote-detail-totals .main-total strong {
+    font-size: 12pt !important;
+  }
+
   .quote-status {
     border: 1px solid #bbb !important;
     background: #fff !important;
     color: #111 !important;
+  }
+
+  .quote-internal-economics {
+    display: none !important;
+  }
+
+  a {
+    text-decoration: none !important;
   }
 }
 
@@ -6927,8 +7070,8 @@ a.quote-history-metric:hover {
 @media print {
 
   @page {
-    size: A4;
-    margin: 11mm;
+    size: A4 portrait;
+    margin: 8mm;
   }
 
   html,
@@ -6976,6 +7119,9 @@ a.quote-history-metric:hover {
     max-width: none !important;
     margin: 0 !important;
     display: block !important;
+    gap: 0 !important;
+    font-size: 9pt !important;
+    line-height: 1.25 !important;
   }
 
   .customer-quote-document {
@@ -6985,36 +7131,93 @@ a.quote-history-metric:hover {
     box-shadow: none !important;
   }
 
-  .customer-quote-header {
-    padding: 0 0 15px !important;
+  .customer-quote-header,
+  .customer-quote-letterhead {
+    padding: 0 0 6px !important;
+    gap: 8px !important;
+    border-bottom: 2px solid #111 !important;
+  }
+
+  .customer-quote-brand > span {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    font-size: 12px !important;
+  }
+
+  .customer-quote-brand strong,
+  .customer-quote-letterhead-copy strong {
+    font-size: 12pt !important;
+  }
+
+  .customer-quote-brand small,
+  .customer-quote-letterhead-copy small,
+  .customer-quote-number small,
+  .customer-quote-number span {
+    font-size: 7.5pt !important;
   }
 
   .customer-quote-title {
-    padding: 18px 3mm !important;
-    margin: 0 -3mm;
+    display: none !important;
   }
 
   .customer-quote-info-grid {
-    padding: 18px 0 !important;
+    padding: 6px 0 !important;
+    gap: 6px !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .customer-quote-info-grid > div {
+    padding: 4px 0 !important;
+    border: 0 !important;
+  }
+
+  .customer-quote-info-grid strong {
+    font-size: 10pt !important;
   }
 
   .customer-quote-section {
-    margin: 0 0 17px !important;
-    break-inside: avoid;
+    margin: 0 0 7px !important;
+    break-inside: auto;
+  }
+
+  .customer-quote-section-heading {
+    margin-bottom: 3px !important;
+  }
+
+  .customer-quote-section-heading h2 {
+    font-size: 10pt !important;
+  }
+
+  .customer-section-help {
+    display: none !important;
   }
 
   .customer-service-row,
   .customer-part-row {
+    padding: 3px 0 !important;
     break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .customer-quote-totals {
-    width: 90mm !important;
-    margin: 4px 0 18px auto !important;
+    width: 78mm !important;
+    margin: 4px 0 6px auto !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .customer-quote-totals > div {
+    padding: 3px 0 !important;
+  }
+
+  .customer-quote-grand-total strong {
+    font-size: 13pt !important;
   }
 
   .customer-quote-footer {
-    padding: 14px 0 0 !important;
+    padding: 6px 0 0 !important;
+    font-size: 7.5pt !important;
   }
 
   a {

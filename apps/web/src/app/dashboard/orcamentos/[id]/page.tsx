@@ -94,7 +94,10 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
     <div className="orbiq-page quote-detail-page">
       <div className="print-header">
         <strong>{organization.name}</strong>
-        <span>Orbiq <small>ORÇAMENTO</small></span>
+        <span>
+          Orçamento {quote.protocol}
+          <small className="print-only"> · Orbiq</small>
+        </span>
       </div>
 
       <section className="quote-detail-heading">
@@ -109,7 +112,9 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
               Versão do cliente / Imprimir
             </Link>
           ) : (
-            <PrintButton />
+            <PrintButton
+              documentTitle={`Orçamento ${quote.protocol} — ${organization.name}`}
+            />
           )}
           <form action={duplicateQuoteAction}>
             <input type="hidden" name="quote_id" value={quote.id} />
@@ -254,7 +259,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         )}
       </section>
 
-      <section className="orbiq-panel">
+      <section className={`orbiq-panel quote-services-section${services.length === 0 ? " print-hide-empty" : ""}`}>
         <div className="orbiq-panel-heading">
           <div><span className="orbiq-eyebrow">SERVIÇOS</span><h2>Serviços solicitados</h2></div>
           <span className="orbiq-count-badge">{services.length}</span>
@@ -276,7 +281,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
           <div className="orbiq-empty compact"><strong>Nenhum serviço registrado.</strong></div>
         ) : (
           <div className="quote-detail-table">
-            <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 200px 70px 120px 120px 90px" }}><span>Categoria</span><span>Serviço</span><span>Qtd.</span><span>Peça?</span><span>Valor unit.</span><span>Total</span><span>Ação</span></div>
+            <div className="quote-detail-table-head service-table" style={{ gridTemplateColumns: "1fr 2fr 200px 70px 120px 120px 90px" }}><span>Categoria</span><span>Serviço</span><span>Qtd.</span><span>Peça?</span><span>Valor unit.</span><span>Total</span><span className="no-print">Ação</span></div>
             {services.map((service) => {
               const quantity = service.quantity ?? 1;
               const unitLabor = service.labor_amount ?? 0;
@@ -381,7 +386,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
       </section>
 
       {(!locked || items.length > 0) ? (
-        <section className="orbiq-panel quote-items-section">
+        <section className={`orbiq-panel quote-items-section${items.length === 0 ? " print-hide-empty" : ""}`}>
           <div className="orbiq-panel-heading"><div><span className="orbiq-eyebrow">PEÇAS / ITENS</span><h2>Itens para compra</h2></div><span className="orbiq-count-badge">{items.length}</span></div>
           {!locked ? (
             <>
@@ -554,9 +559,11 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         </section>
       ) : null}
 
-      <section className="orbiq-panel">
+      <section className={`orbiq-panel${!quote.notes ? " print-hide-empty" : ""}`}>
         <span className="orbiq-eyebrow">OBSERVAÇÕES</span>
-        <p className="quote-detail-notes print-only">{quote.notes || "—"}</p>
+        {quote.notes ? (
+          <p className="quote-detail-notes print-only">{quote.notes}</p>
+        ) : null}
         {locked ? (
           <p className="quote-detail-notes no-print">{quote.notes || "—"}</p>
         ) : (
