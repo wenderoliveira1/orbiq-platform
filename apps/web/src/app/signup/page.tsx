@@ -126,7 +126,7 @@ export default async function SignupPage({
           <div className="mobile-brand">
 
             <div className="brand-mark">
-              <img src="/brand/orbiq-mark.png" alt="" width={32} height={32} />
+              
             </div>
 
             <div>

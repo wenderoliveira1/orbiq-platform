@@ -80,10 +80,15 @@ test.describe("Fase 2.1AV — reabrir orçamento bloqueado + cabeçalho da folha
       "utf8",
     );
     const layout = await readFile("apps/web/src/app/dashboard/layout.tsx", "utf8");
-    const mobile = await readFile(
-      "apps/web/src/app/dashboard/mobile-navigation.tsx",
+    const dashboardCss = await readFile(
+      "apps/web/src/app/dashboard/dashboard.css",
       "utf8",
     );
+    const mobileCss = await readFile(
+      "apps/web/src/app/dashboard/mobile-navigation.module.css",
+      "utf8",
+    );
+    const globals = await readFile("apps/web/src/app/globals.css", "utf8");
     const login = await readFile("apps/web/src/app/login/page.tsx", "utf8");
 
     expect(quoteActions).toContain("updateQuoteIdentityAction");
@@ -95,10 +100,12 @@ test.describe("Fase 2.1AV — reabrir orçamento bloqueado + cabeçalho da folha
     expect(quoteDetail).toContain("Salvar veículo");
     expect(quoteDetail).toContain('name="mileage"');
     expect(quoteDetail).toContain('name="plate"');
-    expect(layout).toContain('/brand/orbiq-mark.png');
+    expect(layout).toContain("orbiq-brand-mark");
     expect(layout).toContain("<strong>Orbiq</strong>");
-    expect(mobile).toContain('/brand/orbiq-mark.png');
-    expect(login).toContain('/brand/orbiq-mark.png');
+    expect(dashboardCss).toContain("/brand/orbiq-mark.png");
+    expect(mobileCss).toContain("/brand/orbiq-mark.png");
+    expect(globals).toContain("/brand/orbiq-mark.png");
     expect(login).toContain("Entrar no Orbiq");
+    expect(login).toContain("brand-mark");
   });
 });

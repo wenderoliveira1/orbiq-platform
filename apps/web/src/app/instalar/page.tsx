@@ -48,7 +48,7 @@ export default function InstallPage() {
       <header className={styles.header}>
         <Link href="/dashboard" className={styles.brand} aria-label="Orbiq">
           <span className={styles.brandMark} aria-hidden="true">
-            <img src="/brand/orbiq-mark.png" alt="" width={28} height={28} />
+            
           </span>
           <span>
             <strong>Orbiq</strong>

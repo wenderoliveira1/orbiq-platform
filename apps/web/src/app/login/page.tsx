@@ -124,7 +124,7 @@ export default async function LoginPage({
         <div className="brand-lockup">
 
           <div className="brand-mark">
-            <img src="/brand/orbiq-mark.png" alt="" width={32} height={32} />
+            
           </div>
 
           <div>

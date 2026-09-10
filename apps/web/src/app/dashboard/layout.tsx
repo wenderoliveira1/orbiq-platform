@@ -55,9 +55,7 @@ export default async function DashboardLayout({
             href="/dashboard"
             className="orbiq-brand-mark"
             aria-label="Orbiq"
-          >
-            <img src="/brand/orbiq-mark.png" alt="" width={32} height={32} />
-          </Link>
+          />
 
           <div>
             <strong>Orbiq</strong>

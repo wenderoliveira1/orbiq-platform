@@ -144,9 +144,7 @@ export function MobileNavigation({
           href="/dashboard"
           className={styles.brandMark}
           aria-label="Orbiq — visão geral"
-        >
-          <img src="/brand/orbiq-mark.png" alt="" width={28} height={28} />
-        </Link>
+        />
 
         <div className={styles.headerIdentity}>
           <strong>Orbiq</strong>
