@@ -30,7 +30,7 @@ type Props = {
   items: Item[];
   discountType: string;
   discountValue: number;
-  defaultMarkup: number;
+  defaultMargin: number;
   locked: boolean;
 };
 
@@ -132,13 +132,47 @@ function numberInput(
 }
 
 
+
+function saleFromLucro(
+  cost: number,
+  percent: number,
+): number | null {
+
+  if (
+    !Number.isFinite(
+      cost,
+    ) ||
+    !Number.isFinite(
+      percent,
+    ) ||
+    percent <
+      0 ||
+    percent >=
+      100
+  ) {
+
+    return null;
+  }
+
+
+  return (
+    cost /
+    (
+      1 -
+      percent /
+      100
+    )
+  );
+}
+
+
 export function CommercialForm({
   quoteId,
   laborTotal,
   items,
   discountType: initialDiscountType,
   discountValue: initialDiscountValue,
-  defaultMarkup,
+  defaultMargin,
   locked,
 }: Props) {
 
@@ -153,23 +187,55 @@ export function CommercialForm({
         items.map(
           (item) => [
             item.id,
-            numberInput(
-              item.sale_unit_amount ??
-              (
-                item.chosen_amount !== null &&
-                item.quantity > 0
-                  ? (
-                      item.chosen_amount /
-                      item.quantity
-                    ) *
-                    (
-                      1 +
-                      defaultMarkup /
-                      100
-                    )
-                  : null
-              ),
-            ),
+            (() => {
+              if (
+                item.sale_unit_amount !==
+                null
+              ) {
+
+                return numberInput(
+                  item.sale_unit_amount,
+                );
+              }
+
+
+              if (
+                item.chosen_amount ===
+                  null ||
+                item.quantity <=
+                  0
+              ) {
+
+                return "";
+              }
+
+
+              const priced =
+                saleFromLucro(
+                  item.chosen_amount /
+                  item.quantity,
+                  defaultMargin,
+                );
+
+
+              if (
+                priced ===
+                null
+              ) {
+
+                return "";
+              }
+
+
+              return priced
+                .toFixed(
+                  2,
+                )
+                .replace(
+                  ".",
+                  ",",
+                );
+            })(),
           ],
         ),
       ),
@@ -177,12 +243,12 @@ export function CommercialForm({
 
 
   const [
-    markup,
-    setMarkup,
+    marginPercent,
+    setMarginPercent,
   ] =
     useState(
       numberInput(
-        defaultMarkup,
+        defaultMargin,
       ),
     );
 
@@ -378,12 +444,23 @@ export function CommercialForm({
     );
 
 
-  function applyMarkup() {
+  function applyLucro() {
 
     const value =
       parseMoney(
-        markup,
+        marginPercent,
       );
+
+
+    if (
+      value <
+        0 ||
+      value >=
+        100
+    ) {
+
+      return;
+    }
 
 
     const next:
@@ -421,12 +498,27 @@ export function CommercialForm({
 
 
       const newPrice =
-        unitCost *
-        (
-          1 +
-          value /
-          100
+        saleFromLucro(
+          unitCost,
+          value,
         );
+
+
+      if (
+        newPrice ===
+        null
+      ) {
+
+        next[
+          item.id
+        ] =
+          salePrices[
+            item.id
+          ] ??
+          "";
+
+        continue;
+      }
 
 
       next[
@@ -509,11 +601,11 @@ export function CommercialForm({
             <div>
 
               <span>
-                Aplicar margem rápida
+                Aplicar lucro rápido
               </span>
 
               <strong>
-                Sobre o custo das peças
+                % de lucro sobre a venda
               </strong>
 
             </div>
@@ -523,11 +615,11 @@ export function CommercialForm({
 
               <input
                 value={
-                  markup
+                  marginPercent
                 }
                 onChange={
                   (event) =>
-                    setMarkup(
+                    setMarginPercent(
                       event.target.value,
                     )
                 }
@@ -545,7 +637,7 @@ export function CommercialForm({
               type="button"
               className="orbiq-secondary-button"
               onClick={
-                applyMarkup
+                applyLucro
               }
             >
               Aplicar em todas
@@ -827,7 +919,7 @@ export function CommercialForm({
           <small>
             {partsMargin.toFixed(
               1,
-            )}% de margem
+            )}% de lucro
           </small>
 
         </article>

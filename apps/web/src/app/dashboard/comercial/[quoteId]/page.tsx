@@ -695,7 +695,8 @@ export default async function CommercialDetailPage({
         discountValue={
           quote.discount_value
         }
-        defaultMarkup={
+        defaultMargin={
+          // % de lucro sobre a venda (não markup sobre custo)
           commercialDefaults?.default_parts_margin_percent ??
           30
         }

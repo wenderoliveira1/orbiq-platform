@@ -290,16 +290,19 @@ export default async function OnboardingPage({
             </label>
 
             <label>
-              <span>Margem padrão das peças (%)</span>
+              <span>Lucro padrão das peças (% sobre a venda)</span>
               <input
                 name="default_parts_margin_percent"
                 type="number"
                 min={0}
-                max={1000}
+                max={99.99}
                 step="0.01"
                 defaultValue={30}
               />
-              <small>Pode ser alterada depois em Configurações.</small>
+              <small>
+                % de lucro sobre a venda (não markup sobre o custo). Pode ser
+                alterado depois em Configurações.
+              </small>
             </label>
           </div>
 
