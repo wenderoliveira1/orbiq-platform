@@ -40,11 +40,19 @@ function formatCnpj(digits: string): string {
 }
 
 function uniqueFixtureCnpjs() {
-  const base = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`;
+  // Keep the distinguishing prefix in the first digits — slice(-14) on a
+  // longer "tag+timestamp" string used to collapse a/b/foreign into one CNPJ.
+  const mk = (tag: number) => {
+    const digits = `${tag}${Date.now()}${Math.floor(Math.random() * 1_000_000_000)}`
+      .replace(/\D/g, "")
+      .slice(0, 14)
+      .padEnd(14, "0");
+    return formatCnpj(digits);
+  };
   return {
-    a: formatCnpj(`1${base}`),
-    b: formatCnpj(`2${base}`),
-    foreign: formatCnpj(`3${base}`),
+    a: mk(1),
+    b: mk(2),
+    foreign: mk(3),
   };
 }
 
