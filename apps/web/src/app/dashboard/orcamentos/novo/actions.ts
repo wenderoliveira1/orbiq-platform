@@ -122,8 +122,10 @@ async function refreshDraftQuoteTotal(
       .eq("organization_id", organizationId)
       .eq("quote_id", quoteId),
   ]);
-  if (servicesResult.error) return servicesResult.error.message;
-  if (itemsResult.error) return itemsResult.error.message;
+  const servicesErr = servicesResult.error;
+  if (servicesErr) return servicesErr.message;
+  const itemsErr = itemsResult.error;
+  if (itemsErr) return itemsErr.message;
   const laborTotal = (servicesResult.data ?? []).reduce(
     (total, service) => total + Number(service.labor_amount ?? 0) * Number(service.quantity ?? 1),
     0,
