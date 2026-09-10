@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 
+import { CategoryGuidedPicker } from "./category-guided-picker";
 import { FunilariaGuidedPicker } from "./funilaria-guided-picker";
 import { QuoteVoiceCapture, type QuoteVoiceConfirmPayload } from "./quote-voice-capture";
 
@@ -66,6 +67,17 @@ export function QuoteAppendWithVoice({ quoteId, serviceCatalog, addAction }: Pro
   return (
     <div className="no-print quote-append-panel" data-testid="quote-append-with-voice">
       <QuoteVoiceCapture dense onConfirm={onVoiceConfirm} />
+      <CategoryGuidedPicker
+        categories={serviceCatalog.map((service) => service.category)}
+        onConfirm={(payload) =>
+          submitAfterConfirm({
+            category: payload.category,
+            description: payload.description,
+            laborAmount: payload.laborAmount,
+            needsPart: payload.needsPart,
+          })
+        }
+      />
       <FunilariaGuidedPicker
         onConfirm={(payload) =>
           submitAfterConfirm({

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
+import { CategoryGuidedPicker } from "../_components/category-guided-picker";
 import { FunilariaGuidedPicker } from "../_components/funilaria-guided-picker";
 import { QuoteVoiceCapture, type QuoteVoiceConfirmPayload } from "../_components/quote-voice-capture";
 import {
@@ -745,6 +746,18 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
           <QuoteVoiceCapture
             categories={availableCategories}
             onConfirm={onVoiceConfirm}
+          />
+          <CategoryGuidedPicker
+            categories={availableCategories}
+            onConfirm={(payload) =>
+              addVoiceOrGuidedService({
+                category: payload.category,
+                description: payload.description,
+                laborAmount: payload.laborAmount,
+                needsPart: payload.needsPart,
+                partDescription: payload.partDescription,
+              })
+            }
           />
           <FunilariaGuidedPicker
             onConfirm={(payload) =>

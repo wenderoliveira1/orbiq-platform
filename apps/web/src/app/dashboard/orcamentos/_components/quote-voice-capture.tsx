@@ -49,6 +49,9 @@ export function QuoteVoiceCapture({
   const [interim, setInterim] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [fields, setFields] = useState<ParsedVoiceService>(emptyFields);
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
+  const [addedCount, setAddedCount] = useState(0);
+  const lastCategoryRef = useRef("MECÂNICA");
 
   useEffect(() => {
     transcriptRef.current = transcript;
@@ -102,6 +105,7 @@ export function QuoteVoiceCapture({
       setFields({ ...parsed, category: matched });
       setInterim("");
       setError(null);
+      setLastAdded(null);
       setPhase("review");
     },
     [categories],
@@ -184,12 +188,32 @@ export function QuoteVoiceCapture({
     [openReview],
   );
 
-  function discard() {
-    stopListening();
+  function clearCaptureFields(nextCategory?: string) {
     setTranscript("");
     setInterim("");
-    setFields(emptyFields());
+    finalChunkRef.current = "";
+    appendModeRef.current = false;
+    setFields({
+      ...emptyFields(),
+      category: nextCategory || lastCategoryRef.current || "MECÂNICA",
+    });
+  }
+
+  function discard() {
+    stopListening();
+    clearCaptureFields();
     setError(null);
+    setLastAdded(null);
+    setAddedCount(0);
+    setPhase(supported ? "idle" : "unsupported");
+  }
+
+  /** After Confirmar: keep session ready for the next service (Novo Orçamento context stays). */
+  function readyForNext(addedLabel: string) {
+    stopListening();
+    clearCaptureFields(lastCategoryRef.current);
+    setError(null);
+    setLastAdded(addedLabel);
     setPhase(supported ? "idle" : "unsupported");
   }
 
@@ -199,16 +223,21 @@ export function QuoteVoiceCapture({
       setError("Revise a descrição do serviço antes de confirmar.");
       return;
     }
+    const upperDescription = description.toLocaleUpperCase("pt-BR");
+    const category = fields.category || lastCategoryRef.current || "MECÂNICA";
     // Human gate: only Confirmar calls onConfirm — never auto-save on speech end.
     onConfirm({
       ...fields,
-      description: description.toLocaleUpperCase("pt-BR"),
+      category,
+      description: upperDescription,
       partDescription: fields.needsPart
         ? fields.partDescription.trim().toLocaleUpperCase("pt-BR")
         : "",
       transcript: transcript.trim(),
     });
-    discard();
+    lastCategoryRef.current = category;
+    setAddedCount((count) => count + 1);
+    readyForNext(`${category} · ${upperDescription}`);
   }
 
   if (phase === "unsupported") {
@@ -253,7 +282,9 @@ export function QuoteVoiceCapture({
             VOZ (PT-BR)
           </span>
           <strong>Falar serviço com as mãos ocupadas</strong>
-          <small>Captura → revisa → Confirmar. Nada é salvo só por falar.</small>
+          <small>
+            Captura → revisa → Confirmar → próximo. Nada é salvo só por falar. Vários serviços na mesma sessão.
+          </small>
         </div>
         <span
           className={`quote-voice-phase-badge is-${phase}`}
@@ -263,6 +294,19 @@ export function QuoteVoiceCapture({
           {phaseLabel}
         </span>
       </div>
+
+      {lastAdded && phase === "idle" ? (
+        <p
+          className="quote-voice-added-banner"
+          data-testid="quote-voice-added-banner"
+          data-voice-added-count={String(addedCount)}
+          role="status"
+        >
+          Adicionado: <strong>{lastAdded}</strong>
+          {addedCount > 1 ? ` · ${addedCount} nesta sessão` : ""} — toque no
+          mic para o próximo
+        </p>
+      ) : null}
 
       {phase !== "review" ? (
         <div className="quote-voice-mic-wrap">
@@ -282,12 +326,18 @@ export function QuoteVoiceCapture({
             </span>
             <span className="quote-voice-mic-copy">
               <strong className="quote-voice-mic-label">
-                {phase === "listening" ? "Ouvindo…" : "Falar serviço"}
+                {phase === "listening"
+                  ? "Ouvindo…"
+                  : lastAdded
+                    ? "Falar próximo serviço"
+                    : "Falar serviço"}
               </strong>
               <span className="quote-voice-mic-hint">
                 {phase === "listening"
                   ? "Toque para parar · Chrome/Edge"
-                  : "Ex.: desamassar porta dianteira E"}
+                  : lastAdded
+                    ? "Mesma sessão — contexto do orçamento mantido"
+                    : "Ex.: desamassar porta dianteira E"}
               </span>
             </span>
           </button>
@@ -437,7 +487,7 @@ export function QuoteVoiceCapture({
               data-testid="quote-voice-confirm"
               onClick={confirm}
             >
-              Confirmar e adicionar
+              Confirmar e adicionar · próximo
             </button>
           </div>
         </div>
