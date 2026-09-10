@@ -92,13 +92,11 @@ a {
   width: 40px;
   height: 40px;
   flex: 0 0 40px;
-  display: grid;
-  place-items: center;
+  display: block;
   border-radius: 13px;
-  background: var(--orbiq-accent);
-  color: #fff;
-  font-weight: 800;
+  background: #f4f6f8 url("/brand/orbiq-mark.png") center / 78% no-repeat;
   text-decoration: none;
+  overflow: hidden;
 }
 
 .orbiq-workshop {
@@ -1566,6 +1564,49 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   font-size: 10px;
 }
 
+.quote-identity-form {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.quote-identity-form label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.quote-identity-form label > span {
+  color: var(--orbiq-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.quote-identity-form input {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 10px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.quote-identity-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.quote-identity-form > .orbiq-secondary-button {
+  justify-self: start;
+  min-height: 36px;
+}
+
 .quote-status-form {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) auto;
@@ -1748,6 +1789,10 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
 
   .quote-detail-grid,
   .quote-detail-totals {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-identity-row {
     grid-template-columns: 1fr;
   }
 

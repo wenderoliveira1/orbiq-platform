@@ -8,6 +8,7 @@ import { QUOTE_STATUSES } from "../quote-meta";
 import {
   addQuoteServiceAction,
   deleteQuoteServiceAction,
+  updateQuoteIdentityAction,
   updateQuoteItemQuantityAction,
   updateQuoteNotesAction,
   updateQuoteServiceLaborAction,
@@ -93,8 +94,8 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             <strong>Aprovado no comercial — edição pausada</strong>
             <span>
               Este orçamento pode já ter sido enviado ao cliente. Para alterar
-              serviços, quantidades ou valores, reabra o mesmo orçamento com
-              confirmação explícita.
+              cliente, veículo, serviços, quantidades ou valores, reabra o mesmo
+              orçamento com confirmação explícita.
             </span>
           </div>
           <div className="quote-locked-banner-actions">
@@ -119,13 +120,89 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
       <section className="quote-detail-grid">
         <article className="orbiq-panel">
           <span className="orbiq-eyebrow">CLIENTE</span>
-          <h2>{customer?.name ?? "Cliente não localizado"}</h2>
-          <div className="quote-detail-info"><span>Telefone</span><strong>{customer?.phone ?? "—"}</strong><span>E-mail</span><strong>{customer?.email ?? "—"}</strong></div>
+          {locked || !customer ? (
+            <>
+              <h2>{customer?.name ?? "Cliente não localizado"}</h2>
+              <div className="quote-detail-info"><span>Telefone</span><strong>{customer?.phone ?? "—"}</strong><span>E-mail</span><strong>{customer?.email ?? "—"}</strong></div>
+            </>
+          ) : (
+            <>
+              <div className="print-only">
+                <h2>{customer.name}</h2>
+                <div className="quote-detail-info"><span>Telefone</span><strong>{customer.phone ?? "—"}</strong><span>E-mail</span><strong>{customer.email ?? "—"}</strong></div>
+              </div>
+              <form action={updateQuoteIdentityAction} className="no-print quote-identity-form">
+                <input type="hidden" name="quote_id" value={quote.id} />
+                <input type="hidden" name="customer_id" value={customer.id} />
+                <input type="hidden" name="section" value="customer" />
+                <label>
+                  <span>Nome</span>
+                  <input name="customer_name" defaultValue={customer.name} required maxLength={180} aria-label="Nome do cliente" />
+                </label>
+                <div className="quote-identity-row">
+                  <label>
+                    <span>Telefone</span>
+                    <input name="customer_phone" defaultValue={customer.phone ?? ""} maxLength={40} aria-label="Telefone do cliente" />
+                  </label>
+                  <label>
+                    <span>E-mail</span>
+                    <input name="customer_email" type="email" defaultValue={customer.email ?? ""} maxLength={180} aria-label="E-mail do cliente" style={{ textTransform: "none" }} />
+                  </label>
+                </div>
+                <button type="submit" className="orbiq-secondary-button">Salvar cliente</button>
+              </form>
+            </>
+          )}
         </article>
         <article className="orbiq-panel">
           <span className="orbiq-eyebrow">VEÍCULO</span>
-          <div className="quote-detail-vehicle-title"><span className="orbiq-plate">{vehicle?.plate ?? "—"}</span><h2>{[vehicle?.brand, vehicle?.model, vehicle?.version].filter(Boolean).join(" ") || "Veículo"}</h2></div>
-          <div className="quote-detail-info"><span>Ano</span><strong>{vehicle?.model_year ?? "—"}</strong><span>Quilometragem</span><strong>{quote.mileage !== null ? `${new Intl.NumberFormat("pt-BR").format(quote.mileage)} km` : "—"}</strong></div>
+          {locked || !vehicle ? (
+            <>
+              <div className="quote-detail-vehicle-title"><span className="orbiq-plate">{vehicle?.plate ?? "—"}</span><h2>{[vehicle?.brand, vehicle?.model, vehicle?.version].filter(Boolean).join(" ") || "Veículo"}</h2></div>
+              <div className="quote-detail-info"><span>Ano</span><strong>{vehicle?.model_year ?? "—"}</strong><span>Quilometragem</span><strong>{quote.mileage !== null ? `${new Intl.NumberFormat("pt-BR").format(quote.mileage)} km` : "—"}</strong></div>
+            </>
+          ) : (
+            <>
+              <div className="print-only">
+                <div className="quote-detail-vehicle-title"><span className="orbiq-plate">{vehicle.plate}</span><h2>{[vehicle.brand, vehicle.model, vehicle.version].filter(Boolean).join(" ") || "Veículo"}</h2></div>
+                <div className="quote-detail-info"><span>Ano</span><strong>{vehicle.model_year ?? "—"}</strong><span>Quilometragem</span><strong>{quote.mileage !== null ? `${new Intl.NumberFormat("pt-BR").format(quote.mileage)} km` : "—"}</strong></div>
+              </div>
+              <form action={updateQuoteIdentityAction} className="no-print quote-identity-form">
+                <input type="hidden" name="quote_id" value={quote.id} />
+                <input type="hidden" name="vehicle_id" value={vehicle.id} />
+                <input type="hidden" name="section" value="vehicle" />
+                <div className="quote-identity-row">
+                  <label>
+                    <span>Placa</span>
+                    <input name="plate" defaultValue={vehicle.plate} required maxLength={8} aria-label="Placa do veículo" />
+                  </label>
+                  <label>
+                    <span>Km</span>
+                    <input name="mileage" inputMode="numeric" defaultValue={quote.mileage ?? ""} required maxLength={10} aria-label="Quilometragem" />
+                  </label>
+                  <label>
+                    <span>Ano</span>
+                    <input name="model_year" inputMode="numeric" defaultValue={vehicle.model_year ?? ""} maxLength={4} aria-label="Ano do veículo" />
+                  </label>
+                </div>
+                <div className="quote-identity-row">
+                  <label>
+                    <span>Marca</span>
+                    <input name="brand" defaultValue={vehicle.brand ?? ""} maxLength={80} aria-label="Marca do veículo" />
+                  </label>
+                  <label>
+                    <span>Modelo</span>
+                    <input name="model" defaultValue={vehicle.model ?? ""} required maxLength={80} aria-label="Modelo do veículo" />
+                  </label>
+                  <label>
+                    <span>Versão</span>
+                    <input name="version" defaultValue={vehicle.version ?? ""} maxLength={120} aria-label="Versão do veículo" />
+                  </label>
+                </div>
+                <button type="submit" className="orbiq-secondary-button">Salvar veículo</button>
+              </form>
+            </>
+          )}
         </article>
       </section>
 

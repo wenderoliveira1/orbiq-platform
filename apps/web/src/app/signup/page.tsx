@@ -126,7 +126,7 @@ export default async function SignupPage({
           <div className="mobile-brand">
 
             <div className="brand-mark">
-              O
+              
             </div>
 
             <div>
@@ -136,7 +136,7 @@ export default async function SignupPage({
               </strong>
 
               <span>
-                Automotive Operations Platform
+                Operações automotivas
               </span>
 
             </div>

@@ -47,10 +47,12 @@ export default function InstallPage() {
     <main className={styles.page}>
       <header className={styles.header}>
         <Link href="/dashboard" className={styles.brand} aria-label="Orbiq">
-          <span aria-hidden="true">O</span>
+          <span className={styles.brandMark} aria-hidden="true">
+            
+          </span>
           <span>
             <strong>Orbiq</strong>
-            <small>Automotive Operations Platform</small>
+            <small>Operações automotivas</small>
           </span>
         </Link>
 

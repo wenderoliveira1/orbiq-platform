@@ -124,7 +124,7 @@ export default async function LoginPage({
         <div className="brand-lockup">
 
           <div className="brand-mark">
-            O
+            
           </div>
 
           <div>
@@ -134,7 +134,7 @@ export default async function LoginPage({
             </strong>
 
             <span>
-              Automotive Operations Platform
+              Operações automotivas
             </span>
 
           </div>

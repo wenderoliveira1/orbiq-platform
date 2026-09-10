@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Orbiq">
-  <rect width="512" height="512" fill="#e30613"/>
-  <circle cx="256" cy="256" r="118" fill="none" stroke="#ffffff" stroke-width="62"/>
-  <circle cx="256" cy="256" r="34" fill="#ffffff"/>
+  <rect width="512" height="512" fill="#0b1220"/>
+  <circle cx="256" cy="256" r="118" fill="none" stroke="#e30613" stroke-width="48"/>
+  <circle cx="256" cy="256" r="118" fill="none" stroke="#3d4658" stroke-width="48" stroke-dasharray="280 400" stroke-dashoffset="40"/>
+  <circle cx="256" cy="256" r="28" fill="#e30613"/>
 </svg>

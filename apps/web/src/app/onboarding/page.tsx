@@ -45,7 +45,7 @@ export default async function OnboardingPage({
       <main className="page-shell narrow">
         <header className="simple-header">
           <div className="brand-lockup dark-text">
-            <div className="brand-mark">O</div>
+            <div className="brand-mark"></div>
             <div>
               <strong>Orbiq</strong>
               <span>Configuração inicial</span>
@@ -141,7 +141,7 @@ export default async function OnboardingPage({
     <main className="page-shell narrow">
       <header className="simple-header">
         <div className="brand-lockup dark-text">
-          <div className="brand-mark">O</div>
+          <div className="brand-mark"></div>
           <div>
             <strong>Orbiq</strong>
             <span>Configuração inicial</span>

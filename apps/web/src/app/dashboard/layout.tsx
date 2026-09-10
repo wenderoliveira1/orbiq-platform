@@ -55,13 +55,11 @@ export default async function DashboardLayout({
             href="/dashboard"
             className="orbiq-brand-mark"
             aria-label="Orbiq"
-          >
-            O
-          </Link>
+          />
 
           <div>
             <strong>Orbiq</strong>
-            <span>Automotive Operations Platform</span>
+            <span>Operações automotivas</span>
           </div>
         </div>
 
