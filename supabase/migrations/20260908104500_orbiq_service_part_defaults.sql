@@ -13,7 +13,7 @@ where category = upper(category)
     'TROCA COXIM MOTOR',
     'TROCA BOMBA DE COMBUSTÍVEL',
     'TROCA CORREIA DE ACESSÓRIOS',
-    'TROCA BOMBA D\'ÁGUA',
+    'TROCA BOMBA D''ÁGUA',
     'TROCA VELAS DE IGNIÇÃO',
     'TROCA FILTRO DE COMBUSTÍVEL',
     'TROCA PIVÔ',
