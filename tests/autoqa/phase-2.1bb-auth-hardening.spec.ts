@@ -57,7 +57,8 @@ test.describe("Fase 2.1BB — endurecimento de autenticação e cookies", () => 
 
     expect(cookieSecurity).toContain("shouldUseSecureCookies");
     expect(cookieSecurity).toContain('startsWith("https://")');
-    expect(cookieSecurity).not.toContain("NODE_ENV");
+    expect(cookieSecurity).toContain("NEXT_PUBLIC_APP_URL");
+    expect(cookieSecurity).not.toContain("process.env.NODE_ENV");
     expect(org).toContain("shouldUseSecureCookies()");
     expect(theme).toContain("shouldUseSecureCookies()");
     expect(proxy).toContain("authSessionCookieOptions");

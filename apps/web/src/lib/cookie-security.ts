@@ -1,6 +1,7 @@
 /**
  * Cookie flags that stay compatible with local HTTP AutoQA and HTTPS production.
- * Never key Secure off NODE_ENV alone — CI runs production builds on http://127.0.0.1.
+ * Secure follows the public app URL scheme — not the build mode — so CI can run
+ * production builds on http://127.0.0.1 without dropping session cookies.
  */
 export function shouldUseSecureCookies(): boolean {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() ?? "";
