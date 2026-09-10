@@ -50,10 +50,10 @@ export function CustomerPhoneLookup({ customers, vehicles }: Props) {
   );
 
   function handlePhoneChange(value: string) {
-    setPhone(value);
     const query = digits(value);
-    const found = customers.find((item) => digits(item.phone) === query && query.length >= 4);
+    setPhone(query);
 
+    const found = customers.find((item) => digits(item.phone) === query && query.length >= 4);
     if (!found) return;
 
     setSelectValue("customer_id", found.id);
@@ -81,7 +81,7 @@ export function CustomerPhoneLookup({ customers, vehicles }: Props) {
             onChange={(event) => handlePhoneChange(event.target.value)}
             inputMode="tel"
             autoComplete="tel"
-            placeholder="Digite o telefone cadastrado"
+            placeholder="DIGITE O TELEFONE CADASTRADO"
           />
         </label>
 
@@ -91,11 +91,11 @@ export function CustomerPhoneLookup({ customers, vehicles }: Props) {
             {customerVehicles.length === 1
               ? ` • ${[customerVehicles[0].brand, customerVehicles[0].model].filter(Boolean).join(" ")} • ${customerVehicles[0].plate}`
               : customerVehicles.length > 1
-                ? ` • ${customerVehicles.length} veículos encontrados — selecione o veículo abaixo.`
-                : " • Cliente encontrado, mas sem veículo cadastrado."}
+                ? ` • ${customerVehicles.length} VEÍCULOS ENCONTRADOS — SELECIONE O VEÍCULO ABAIXO.`
+                : " • CLIENTE ENCONTRADO, MAS SEM VEÍCULO CADASTRADO."}
           </div>
-        ) : digits(phone).length >= 4 ? (
-          <div className="orbiq-alert error">Nenhum cliente encontrado com esse telefone.</div>
+        ) : phone ? (
+          <div className="orbiq-alert error">NENHUM CLIENTE ENCONTRADO COM ESSE TELEFONE.</div>
         ) : null}
       </div>
     </section>

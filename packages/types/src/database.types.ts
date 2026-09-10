@@ -120,6 +120,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          customer_number: number
           email: string | null
           id: string
           name: string
@@ -131,6 +132,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          customer_number?: number
           email?: string | null
           id?: string
           name: string
@@ -142,6 +144,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          customer_number?: number
           email?: string | null
           id?: string
           name?: string
@@ -782,6 +785,7 @@ export type Database = {
           labor_service_id: string | null
           needs_part: boolean
           organization_id: string
+          quantity: number
           quote_id: string
           updated_at: string
         }
@@ -794,6 +798,7 @@ export type Database = {
           labor_service_id?: string | null
           needs_part?: boolean
           organization_id: string
+          quantity?: number
           quote_id: string
           updated_at?: string
         }
@@ -806,6 +811,7 @@ export type Database = {
           labor_service_id?: string | null
           needs_part?: boolean
           organization_id?: string
+          quantity?: number
           quote_id?: string
           updated_at?: string
         }
@@ -1134,6 +1140,7 @@ export type Database = {
           description: string
           id: string
           organization_id: string
+          requires_part: boolean
           updated_at: string
         }
         Insert: {
@@ -1144,6 +1151,7 @@ export type Database = {
           description: string
           id?: string
           organization_id: string
+          requires_part?: boolean
           updated_at?: string
         }
         Update: {
@@ -1154,6 +1162,7 @@ export type Database = {
           description?: string
           id?: string
           organization_id?: string
+          requires_part?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -1593,6 +1602,22 @@ export type Database = {
           quote_id: string
         }[]
       }
+      create_quote_with_quantities: {
+        Args: {
+          items: Json
+          services: Json
+          target_customer_id: string
+          target_mileage: number
+          target_notes: string
+          target_org_id: string
+          target_priority: string
+          target_vehicle_id: string
+        }
+        Returns: {
+          protocol: string
+          quote_id: string
+        }[]
+      }
       finalize_quote_supplier_awards: {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: number
@@ -1793,6 +1818,10 @@ export type Database = {
       public_get_workshop_profile: {
         Args: { target_token: string }
         Returns: Json
+      }
+      recalculate_quote_final_amount: {
+        Args: { target_quote_id: string }
+        Returns: undefined
       }
       receive_purchase_order_all: {
         Args: { target_order_id: string; target_org_id: string }

@@ -33,14 +33,18 @@ function parseMileage(raw: string): number | null {
   return Math.trunc(value);
 }
 
+function upper(value: string) {
+  return value.trim().toLocaleUpperCase("pt-BR");
+}
+
 export async function saveServiceCatalogAction(
   category: string,
   description: string,
   laborAmount: number,
 ): Promise<string> {
   const { supabase, organization } = await getCurrentContext();
-  const normalizedCategory = category.trim();
-  const normalizedDescription = description.trim();
+  const normalizedCategory = upper(category);
+  const normalizedDescription = upper(description);
   if (
     !normalizedCategory ||
     normalizedDescription.length < 2 ||
@@ -100,7 +104,7 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
   const vehicleId = vehicleIdRaw.trim();
   const priorityRaw = priorityInput.trim() || "normal";
   const mileage = parseMileage(mileageRaw.trim());
-  const notes = notesRaw.trim();
+  const notes = upper(notesRaw);
   const servicesRaw = servicesInput.trim();
   const itemsRaw = itemsInput.trim();
 
@@ -115,15 +119,15 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
     if (service.service_catalog_id === null) {
       const { error: catalogError } = await supabase.rpc("save_service_catalog", {
         target_org_id: organization.id,
-        target_category: service.category,
-        target_description: service.description,
+        target_category: upper(service.category),
+        target_description: upper(service.description),
         target_labor_amount: service.labor_amount,
       });
       if (catalogError) return failure("save_failed");
     }
   }
 
-  const { data, error } = await supabase.rpc("create_quote_v2", {
+  const { data, error } = await supabase.rpc("create_quote_with_quantities", {
     target_org_id: organization.id,
     target_customer_id: customerId,
     target_vehicle_id: vehicleId,

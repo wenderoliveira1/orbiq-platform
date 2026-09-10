@@ -12,6 +12,7 @@ export type QuoteServicePayload = {
   category: string;
   description: string;
   labor_amount: number;
+  quantity: number;
   needs_part: boolean;
 };
 
@@ -56,13 +57,14 @@ export function parseQuotePayload(servicesRaw: string, itemsRaw: string, priorit
     const serviceCatalogId = value.service_catalog_id;
     if (!(laborServiceId === null || (typeof laborServiceId === "string" && isUuid(laborServiceId)))) return null;
     if (!(serviceCatalogId === null || (typeof serviceCatalogId === "string" && isUuid(serviceCatalogId)))) return null;
-    if (!boundedText(value.category, 80) || !boundedText(value.description, 300) || !validMoney(value.labor_amount) || typeof value.needs_part !== "boolean") return null;
+    if (!boundedText(value.category, 80) || !boundedText(value.description, 300) || !validMoney(value.labor_amount) || !validQuantity(value.quantity) || typeof value.needs_part !== "boolean") return null;
     services.push({
       labor_service_id: laborServiceId,
       service_catalog_id: serviceCatalogId,
       category: value.category.trim(),
       description: value.description.trim(),
       labor_amount: value.labor_amount,
+      quantity: value.quantity,
       needs_part: value.needs_part,
     });
   }

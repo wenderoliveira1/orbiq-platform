@@ -338,7 +338,7 @@ test.describe("Fase 1.9C - gestão de oficinas e filiais", () => {
     );
     await page.goto("/dashboard/clientes");
     await expect(
-      page.getByText("Cliente Exclusivo Matriz 1.9C", {
+      page.getByText("CLIENTE EXCLUSIVO MATRIZ 1.9C", {
         exact: true,
       }),
     ).toBeVisible();
@@ -355,7 +355,7 @@ test.describe("Fase 1.9C - gestão de oficinas e filiais", () => {
     await page.goto("/dashboard/clientes");
 
     await expect(
-      page.getByText("Cliente Exclusivo Matriz 1.9C", {
+      page.getByText("CLIENTE EXCLUSIVO MATRIZ 1.9C", {
         exact: true,
       }),
     ).toHaveCount(0);

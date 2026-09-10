@@ -68,6 +68,9 @@ const primaryQuoteId = randomUUID();
 const primaryCustomerName = `Cliente Matriz Dados ${suffix}`;
 const branchCustomerName = `Cliente Filial Dados ${suffix}`;
 const externalCustomerName = `Cliente Externo Sigiloso ${suffix}`;
+const storedPrimaryCustomerName = primaryCustomerName.toUpperCase();
+const storedBranchCustomerName = branchCustomerName.toUpperCase();
+const storedExternalCustomerName = externalCustomerName.toUpperCase();
 const inviteHash = `invite_hash_${randomUUID().replaceAll("-", "")}`;
 const publicLinkToken = `public_token_${randomUUID().replaceAll("-", "")}`;
 
@@ -283,7 +286,7 @@ test.describe("Fase 1.9G - dados, continuidade e LGPD", () => {
     expect(document.snapshot.data.customers).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          name: primaryCustomerName,
+          name: storedPrimaryCustomerName,
           organization_id: primaryOrganizationId,
         }),
       ]),
@@ -296,8 +299,8 @@ test.describe("Fase 1.9G - dados, continuidade e LGPD", () => {
     );
     expect(rawExport).not.toContain(inviteHash);
     expect(rawExport).not.toContain(publicLinkToken);
-    expect(rawExport).not.toContain(branchCustomerName);
-    expect(rawExport).not.toContain(externalCustomerName);
+    expect(rawExport).not.toContain(storedBranchCustomerName);
+    expect(rawExport).not.toContain(storedExternalCustomerName);
 
     const exportRows = runPostgres(`
       select
@@ -461,9 +464,9 @@ test.describe("Fase 1.9G - dados, continuidade e LGPD", () => {
 
     expect(snapshot).toHaveLength(1);
     expect(snapshot[0].export_organization_id).toBe(externalOrganizationId);
-    expect(snapshot[0].export_snapshot).toContain(externalCustomerName);
-    expect(snapshot[0].export_snapshot).not.toContain(primaryCustomerName);
-    expect(snapshot[0].export_snapshot).not.toContain(branchCustomerName);
+    expect(snapshot[0].export_snapshot).toContain(storedExternalCustomerName);
+    expect(snapshot[0].export_snapshot).not.toContain(storedPrimaryCustomerName);
+    expect(snapshot[0].export_snapshot).not.toContain(storedBranchCustomerName);
     expect(snapshot[0].export_snapshot).not.toContain(inviteHash);
     expect(snapshot[0].export_snapshot).not.toContain(publicLinkToken);
 
