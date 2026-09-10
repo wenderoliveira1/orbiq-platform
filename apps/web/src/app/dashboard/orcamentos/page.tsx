@@ -4,6 +4,7 @@ import {
   getCurrentContext,
 } from "../_lib/current-organization";
 
+import { duplicateQuoteAction } from "./[id]/actions";
 import {
   PRIORITY_LABELS,
   QUOTE_STATUSES,
@@ -14,6 +15,8 @@ import {
 type SearchParams = Promise<{
   q?: string;
   status?: string;
+  ok?: string;
+  error?: string;
 }>;
 
 
@@ -271,6 +274,12 @@ export default async function QuotesPage({
         </Link>
       </section>
 
+      {params.ok ? (
+        <div className="orbiq-alert success">{params.ok}</div>
+      ) : null}
+      {params.error ? (
+        <div className="orbiq-alert error">{params.error}</div>
+      ) : null}
 
       <section className="quote-history-metrics">
         <article>
@@ -413,83 +422,105 @@ export default async function QuotesPage({
 
 
                 return (
-                  <Link
+                  <article
                     key={
                       quote.id
                     }
-                    href={
-                      `/dashboard/orcamentos/${quote.id}`
-                    }
                     className="quote-history-row"
                   >
-                    <div className="quote-history-customer">
-                      <strong>
-                        {customer?.name ??
-                          "Cliente não localizado"}
+                    <Link
+                      href={
+                        `/dashboard/orcamentos/${quote.id}`
+                      }
+                      className="quote-history-main"
+                    >
+                      <div className="quote-history-customer">
+                        <strong>
+                          {customer?.name ??
+                            "Cliente não localizado"}
+                        </strong>
+
+                        <span>
+                          {customer?.phone ??
+                            "Sem telefone"}
+                        </span>
+                      </div>
+
+                      <div className="quote-history-vehicle">
+                        <span className="orbiq-plate">
+                          {vehicle?.plate ??
+                            "—"}
+                        </span>
+
+                        <span>
+                          {[
+                            vehicle?.brand,
+                            vehicle?.model,
+                          ]
+                            .filter(Boolean)
+                            .join(" ") ||
+                            "Veículo"}
+                        </span>
+                      </div>
+
+                      <div className="quote-history-tags">
+                        <span
+                          className={
+                            `quote-status status-${quote.status}`
+                          }
+                        >
+                          {statusLabel(
+                            quote.status,
+                          )}
+                        </span>
+
+                        <small>
+                          {PRIORITY_LABELS[
+                            quote.priority
+                          ] ??
+                            quote.priority}
+                        </small>
+                      </div>
+
+                      <div className="quote-history-protocol">
+                        <span>
+                          {formatDate(
+                            quote.created_at,
+                          )}
+                        </span>
+
+                        <strong>
+                          {quote.protocol}
+                        </strong>
+                      </div>
+
+                      <strong className="quote-history-arrow">
+                        →
                       </strong>
+                    </Link>
 
-                      <span>
-                        {customer?.phone ??
-                          "Sem telefone"}
-                      </span>
-                    </div>
-
-
-                    <div className="quote-history-vehicle">
-                      <span className="orbiq-plate">
-                        {vehicle?.plate ??
-                          "—"}
-                      </span>
-
-                      <span>
-                        {[
-                          vehicle?.brand,
-                          vehicle?.model,
-                        ]
-                          .filter(Boolean)
-                          .join(" ") ||
-                          "Veículo"}
-                      </span>
-                    </div>
-
-
-                    <div className="quote-history-tags">
-                      <span
-                        className={
-                          `quote-status status-${quote.status}`
-                        }
+                    <form
+                      action={duplicateQuoteAction}
+                      className="quote-history-duplicate no-print"
+                    >
+                      <input
+                        type="hidden"
+                        name="quote_id"
+                        value={quote.id}
+                      />
+                      <input
+                        type="hidden"
+                        name="return_to"
+                        value="list"
+                      />
+                      <button
+                        type="submit"
+                        className="orbiq-secondary-button"
                       >
-                        {statusLabel(
-                          quote.status,
-                        )}
-                      </span>
-
-                      <small>
-                        {PRIORITY_LABELS[
-                          quote.priority
-                        ] ??
-                          quote.priority}
-                      </small>
-                    </div>
-
-
-                    <div className="quote-history-protocol">
-                      <span>
-                        {formatDate(
-                          quote.created_at,
-                        )}
-                      </span>
-
-                      <strong>
-                        {quote.protocol}
-                      </strong>
-                    </div>
-
-
-                    <strong className="quote-history-arrow">
-                      →
-                    </strong>
-                  </Link>
+                        Duplicar
+                      </button>
+                    </form>
+                  </article>
                 );
               },
             )}
