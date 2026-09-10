@@ -9518,6 +9518,47 @@ a.ops-pipeline-step:hover {
 }
 
 
+
+
+/* ORBIQ COMMERCIAL STAFF TOTALS CLARITY 20260910 */
+
+.commercial-staff-totals {
+  display: grid;
+  gap: 10px;
+}
+
+.commercial-staff-totals-heading h2 {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.commercial-staff-totals-heading .commercial-help,
+.commercial-labor-panel .commercial-help,
+.commercial-parts-panel .commercial-help {
+  margin: 4px 0 0;
+  color: var(--orbiq-muted);
+  font-size: 12px;
+  max-width: 54ch;
+}
+
+.commercial-total-kicker {
+  color: var(--orbiq-accent, #e30613);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.commercial-summary-grid-staff article {
+  gap: 4px;
+}
+
+.commercial-final-breakdown {
+  display: block;
+  margin-top: 2px;
+  color: var(--orbiq-muted);
+  font-size: 11px;
+}
+
 /* ORBIQ QUOTES LIST DENSE SEARCH 20260910 */
 
 .quote-history-panel .quote-history-search {

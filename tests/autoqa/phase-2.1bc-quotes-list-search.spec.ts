@@ -29,7 +29,10 @@ test.describe("Fase 2.1BC — lista de orçamentos: busca/filtro denso", () => {
     expect(list).toContain("matchesQuoteListSearch");
     expect(list).toContain("quotesListHref");
     expect(list).toContain('data-testid="quote-history-metrics"');
-    expect(list).toContain('data-testid="quote-metric-drafts"');
+    // Metrics use data-testid={metric.testId}; drafts id lives on the metrics array.
+    expect(list).toContain('testId: "quote-metric-drafts"');
+    expect(list).toContain("quote-metric-drafts");
+    expect(list).toContain("data-testid={metric.testId}");
     expect(list).toContain("Rascunhos");
     expect(list).toContain('data-testid="quote-draft-badge"');
     expect(list).toContain("QUOTE_STATUSES.map");
