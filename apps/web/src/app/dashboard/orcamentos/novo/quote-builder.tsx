@@ -178,30 +178,40 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   const servicesPayload = useMemo(() => selectedServices.map((service) => ({ labor_service_id: null, service_catalog_id: service.serviceCatalogId, category: service.category, description: service.description, labor_amount: service.laborAmount, quantity: parseQuantity(service.quantity), needs_part: service.needsPart })), [selectedServices]);
 
   useEffect(() => {
-    const draft = readQuoteBuilderDraft(organizationId, userId);
-    if (draft && isMeaningfulQuoteBuilderDraft(draft)) {
-      const customerExists = !draft.customerId || customers.some((customer) => customer.id === draft.customerId);
-      const vehicleExists =
-        !draft.vehicleId ||
-        vehicles.some(
-          (vehicle) =>
-            vehicle.id === draft.vehicleId &&
-            (!draft.customerId || vehicle.customer_id === draft.customerId),
-        );
-      setCustomerId(customerExists ? draft.customerId : "");
-      setVehicleId(customerExists && vehicleExists ? draft.vehicleId : "");
-      setMileage(draft.mileage);
-      setPriority(draft.priority);
-      setNotes(draft.notes);
-      setServiceCategory(draft.serviceCategory);
-      setSelectedServices(draft.selectedServices);
-      setExtraItems(draft.extraItems);
-      setOpenStep(draft.openStep);
-      setServerDraftQuoteId(draft.serverDraftQuoteId);
-      setServerDraftProtocol(draft.serverDraftProtocol);
-      setDraftRestored(true);
-    }
-    setDraftReady(true);
+    let cancelled = false;
+    // Defer restore so we do not setState synchronously inside the effect body
+    // (react-hooks/set-state-in-effect). localStorage is only available in the browser.
+    const timer = window.setTimeout(() => {
+      if (cancelled) return;
+      const draft = readQuoteBuilderDraft(organizationId, userId);
+      if (draft && isMeaningfulQuoteBuilderDraft(draft)) {
+        const customerExists = !draft.customerId || customers.some((customer) => customer.id === draft.customerId);
+        const vehicleExists =
+          !draft.vehicleId ||
+          vehicles.some(
+            (vehicle) =>
+              vehicle.id === draft.vehicleId &&
+              (!draft.customerId || vehicle.customer_id === draft.customerId),
+          );
+        setCustomerId(customerExists ? draft.customerId : "");
+        setVehicleId(customerExists && vehicleExists ? draft.vehicleId : "");
+        setMileage(draft.mileage);
+        setPriority(draft.priority);
+        setNotes(draft.notes);
+        setServiceCategory(draft.serviceCategory);
+        setSelectedServices(draft.selectedServices);
+        setExtraItems(draft.extraItems);
+        setOpenStep(draft.openStep);
+        setServerDraftQuoteId(draft.serverDraftQuoteId);
+        setServerDraftProtocol(draft.serverDraftProtocol);
+        setDraftRestored(true);
+      }
+      setDraftReady(true);
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
     // Restore only on mount for this org/user.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId, userId]);
