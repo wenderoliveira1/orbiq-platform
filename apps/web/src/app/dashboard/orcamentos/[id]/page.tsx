@@ -9,8 +9,10 @@ import {
   addQuoteServiceAction,
   deleteQuoteServiceAction,
   updateQuoteIdentityAction,
+  updateQuoteItemDescriptionAction,
   updateQuoteItemQuantityAction,
   updateQuoteNotesAction,
+  updateQuoteServiceDescriptionAction,
   updateQuoteServiceLaborAction,
   updateQuoteServiceQuantityAction,
   updateQuoteStatusAction,
@@ -251,7 +253,28 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
               return (
                 <div key={service.id} className="quote-detail-table-row service-table" style={{ gridTemplateColumns: "1fr 2fr 200px 70px 120px 120px 90px" }}>
                   <span>{service.category}</span>
-                  <strong>{service.description}</strong>
+                  <div>
+                    {locked ? (
+                      <strong>{service.description}</strong>
+                    ) : (
+                      <>
+                        <strong className="print-only">{service.description}</strong>
+                        <form action={updateQuoteServiceDescriptionAction} className="no-print" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <input type="hidden" name="quote_id" value={quote.id} />
+                          <input type="hidden" name="service_id" value={service.id} />
+                          <input
+                            name="description"
+                            defaultValue={service.description}
+                            maxLength={300}
+                            required
+                            aria-label={`Descrição de ${service.description}`}
+                            style={{ flex: "1 1 160px", minWidth: 140, minHeight: 40, padding: "0 8px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }}
+                          />
+                          <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar</button>
+                        </form>
+                      </>
+                    )}
+                  </div>
                   <div>
                     {locked ? (
                       <span>{qty(quantity)}</span>
@@ -327,7 +350,34 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             <div className="quote-detail-table-head item-table" style={{ gridTemplateColumns: "1.7fr 220px 130px 1fr 100px" }}><span>Peça</span><span>Qtd.</span><span>Lado</span><span>Especificação</span><span>Compra</span></div>
             {items.map((item) => (
               <div key={item.id} className="quote-detail-table-row item-table" style={{ gridTemplateColumns: "1.7fr 220px 130px 1fr 100px" }}>
-                <div><strong>{item.description}</strong><span>{item.category}</span></div>
+                <div>
+                  {locked ? (
+                    <>
+                      <strong>{item.description}</strong>
+                      <span>{item.category}</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="print-only"><strong>{item.description}</strong><span>{item.category}</span></div>
+                      <form action={updateQuoteItemDescriptionAction} className="no-print" style={{ display: "grid", gap: 6 }}>
+                        <input type="hidden" name="quote_id" value={quote.id} />
+                        <input type="hidden" name="item_id" value={item.id} />
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <input
+                            name="description"
+                            defaultValue={item.description}
+                            maxLength={300}
+                            required
+                            aria-label={`Descrição de ${item.description}`}
+                            style={{ flex: "1 1 160px", minWidth: 140, minHeight: 40, padding: "0 8px", border: "1px solid var(--orbiq-border)", borderRadius: 11 }}
+                          />
+                          <button type="submit" className="orbiq-secondary-button" style={{ minHeight: 40 }}>Salvar</button>
+                        </div>
+                        <span>{item.category}</span>
+                      </form>
+                    </>
+                  )}
+                </div>
                 <div>
                   {locked ? (
                     <span>{qty(item.quantity)} {item.unit}</span>
