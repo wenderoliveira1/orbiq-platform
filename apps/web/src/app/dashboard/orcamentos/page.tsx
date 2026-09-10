@@ -1,16 +1,17 @@
 import Link from "next/link";
 
-import {
-  getCurrentContext,
-} from "../_lib/current-organization";
+import { getCurrentContext } from "../_lib/current-organization";
 
 import { duplicateQuoteAction } from "./[id]/actions";
+import {
+  matchesQuoteListSearch,
+  quotesListHref,
+} from "./quote-list-filter";
 import {
   PRIORITY_LABELS,
   QUOTE_STATUSES,
   statusLabel,
 } from "./quote-meta";
-
 
 type SearchParams = Promise<{
   q?: string;
@@ -19,101 +20,45 @@ type SearchParams = Promise<{
   error?: string;
 }>;
 
-
-function formatDate(
-  value: string,
-): string {
-  return new Intl.DateTimeFormat(
-    "pt-BR",
-    {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    },
-  ).format(
-    new Date(value),
-  );
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
-
 
 export default async function QuotesPage({
   searchParams,
 }: {
   searchParams: SearchParams;
 }) {
-  const params =
-    await searchParams;
+  const params = await searchParams;
+  const qRaw = String(params.q ?? "").trim();
+  const selectedStatus = String(params.status ?? "").trim();
 
+  const { supabase, organization } = await getCurrentContext();
 
-  const q =
-    String(
-      params.q ?? "",
-    )
-      .trim()
-      .toLocaleLowerCase(
-        "pt-BR",
-      );
-
-
-  const selectedStatus =
-    String(
-      params.status ?? "",
-    ).trim();
-
-
-  const {
-    supabase,
-    organization,
-  } =
-    await getCurrentContext();
-
-
-  const [
-    quotesResult,
-    customersResult,
-    vehiclesResult,
-  ] =
-    await Promise.all([
-      supabase
-        .from("quotes")
-        .select(
-          "id, customer_id, vehicle_id, protocol, priority, status, mileage, final_amount, created_at, updated_at",
-        )
-        .eq(
-          "organization_id",
-          organization.id,
-        )
-        .order(
-          "created_at",
-          {
-            ascending: false,
-          },
-        )
-        .limit(250),
-
-      supabase
-        .from("customers")
-        .select(
-          "id, name, phone",
-        )
-        .eq(
-          "organization_id",
-          organization.id,
-        ),
-
-      supabase
-        .from("vehicles")
-        .select(
-          "id, plate, brand, model",
-        )
-        .eq(
-          "organization_id",
-          organization.id,
-        ),
-    ]);
-
+  const [quotesResult, customersResult, vehiclesResult] = await Promise.all([
+    supabase
+      .from("quotes")
+      .select(
+        "id, customer_id, vehicle_id, protocol, priority, status, mileage, final_amount, created_at, updated_at",
+      )
+      .eq("organization_id", organization.id)
+      .order("created_at", { ascending: false })
+      .limit(250),
+    supabase
+      .from("customers")
+      .select("id, name, phone")
+      .eq("organization_id", organization.id),
+    supabase
+      .from("vehicles")
+      .select("id, plate, brand, model")
+      .eq("organization_id", organization.id),
+  ]);
 
   if (quotesResult.error) {
     throw new Error(
@@ -121,13 +66,11 @@ export default async function QuotesPage({
     );
   }
 
-
   if (customersResult.error) {
     throw new Error(
       `Falha ao carregar clientes: ${customersResult.error.message}`,
     );
   }
-
 
   if (vehiclesResult.error) {
     throw new Error(
@@ -135,142 +78,110 @@ export default async function QuotesPage({
     );
   }
 
+  const customerMap = new Map(
+    (customersResult.data ?? []).map(
+      (customer) => [customer.id, customer] as const,
+    ),
+  );
 
-  const customerMap =
-    new Map(
-      (
-        customersResult.data ??
-        []
-      ).map(
-        (customer) =>
-          [
-            customer.id,
-            customer,
-          ] as const,
-      ),
-    );
+  const vehicleMap = new Map(
+    (vehiclesResult.data ?? []).map(
+      (vehicle) => [vehicle.id, vehicle] as const,
+    ),
+  );
 
+  const allQuotes = quotesResult.data ?? [];
 
-  const vehicleMap =
-    new Map(
-      (
-        vehiclesResult.data ??
-        []
-      ).map(
-        (vehicle) =>
-          [
-            vehicle.id,
-            vehicle,
-          ] as const,
-      ),
-    );
+  const quotes = allQuotes.filter((quote) => {
+    if (selectedStatus && quote.status !== selectedStatus) {
+      return false;
+    }
 
+    const customer = customerMap.get(quote.customer_id);
+    const vehicle = vehicleMap.get(quote.vehicle_id);
 
-  const allQuotes =
-    quotesResult.data ??
-    [];
+    return matchesQuoteListSearch(qRaw, {
+      protocol: quote.protocol,
+      customerName: customer?.name,
+      customerPhone: customer?.phone,
+      plate: vehicle?.plate,
+      brand: vehicle?.brand,
+      model: vehicle?.model,
+    });
+  });
 
+  const draftQuotes = allQuotes.filter(
+    (quote) => quote.status === "estimating",
+  ).length;
 
-  const quotes =
-    allQuotes.filter(
-      (quote) => {
-        if (
-          selectedStatus &&
-          quote.status !==
-            selectedStatus
-        ) {
-          return false;
-        }
+  const awaitingQuotes = allQuotes.filter(
+    (quote) => quote.status === "awaiting_quote",
+  ).length;
 
+  const running = allQuotes.filter(
+    (quote) =>
+      quote.status === "in_progress" || quote.status === "awaiting_parts",
+  ).length;
 
-        if (!q) {
-          return true;
-        }
+  const completed = allQuotes.filter(
+    (quote) => quote.status === "completed",
+  ).length;
 
+  const hasFilters = Boolean(qRaw || selectedStatus);
 
-        const customer =
-          customerMap.get(
-            quote.customer_id,
-          );
-
-
-        const vehicle =
-          vehicleMap.get(
-            quote.vehicle_id,
-          );
-
-
-        const searchable =
-          [
-            quote.protocol,
-            customer?.name,
-            customer?.phone,
-            vehicle?.plate,
-            vehicle?.brand,
-            vehicle?.model,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLocaleLowerCase(
-              "pt-BR",
-            );
-
-
-        return searchable.includes(
-          q,
-        );
-      },
-    );
-
-
-  const draftQuotes =
-    allQuotes.filter(
-      (quote) =>
-        quote.status ===
-        "estimating",
-    ).length;
-
-
-  const awaitingQuotes =
-    allQuotes.filter(
-      (quote) =>
-        quote.status ===
-        "awaiting_quote",
-    ).length;
-
-
-  const running =
-    allQuotes.filter(
-      (quote) =>
-        quote.status ===
-          "in_progress" ||
-        quote.status ===
-          "awaiting_parts",
-    ).length;
-
-
-  const completed =
-    allQuotes.filter(
-      (quote) =>
-        quote.status ===
-        "completed",
-    ).length;
-
+  const metrics: Array<{
+    key: string;
+    label: string;
+    value: number;
+    status: string | null;
+    testId: string;
+  }> = [
+    {
+      key: "all",
+      label: "Total",
+      value: allQuotes.length,
+      status: "",
+      testId: "quote-metric-total",
+    },
+    {
+      key: "estimating",
+      label: "Rascunhos",
+      value: draftQuotes,
+      status: "estimating",
+      testId: "quote-metric-drafts",
+    },
+    {
+      key: "awaiting_quote",
+      label: "Aguardando cotação",
+      value: awaitingQuotes,
+      status: "awaiting_quote",
+      testId: "quote-metric-awaiting",
+    },
+    {
+      key: "running",
+      label: "Em andamento",
+      value: running,
+      status: null,
+      testId: "quote-metric-running",
+    },
+    {
+      key: "completed",
+      label: "Finalizados",
+      value: completed,
+      status: "completed",
+      testId: "quote-metric-completed",
+    },
+  ];
 
   return (
     <div className="orbiq-page">
       <section className="orbiq-page-heading">
         <div>
-          <span className="orbiq-eyebrow">
-            ORÇAMENTOS
-          </span>
-
-          <h1>
-            Histórico de orçamentos
-          </h1>
-
+          <span className="orbiq-eyebrow">ORÇAMENTOS</span>
+          <h1>Histórico de orçamentos</h1>
           <p>
-            Consulte atendimentos, pesquise veículos e acompanhe o andamento da oficina.
+            Consulte atendimentos, pesquise veículos e acompanhe o andamento da
+            oficina.
           </p>
         </div>
 
@@ -289,133 +200,118 @@ export default async function QuotesPage({
         <div className="orbiq-alert error">{params.error}</div>
       ) : null}
 
-      <section className="quote-history-metrics">
-        <article>
-          <span>Total</span>
+      <section
+        className="quote-history-metrics"
+        data-testid="quote-history-metrics"
+        aria-label="Resumo por status"
+      >
+        {metrics.map((metric) => {
+          const filterable = metric.status !== null;
+          const isActive =
+            filterable &&
+            (metric.status === ""
+              ? !selectedStatus
+              : selectedStatus === metric.status);
 
-          <strong>
-            {allQuotes.length}
-          </strong>
-        </article>
+          const className = isActive
+            ? "quote-history-metric is-active"
+            : "quote-history-metric";
 
-        <article>
-          <span>
-            Rascunhos
-          </span>
+          const body = (
+            <>
+              <span>{metric.label}</span>
+              <strong>{metric.value}</strong>
+            </>
+          );
 
-          <strong>
-            {draftQuotes}
-          </strong>
-        </article>
+          if (!filterable) {
+            return (
+              <div
+                key={metric.key}
+                className={className}
+                data-testid={metric.testId}
+              >
+                {body}
+              </div>
+            );
+          }
 
-        <article>
-          <span>
-            Aguardando cotação
-          </span>
-
-          <strong>
-            {awaitingQuotes}
-          </strong>
-        </article>
-
-        <article>
-          <span>
-            Em andamento
-          </span>
-
-          <strong>
-            {running}
-          </strong>
-        </article>
-
-        <article>
-          <span>
-            Finalizados
-          </span>
-
-          <strong>
-            {completed}
-          </strong>
-        </article>
+          return (
+            <Link
+              key={metric.key}
+              href={quotesListHref({
+                q: qRaw,
+                status: metric.status || null,
+              })}
+              className={className}
+              data-testid={metric.testId}
+              aria-current={isActive ? "page" : undefined}
+            >
+              {body}
+            </Link>
+          );
+        })}
       </section>
 
-
-      <section className="orbiq-panel">
+      <section className="orbiq-panel quote-history-panel">
         <form
           action="/dashboard/orcamentos"
+          method="get"
           className="quote-history-search"
+          data-testid="quote-history-search"
         >
           <input
             name="q"
-            defaultValue={
-              params.q ?? ""
-            }
-            placeholder="Buscar protocolo, cliente, telefone ou placa"
+            defaultValue={qRaw}
+            placeholder="Cliente, placa ou ORB-…"
+            aria-label="Buscar por cliente, placa ou protocolo"
+            data-testid="quote-history-search-q"
+            autoComplete="off"
           />
 
           <select
             name="status"
-            defaultValue={
-              selectedStatus
-            }
+            defaultValue={selectedStatus}
+            aria-label="Filtrar por status"
+            data-testid="quote-history-search-status"
           >
-            <option value="">
-              Todos os status
-            </option>
-
-            {QUOTE_STATUSES.map(
-              (status) => (
-                <option
-                  key={
-                    status.value
-                  }
-                  value={
-                    status.value
-                  }
-                >
-                  {status.label}
-                </option>
-              ),
-            )}
+            <option value="">Todos os status</option>
+            {QUOTE_STATUSES.map((status) => (
+              <option key={status.value} value={status.value}>
+                {status.label}
+              </option>
+            ))}
           </select>
 
-          <button
-            type="submit"
-            className="orbiq-secondary-button"
-          >
+          <button type="submit" className="orbiq-secondary-button">
             Buscar
           </button>
 
-          {q ||
-          selectedStatus ? (
+          {hasFilters ? (
             <Link
               href="/dashboard/orcamentos"
               className="orbiq-secondary-button"
+              data-testid="quote-history-search-clear"
             >
               Limpar
             </Link>
           ) : null}
         </form>
-      </section>
 
-
-      <section className="orbiq-panel quote-history-panel">
         <div className="quote-history-count">
           <strong>{quotes.length}</strong>
-          <span>orçamento(s)</span>
+          <span>
+            orçamento(s)
+            {hasFilters ? " filtrado(s)" : ""}
+          </span>
         </div>
 
-        {quotes.length ===
-        0 ? (
+        {quotes.length === 0 ? (
           <div className="orbiq-empty">
-            <strong>
-              Nenhum orçamento encontrado.
-            </strong>
-
+            <strong>Nenhum orçamento encontrado.</strong>
             <span>
               Ajuste os filtros ou realize um novo orçamento.
             </span>
-
             <Link
               href="/dashboard/orcamentos/novo"
               className="orbiq-primary-button"
@@ -425,128 +321,74 @@ export default async function QuotesPage({
           </div>
         ) : (
           <div className="quote-history-list">
-            {quotes.map(
-              (quote) => {
-                const customer =
-                  customerMap.get(
-                    quote.customer_id,
-                  );
+            {quotes.map((quote) => {
+              const customer = customerMap.get(quote.customer_id);
+              const vehicle = vehicleMap.get(quote.vehicle_id);
 
-
-                const vehicle =
-                  vehicleMap.get(
-                    quote.vehicle_id,
-                  );
-
-
-                return (
-                  <article
-                    key={
-                      quote.id
-                    }
-                    className="quote-history-row"
+              return (
+                <article key={quote.id} className="quote-history-row">
+                  <Link
+                    href={`/dashboard/orcamentos/${quote.id}`}
+                    className="quote-history-main"
                   >
-                    <Link
-                      href={
-                        `/dashboard/orcamentos/${quote.id}`
-                      }
-                      className="quote-history-main"
-                    >
-                      <div className="quote-history-customer">
-                        <strong>
-                          {customer?.name ??
-                            "Cliente não localizado"}
-                        </strong>
-
-                        <span>
-                          {customer?.phone ??
-                            "Sem telefone"}
-                        </span>
-                      </div>
-
-                      <div className="quote-history-vehicle">
-                        <span className="orbiq-plate">
-                          {vehicle?.plate ??
-                            "—"}
-                        </span>
-
-                        <span>
-                          {[
-                            vehicle?.brand,
-                            vehicle?.model,
-                          ]
-                            .filter(Boolean)
-                            .join(" ") ||
-                            "Veículo"}
-                        </span>
-                      </div>
-
-                      <div className="quote-history-tags">
-                        <span
-                          className={
-                            `quote-status status-${quote.status}`
-                          }
-                          data-testid={
-                            quote.status === "estimating"
-                              ? "quote-draft-badge"
-                              : undefined
-                          }
-                        >
-                          {statusLabel(
-                            quote.status,
-                          )}
-                        </span>
-
-                        <small>
-                          {PRIORITY_LABELS[
-                            quote.priority
-                          ] ??
-                            quote.priority}
-                        </small>
-                      </div>
-
-                      <div className="quote-history-protocol">
-                        <span>
-                          {formatDate(
-                            quote.created_at,
-                          )}
-                        </span>
-
-                        <strong>
-                          {quote.protocol}
-                        </strong>
-                      </div>
-
-                      <strong className="quote-history-arrow">
-                        →
+                    <div className="quote-history-customer">
+                      <strong>
+                        {customer?.name ?? "Cliente não localizado"}
                       </strong>
-                    </Link>
+                      <span>{customer?.phone ?? "Sem telefone"}</span>
+                    </div>
 
-                    <form
-                      action={duplicateQuoteAction}
-                      className="quote-history-duplicate no-print"
-                    >
-                      <input
-                        type="hidden"
-                        name="quote_id"
-                        value={quote.id}
-                      />
-                      <input
-                        type="hidden"
-                        name="return_to"
-                        value="list"
-                      />
-                      <button
-                        type="submit"
-                        className="orbiq-secondary-button"
+                    <div className="quote-history-vehicle">
+                      <span className="orbiq-plate">
+                        {vehicle?.plate ?? "—"}
+                      </span>
+                      <span>
+                        {[vehicle?.brand, vehicle?.model]
+                          .filter(Boolean)
+                          .join(" ") || "Veículo"}
+                      </span>
+                    </div>
+
+                    <div className="quote-history-tags">
+                      <span
+                        className={`quote-status status-${quote.status}`}
+                        data-testid={
+                          quote.status === "estimating"
+                            ? "quote-draft-badge"
+                            : undefined
+                        }
                       >
-                        Duplicar
-                      </button>
-                    </form>
-                  </article>
-                );
-              },
-            )}
+                        {statusLabel(quote.status)}
+                      </span>
+                      <small>
+                        {PRIORITY_LABELS[quote.priority] ?? quote.priority}
+                      </small>
+                    </div>
+
+                    <div className="quote-history-protocol">
+                      <span>{formatDate(quote.created_at)}</span>
+                      <strong>{quote.protocol}</strong>
+                    </div>
+
+                    <strong className="quote-history-arrow">→</strong>
+                  </Link>
+
+                  <form
+                    action={duplicateQuoteAction}
+                    className="quote-history-duplicate no-print"
+                  >
+                    <input type="hidden" name="quote_id" value={quote.id} />
+                    <input type="hidden" name="return_to" value="list" />
+                    <button
+                      type="submit"
+                      className="orbiq-secondary-button"
+                    >
+                      Duplicar
+                    </button>
+                  </form>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>
