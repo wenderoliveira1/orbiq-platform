@@ -1784,15 +1784,6 @@ export type Database = {
           role: string
         }[]
       }
-      lookup_ai_help_memory: {
-        Args: { target_org_id: string; target_question_normalized: string }
-        Returns: {
-          answer_text: string
-          hit_count: number
-          memory_id: string
-          source: string
-        }[]
-      }
       list_organization_team: {
         Args: { target_org_id: string }
         Returns: {
@@ -1803,6 +1794,15 @@ export type Database = {
           role: string
           status: string
           user_id: string
+        }[]
+      }
+      lookup_ai_help_memory: {
+        Args: { target_org_id: string; target_question_normalized: string }
+        Returns: {
+          answer_text: string
+          hit_count: number
+          memory_id: string
+          source: string
         }[]
       }
       mark_purchase_order_ordered: {
