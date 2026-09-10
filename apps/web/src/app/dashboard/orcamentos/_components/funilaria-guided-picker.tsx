@@ -35,6 +35,7 @@ export function FunilariaGuidedPicker({ onConfirm, className = "" }: Props) {
   const [part, setPart] = useState<FunilariaPart | null>(null);
   const [laborAmount, setLaborAmount] = useState("");
   const [needsPart, setNeedsPart] = useState(false);
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   const description = useMemo(() => {
     if (!action || !part) return "";
@@ -45,6 +46,7 @@ export function FunilariaGuidedPicker({ onConfirm, className = "" }: Props) {
     setAction(next);
     setPart(null);
     setNeedsPart(next.id === "trocar");
+    setLastAdded(null);
     setStep("part");
   }
 
@@ -53,12 +55,13 @@ export function FunilariaGuidedPicker({ onConfirm, className = "" }: Props) {
     setStep("confirm");
   }
 
-  function reset() {
+  function reset(keepFlash = false) {
     setStep("action");
     setAction(null);
     setPart(null);
     setLaborAmount("");
     setNeedsPart(false);
+    if (!keepFlash) setLastAdded(null);
   }
 
   function confirm() {
@@ -72,7 +75,9 @@ export function FunilariaGuidedPicker({ onConfirm, className = "" }: Props) {
       needsPartHint: needsPart,
       partDescription: needsPart ? part.phrase : "",
     });
-    reset();
+    setLastAdded(description);
+    // Stay ready for next Funilaria service in the same quote session.
+    reset(true);
   }
 
   return (
@@ -89,7 +94,7 @@ export function FunilariaGuidedPicker({ onConfirm, className = "" }: Props) {
             FUNILARIA GUIADA
           </span>
           <strong>2 passos: ação → peça/lado</strong>
-          <small>Chips grandes. Descrição montada em maiúsculas (pt-BR).</small>
+          <small>Chips grandes. Após adicionar, continua pronto para o próximo.</small>
         </div>
         {step !== "action" ? (
           <button
@@ -101,13 +106,23 @@ export function FunilariaGuidedPicker({ onConfirm, className = "" }: Props) {
                 setStep("part");
                 return;
               }
-              reset();
+              reset(Boolean(lastAdded));
             }}
           >
             Voltar
           </button>
         ) : null}
       </div>
+
+      {lastAdded && step === "action" ? (
+        <p
+          className="quote-voice-added-banner"
+          data-testid="funilaria-added-banner"
+          role="status"
+        >
+          Adicionado: <strong>{lastAdded}</strong> — escolha a próxima ação
+        </p>
+      ) : null}
 
       {step === "action" ? (
         <div className="funilaria-chip-grid" data-testid="funilaria-action-grid">
@@ -180,7 +195,7 @@ export function FunilariaGuidedPicker({ onConfirm, className = "" }: Props) {
             <span>Inclui peça / item de compra (Peças)</span>
           </label>
           <div className="funilaria-confirm-actions">
-            <button type="button" className="orbiq-secondary-button" onClick={reset} data-testid="funilaria-discard">
+            <button type="button" className="orbiq-secondary-button" onClick={() => reset(false)} data-testid="funilaria-discard">
               Descartar
             </button>
             <button

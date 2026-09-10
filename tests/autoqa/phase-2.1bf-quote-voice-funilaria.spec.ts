@@ -35,6 +35,9 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     expect(capture).toContain("MÃO DE OBRA");
     expect(capture).toContain("PEÇAS");
     expect(capture).toContain("Confirmar e adicionar");
+    expect(capture).toContain("readyForNext");
+    expect(capture).toContain("quote-voice-added-banner");
+    expect(capture).toContain("Falar próximo serviço");
     expect(capture).toContain("Descartar");
     expect(capture).toContain("VOZ (PT-BR)");
     expect(capture).toContain("Nada é salvo só por falar");
@@ -168,6 +171,7 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     const css = await readFile("apps/web/src/app/dashboard/dashboard.css", "utf8");
 
     expect(builder).toContain("QuoteVoiceCapture");
+    expect(builder).toContain("CategoryGuidedPicker");
     expect(builder).toContain("FunilariaGuidedPicker");
     expect(builder).toContain("addVoiceOrGuidedService");
     expect(builder).toContain("onVoiceConfirm");
@@ -176,6 +180,7 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     expect(detail).not.toMatch(/!locked \? \(\s*<div className="no-print quote-append-panel">\s*<form action=\{addQuoteServiceAction\}/);
 
     expect(append).toContain("QuoteVoiceCapture");
+    expect(append).toContain("CategoryGuidedPicker");
     expect(append).toContain("FunilariaGuidedPicker");
     expect(append).toContain("onVoiceConfirm");
     expect(append).toContain("requestSubmit");
@@ -189,5 +194,57 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     expect(css).toContain(".quote-voice-phase-badge");
     expect(css).toContain(".quote-voice-mic.is-large");
     expect(css).toContain("quote-voice-pulse");
+    expect(css).toContain(".quote-voice-added-banner");
+    expect(css).toContain(".category-guided-picker");
+  });
+
+  test("voz multi-serviço: após Confirmar fica pronto sem perder sessão", async () => {
+    const capture = await readFile(
+      "apps/web/src/app/dashboard/orcamentos/_components/quote-voice-capture.tsx",
+      "utf8",
+    );
+    expect(capture).toContain("function readyForNext");
+    expect(capture).toContain("readyForNext(`");
+    expect(capture).not.toMatch(/onConfirm\([\s\S]*?\);\s*discard\(\);/);
+    expect(capture).toContain("lastCategoryRef");
+    expect(capture).toContain("addedCount");
+    expect(capture).toContain("Vários serviços na mesma sessão");
+
+    const funilaria = await readFile(
+      "apps/web/src/app/dashboard/orcamentos/_components/funilaria-guided-picker.tsx",
+      "utf8",
+    );
+    expect(funilaria).toContain("funilaria-added-banner");
+    expect(funilaria).toContain("reset(true)");
+    expect(funilaria).toContain("escolha a próxima ação");
+  });
+
+  test("chips leves de categoria: MECÂNICA/ELÉTRICA sem catálogo fake 2-step", async () => {
+    const picker = await readFile(
+      "apps/web/src/app/dashboard/orcamentos/_components/category-guided-picker.tsx",
+      "utf8",
+    );
+    expect(picker).toContain('data-testid="category-guided-picker"');
+    expect(picker).toContain('data-testid="category-guided-grid"');
+    expect(picker).toContain('data-testid="category-guided-describe"');
+    expect(picker).toContain('data-testid="category-guided-confirm-add"');
+    expect(picker).toContain("OUTRAS ÁREAS");
+    expect(picker).toContain("Categoria → descrição livre");
+    expect(picker).toContain("MECÂNICA");
+    expect(picker).toContain("ELÉTRICA");
+    expect(picker).toContain("LIGHT_GUIDED_CATEGORIES");
+    expect(picker).toContain("sem catálogo estruturado inventado");
+    // Must NOT invent Funilaria-style action→part for other categories
+    expect(picker).not.toContain("FUNILARIA_ACTIONS");
+    expect(picker).not.toContain("composeFunilariaDescription");
+    expect(picker).toContain('RICH_STRUCTURED');
+    expect(picker).toContain("FUNILARIA");
+
+    expect(picker).toMatch(/"MECÂNICA"/);
+    expect(picker).toMatch(/"ELÉTRICA"/);
+    expect(picker).toMatch(/"SUSPENSÃO"/);
+    expect(picker).toMatch(/"FREIOS"/);
+    // FUNILARIA must stay on the rich picker, not in light chips list
+    expect(picker).toContain('const RICH_STRUCTURED = new Set(["FUNILARIA", "PINTURA"])');
   });
 });

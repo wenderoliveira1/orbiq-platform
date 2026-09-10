@@ -9571,7 +9571,8 @@ a.ops-pipeline-step:hover {
 /* ORBIQ QUOTE VOICE CAPTURE + FUNILARIA GUIDED 20260910 */
 
 .quote-voice-capture,
-.funilaria-guided-picker {
+.funilaria-guided-picker,
+.category-guided-picker {
   display: grid;
   gap: 10px;
   margin-bottom: 12px;
@@ -9587,7 +9588,8 @@ a.ops-pipeline-step:hover {
 }
 
 .quote-voice-capture-head,
-.funilaria-guided-head {
+.funilaria-guided-head,
+.category-guided-head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -9596,20 +9598,23 @@ a.ops-pipeline-step:hover {
 }
 
 .quote-voice-capture-head > div,
-.funilaria-guided-head > div {
+.funilaria-guided-head > div,
+.category-guided-head > div {
   display: grid;
   gap: 2px;
   min-width: 0;
 }
 
 .quote-voice-capture-head strong,
-.funilaria-guided-head strong {
+.funilaria-guided-head strong,
+.category-guided-head strong {
   font-size: 14px;
   line-height: 1.25;
 }
 
 .quote-voice-capture-head small,
-.funilaria-guided-head small {
+.funilaria-guided-head small,
+.category-guided-head small {
   color: var(--orbiq-muted);
   font-size: 11px;
 }
@@ -9794,7 +9799,8 @@ a.ops-pipeline-step:hover {
 }
 
 .quote-voice-capture.is-dense,
-.funilaria-guided-picker {
+.funilaria-guided-picker,
+.category-guided-picker {
   padding: 10px 12px;
 }
 
@@ -9936,4 +9942,48 @@ a.ops-pipeline-step:hover {
 .quote-voice-capture.is-review {
   border-color: rgba(14, 116, 144, 0.35);
   box-shadow: 0 0 0 2px rgba(14, 116, 144, 0.08);
+}
+
+
+/* ORBIQ VOICE MULTI + CATEGORY GUIDED 20260910 */
+
+.quote-voice-added-banner {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(22, 163, 74, 0.35);
+  background: rgba(22, 163, 74, 0.08);
+  color: var(--orbiq-text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.quote-voice-added-banner strong {
+  font-weight: 750;
+}
+
+.category-guided-chip-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.category-guided-chip strong {
+  letter-spacing: 0.02em;
+}
+
+.quote-voice-phase-badge.is-idle-ready,
+.quote-voice-capture.is-ready-next {
+  border-color: rgba(22, 163, 74, 0.35);
+}
+
+@media (max-width: 900px) {
+  .category-guided-chip-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .category-guided-chip-grid {
+    grid-template-columns: 1fr;
+  }
 }
