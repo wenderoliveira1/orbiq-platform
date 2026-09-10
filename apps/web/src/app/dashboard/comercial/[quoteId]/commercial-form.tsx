@@ -607,22 +607,22 @@ export function CommercialForm({
       />
 
 
-      <section className="orbiq-panel">
+      <section className="orbiq-panel commercial-parts-panel" data-testid="commercial-parts-section">
 
         <div className="orbiq-panel-heading">
 
           <div>
 
             <span className="orbiq-eyebrow">
-              FORMAÇÃO DE PREÇO
+              PEÇAS
             </span>
 
             <h2>
-              Peças
+              Peças (custo e venda)
             </h2>
 
             <p className="commercial-help">
-              Preço direto: informe o custo da peça e o preço de venda. Cotar fornecedor é opcional.
+              Separado da mão de obra. Informe o custo interno e o preço de venda da peça. Cotar fornecedor é opcional. Custo e lucro ficam só na oficina.
             </p>
 
           </div>
@@ -907,79 +907,132 @@ export function CommercialForm({
       </section>
 
 
-      <section className="commercial-summary-grid">
+      <section
+        className="commercial-staff-totals"
+        data-testid="commercial-staff-totals"
+        aria-label="Totais internos Peças, Mão de obra e Lucro"
+      >
 
-        <article>
+        <div className="commercial-staff-totals-heading">
 
-          <span>
-            Mão de obra
+          <span className="orbiq-eyebrow">
+            TOTAIS INTERNOS
           </span>
 
-          <strong>
-            {money(
-              laborTotal,
-            )}
-          </strong>
+          <h2>
+            Peças · Mão de obra · Lucro
+          </h2>
 
-        </article>
+          <p className="commercial-help">
+            Visão da oficina. Custo e lucro não aparecem na versão do cliente.
+          </p>
 
-
-        <article>
-
-          <span>
-            Custo peças
-          </span>
-
-          <strong>
-            {money(
-              partsCost,
-            )}
-          </strong>
-
-        </article>
+        </div>
 
 
-        <article>
+        <div className="commercial-summary-grid commercial-summary-grid-staff">
 
-          <span>
-            Venda peças
-          </span>
+          <article data-testid="commercial-total-parts-sale">
 
-          <strong>
-            {money(
-              partsSale,
-            )}
-          </strong>
+            <span className="commercial-total-kicker">
+              PEÇAS
+            </span>
 
-        </article>
+            <span>
+              Venda peças
+            </span>
+
+            <strong>
+              {money(
+                partsSale,
+              )}
+            </strong>
+
+            <small>
+              Custo {money(partsCost)}
+            </small>
+
+          </article>
 
 
-        <article>
+          <article data-testid="commercial-total-labor-sale">
 
-          <span>
-            Lucro bruto peças
-          </span>
+            <span className="commercial-total-kicker">
+              MÃO DE OBRA
+            </span>
 
-          <strong
-            className={
-              partsProfit >=
-              0
-                ? "commercial-positive"
-                : "commercial-negative"
-            }
-          >
-            {money(
-              partsProfit,
-            )}
-          </strong>
+            <span>
+              Venda mão de obra
+            </span>
 
-          <small>
-            {partsMargin.toFixed(
-              1,
-            )}% de lucro
-          </small>
+            <strong>
+              {money(
+                laborTotal,
+              )}
+            </strong>
 
-        </article>
+            <small>
+              Sem misturar com peças
+            </small>
+
+          </article>
+
+
+          <article data-testid="commercial-total-parts-cost">
+
+            <span className="commercial-total-kicker">
+              CUSTO (OFICINA)
+            </span>
+
+            <span>
+              Custo peças
+            </span>
+
+            <strong>
+              {money(
+                partsCost,
+              )}
+            </strong>
+
+            <small>
+              Interno — não vai ao cliente
+            </small>
+
+          </article>
+
+
+          <article data-testid="commercial-total-profit">
+
+            <span className="commercial-total-kicker">
+              LUCRO (OFICINA)
+            </span>
+
+            <span>
+              Lucro bruto peças
+            </span>
+
+            <strong
+              className={
+                partsProfit >=
+                0
+                  ? "commercial-positive"
+                  : "commercial-negative"
+              }
+            >
+              {money(
+                partsProfit,
+              )}
+            </strong>
+
+            <small>
+              {partsMargin.toFixed(
+                1,
+              )}% de lucro sobre a venda
+            </small>
+
+          </article>
+
+        </div>
 
       </section>
 
@@ -1075,12 +1128,15 @@ export function CommercialForm({
       </section>
 
 
-      <section className="commercial-final-card">
+      <section
+        className="commercial-final-card"
+        data-testid="commercial-final-sale-card"
+      >
 
         <div>
 
           <span>
-            Subtotal
+            Subtotal (venda)
           </span>
 
           <strong>
@@ -1088,6 +1144,10 @@ export function CommercialForm({
               subtotal,
             )}
           </strong>
+
+          <small className="commercial-final-breakdown">
+            Peças {money(partsSale)} + Mão de obra {money(laborTotal)}
+          </small>
 
         </div>
 
@@ -1110,7 +1170,7 @@ export function CommercialForm({
         <div className="commercial-final-main">
 
           <span>
-            TOTAL DO CLIENTE
+            TOTAL DO CLIENTE (VENDA)
           </span>
 
           <strong>

@@ -772,7 +772,10 @@ export default async function CommercialDetailPage({
       ) : null}
 
 
-      <section className="orbiq-panel">
+      <section
+        className="orbiq-panel commercial-labor-panel"
+        data-testid="commercial-labor-section"
+      >
 
         <div className="orbiq-panel-heading">
 
@@ -783,8 +786,12 @@ export default async function CommercialDetailPage({
             </span>
 
             <h2>
-              Serviços
+              Mão de obra
             </h2>
+
+            <p className="commercial-help">
+              Valores de venda dos serviços. Não misturar com peças.
+            </p>
 
           </div>
 
