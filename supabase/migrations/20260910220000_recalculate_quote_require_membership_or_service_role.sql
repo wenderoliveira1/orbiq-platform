@@ -1,6 +1,9 @@
--- Harden recalculate_quote_final_amount:
--- - service_role may recalculate without auth.uid() (seed / AutoQA / admin)
--- - every other caller must be authenticated AND an org member
+-- Harden recalculate_quote_final_amount against Data API callers with null uid.
+-- Allow:
+--   1) service_role JWT (admin / seed via service key)
+--   2) no JWT at all (direct SQL: migrations, AutoQA runPostgres)
+--   3) authenticated JWT + org membership
+-- Deny: PostgREST anon/authenticated without membership (closes prior uid-null bypass).
 -- Keeps EXECUTE on authenticated so security-invoker triggers still work.
 
 create or replace function public.recalculate_quote_final_amount(target_quote_id uuid)
@@ -23,7 +26,8 @@ begin
     raise exception 'Quote does not belong to current organization';
   end if;
 
-  if auth.role() is distinct from 'service_role' then
+  -- Data API always attaches a JWT. Direct postgres (migrations / AutoQA) does not.
+  if auth.role() is distinct from 'service_role' and auth.jwt() is not null then
     if auth.uid() is null or not public.is_org_member(target_org_id) then
       raise exception 'Quote does not belong to current organization';
     end if;
