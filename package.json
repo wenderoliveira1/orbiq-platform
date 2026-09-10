@@ -18,6 +18,8 @@
     "release:drill": "node scripts/release-drill.mjs",
     "release:preflight": "node scripts/release-preflight.mjs",
     "lint:web": "pnpm --filter web lint",
+    "quality": "node scripts/quality-gate.mjs",
+    "test:autoqa": "pnpm exec playwright test",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status"
