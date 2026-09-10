@@ -78,6 +78,260 @@ export async function saveServiceLaborAction(serviceId: string, amount: number):
   revalidatePath("/dashboard/orcamentos/novo");
 }
 
+
+type DraftServiceInput = {
+  labor_service_id: string | null;
+  service_catalog_id: string | null;
+  category: string;
+  description: string;
+  labor_amount: number;
+  quantity: number;
+  needs_part: boolean;
+};
+
+type DraftItemInput = {
+  category: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  side: string | null;
+  specification: string | null;
+  notes: string | null;
+  chosen_amount: number | null;
+  sale_unit_amount: number | null;
+};
+
+export type UpsertQuoteBuilderDraftResult =
+  | { ok: true; quoteId: string; protocol: string }
+  | { ok: false; error: string };
+
+async function refreshDraftQuoteTotal(
+  supabase: Awaited<ReturnType<typeof getCurrentContext>>["supabase"],
+  organizationId: string,
+  quoteId: string,
+): Promise<string | null> {
+  const [servicesResult, itemsResult] = await Promise.all([
+    supabase
+      .from("quote_services")
+      .select("labor_amount, quantity")
+      .eq("organization_id", organizationId)
+      .eq("quote_id", quoteId),
+    supabase
+      .from("quote_items")
+      .select("chosen_amount")
+      .eq("organization_id", organizationId)
+      .eq("quote_id", quoteId),
+  ]);
+  if (servicesResult.error) return servicesResult.error.message;
+  if (itemsResult.error) return itemsResult.error.message;
+  const laborTotal = (servicesResult.data ?? []).reduce(
+    (total, service) => total + Number(service.labor_amount ?? 0) * Number(service.quantity ?? 1),
+    0,
+  );
+  const partsTotal = (itemsResult.data ?? []).reduce(
+    (total, item) => total + Number(item.chosen_amount ?? 0),
+    0,
+  );
+  const { error } = await supabase
+    .from("quotes")
+    .update({ final_amount: Math.round((laborTotal + partsTotal) * 100) / 100 })
+    .eq("id", quoteId)
+    .eq("organization_id", organizationId);
+  return error?.message ?? null;
+}
+
+async function replaceDraftQuoteLines(
+  supabase: Awaited<ReturnType<typeof getCurrentContext>>["supabase"],
+  organizationId: string,
+  quoteId: string,
+  services: DraftServiceInput[],
+  items: DraftItemInput[],
+): Promise<string | null> {
+  const { error: deleteServicesError } = await supabase
+    .from("quote_services")
+    .delete()
+    .eq("quote_id", quoteId)
+    .eq("organization_id", organizationId);
+  if (deleteServicesError) return deleteServicesError.message;
+
+  const { error: deleteItemsError } = await supabase
+    .from("quote_items")
+    .delete()
+    .eq("quote_id", quoteId)
+    .eq("organization_id", organizationId);
+  if (deleteItemsError) return deleteItemsError.message;
+
+  if (services.length > 0) {
+    const { error: insertServicesError } = await supabase.from("quote_services").insert(
+      services.map((service) => ({
+        organization_id: organizationId,
+        quote_id: quoteId,
+        labor_service_id: service.labor_service_id,
+        category: upper(service.category) || "OUTROS",
+        description: upper(service.description),
+        needs_part: service.needs_part,
+        quantity: service.quantity,
+        labor_amount: Math.round(service.labor_amount * 100) / 100,
+      })),
+    );
+    if (insertServicesError) return insertServicesError.message;
+  }
+
+  if (items.length > 0) {
+    const { error: insertItemsError } = await supabase.from("quote_items").insert(
+      items.map((item) => {
+        const chosen = item.chosen_amount;
+        const saleUnit = item.sale_unit_amount;
+        const saleTotal =
+          saleUnit !== null ? Math.round(saleUnit * item.quantity * 100) / 100 : null;
+        return {
+          organization_id: organizationId,
+          quote_id: quoteId,
+          category: upper(item.category) || "OUTROS",
+          description: upper(item.description),
+          quantity: item.quantity,
+          unit: upper(item.unit) || "UN",
+          side: item.side ? upper(item.side) : null,
+          specification: item.specification ? upper(item.specification) : null,
+          notes: item.notes ? upper(item.notes) : null,
+          purchase_status: chosen !== null ? "approved" : "pending",
+          chosen_amount: chosen,
+          sale_unit_amount: saleUnit,
+          sale_total_amount: saleTotal,
+        };
+      }),
+    );
+    if (insertItemsError) return insertItemsError.message;
+  }
+
+  return refreshDraftQuoteTotal(supabase, organizationId, quoteId);
+}
+
+export async function upsertQuoteBuilderDraftAction(input: {
+  draftQuoteId: string | null;
+  customerId: string;
+  vehicleId: string;
+  priority: string;
+  mileage: string;
+  notes: string;
+  servicesJson: string;
+  itemsJson: string;
+}): Promise<UpsertQuoteBuilderDraftResult> {
+  const { supabase, organization } = await getCurrentContext();
+  const customerId = input.customerId.trim();
+  const vehicleId = input.vehicleId.trim();
+  const priorityRaw = input.priority.trim() || "normal";
+  const mileage = parseMileage(input.mileage.trim());
+  const notes = upper(input.notes);
+  const draftQuoteId = input.draftQuoteId?.trim() || null;
+
+  if (!customerId || !isUuid(customerId)) return { ok: false, error: "customer_required" };
+  if (!vehicleId || !isUuid(vehicleId)) return { ok: false, error: "vehicle_required" };
+  if (mileage === null) return { ok: false, error: "mileage_required" };
+  if (draftQuoteId && !isUuid(draftQuoteId)) return { ok: false, error: "payload_invalid" };
+
+  const payload = parseQuotePayload(input.servicesJson, input.itemsJson, priorityRaw);
+  if (!payload) return { ok: false, error: "payload_invalid" };
+
+  for (const service of payload.services) {
+    if (service.service_catalog_id === null) {
+      const { error: catalogError } = await supabase.rpc("save_service_catalog", {
+        target_org_id: organization.id,
+        target_category: upper(service.category),
+        target_description: upper(service.description),
+        target_labor_amount: service.labor_amount,
+      });
+      if (catalogError) return { ok: false, error: "save_failed" };
+    }
+  }
+
+  if (!draftQuoteId) {
+    const { data, error } = await supabase.rpc("create_quote_with_quantities", {
+      target_org_id: organization.id,
+      target_customer_id: customerId,
+      target_vehicle_id: vehicleId,
+      target_priority: payload.priority,
+      target_mileage: mileage,
+      target_notes: notes,
+      services: payload.services,
+      items: payload.items,
+    });
+    if (error) return { ok: false, error: "save_failed" };
+    const created = data?.[0];
+    if (!created?.quote_id) return { ok: false, error: "result_invalid" };
+    revalidatePath("/dashboard/orcamentos");
+    revalidatePath("/dashboard");
+    return { ok: true, quoteId: String(created.quote_id), protocol: String(created.protocol ?? "") };
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from("quotes")
+    .select("id, protocol, commercial_status, status")
+    .eq("id", draftQuoteId)
+    .eq("organization_id", organization.id)
+    .maybeSingle();
+  if (existingError || !existing) return { ok: false, error: "result_invalid" };
+  if (existing.commercial_status === "approved") return { ok: false, error: "save_failed" };
+
+  const { error: updateError } = await supabase
+    .from("quotes")
+    .update({
+      customer_id: customerId,
+      vehicle_id: vehicleId,
+      priority: payload.priority,
+      mileage,
+      notes: notes || null,
+    })
+    .eq("id", draftQuoteId)
+    .eq("organization_id", organization.id);
+  if (updateError) return { ok: false, error: "save_failed" };
+
+  const replaceError = await replaceDraftQuoteLines(
+    supabase,
+    organization.id,
+    draftQuoteId,
+    payload.services,
+    payload.items,
+  );
+  if (replaceError) return { ok: false, error: "save_failed" };
+
+  revalidatePath("/dashboard/orcamentos");
+  revalidatePath(`/dashboard/orcamentos/${draftQuoteId}`);
+  revalidatePath("/dashboard");
+  return { ok: true, quoteId: draftQuoteId, protocol: String(existing.protocol ?? "") };
+}
+
+export async function discardQuoteBuilderServerDraftAction(
+  draftQuoteId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { supabase, organization } = await getCurrentContext();
+  const id = draftQuoteId.trim();
+  if (!id || !isUuid(id)) return { ok: false, error: "payload_invalid" };
+
+  const { data: existing, error: existingError } = await supabase
+    .from("quotes")
+    .select("id, commercial_status, status")
+    .eq("id", id)
+    .eq("organization_id", organization.id)
+    .maybeSingle();
+  if (existingError || !existing) return { ok: false, error: "result_invalid" };
+  if (existing.commercial_status === "approved") return { ok: false, error: "save_failed" };
+  if (existing.status !== "estimating") return { ok: false, error: "save_failed" };
+
+  await supabase.from("quote_items").delete().eq("quote_id", id).eq("organization_id", organization.id);
+  await supabase.from("quote_services").delete().eq("quote_id", id).eq("organization_id", organization.id);
+  const { error } = await supabase
+    .from("quotes")
+    .delete()
+    .eq("id", id)
+    .eq("organization_id", organization.id);
+  if (error) return { ok: false, error: "save_failed" };
+
+  revalidatePath("/dashboard/orcamentos");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
+
 export async function createQuoteV2Action(formData: FormData): Promise<never> {
   const { supabase, organization } = await getCurrentContext();
   const customerIdRaw = singleRawText(formData, "customer_id");
@@ -87,6 +341,7 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
   const notesRaw = singleRawText(formData, "notes");
   const servicesInput = singleRawText(formData, "services_json");
   const itemsInput = singleRawText(formData, "items_json");
+  const draftQuoteIdRaw = String(formData.get("draft_quote_id") ?? "").trim();
 
   if (
     customerIdRaw.length > MAX_ID_CHARS ||
@@ -127,19 +382,38 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
     }
   }
 
-  const { data, error } = await supabase.rpc("create_quote_with_quantities", {
-    target_org_id: organization.id,
-    target_customer_id: customerId,
-    target_vehicle_id: vehicleId,
-    target_priority: payload.priority,
-    target_mileage: mileage,
-    target_notes: notes,
-    services: payload.services,
-    items: payload.items,
-  });
-  if (error) return failure("save_failed");
-  const created = data?.[0];
-  if (!created || !created.quote_id) return failure("result_invalid");
+  let finalizedQuoteId: string | null = null;
+
+  if (draftQuoteIdRaw) {
+    if (!isUuid(draftQuoteIdRaw)) return failure("payload_invalid");
+    const upsert = await upsertQuoteBuilderDraftAction({
+      draftQuoteId: draftQuoteIdRaw,
+      customerId,
+      vehicleId,
+      priority: payload.priority,
+      mileage: String(mileage),
+      notes,
+      servicesJson: servicesRaw,
+      itemsJson: itemsRaw,
+    });
+    if (!upsert.ok) return failure("save_failed");
+    finalizedQuoteId = upsert.quoteId;
+  } else {
+    const { data, error } = await supabase.rpc("create_quote_with_quantities", {
+      target_org_id: organization.id,
+      target_customer_id: customerId,
+      target_vehicle_id: vehicleId,
+      target_priority: payload.priority,
+      target_mileage: mileage,
+      target_notes: notes,
+      services: payload.services,
+      items: payload.items,
+    });
+    if (error) return failure("save_failed");
+    const created = data?.[0];
+    if (!created || !created.quote_id) return failure("result_invalid");
+    finalizedQuoteId = String(created.quote_id);
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/orcamentos");
@@ -147,11 +421,12 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
   revalidatePath("/dashboard/comercial");
   revalidatePath("/dashboard/compras");
   revalidatePath("/dashboard/execucao");
+  revalidatePath(`/dashboard/orcamentos/${finalizedQuoteId}`);
 
   const hasManualPrice = payload.items.some((item) => item.chosen_amount !== null);
   if (hasManualPrice) {
-    redirect(`/dashboard/comercial/${created.quote_id}?ok=direct_price`);
+    redirect(`/dashboard/comercial/${finalizedQuoteId}?ok=direct_price`);
   }
 
-  redirect(`/dashboard/orcamentos/${created.quote_id}?created=1`);
+  redirect(`/dashboard/orcamentos/${finalizedQuoteId}?created=1`);
 }

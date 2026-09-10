@@ -12,7 +12,7 @@ type SearchParams = Promise<{
 
 export default async function NewQuotePage({ searchParams }: { searchParams: SearchParams }) {
   const query = await searchParams;
-  const { supabase, organization } = await getCurrentContext();
+  const { supabase, organization, user } = await getCurrentContext();
 
   const [customersResult, vehiclesResult, servicesResult] = await Promise.all([
     supabase.from("customers").select("id, name, phone").eq("organization_id", organization.id).order("name", { ascending: true }),
@@ -36,6 +36,8 @@ export default async function NewQuotePage({ searchParams }: { searchParams: Sea
         customers={customers}
         vehicles={vehicles}
         serviceCatalog={servicesResult.data ?? []}
+        organizationId={organization.id}
+        userId={user.id}
         errorMessage={quoteErrorMessage(query.error)}
       />
     </>
