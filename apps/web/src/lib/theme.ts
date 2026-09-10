@@ -1,3 +1,5 @@
+import { shouldUseSecureCookies } from "@/lib/cookie-security";
+
 export const THEME_COOKIE = "orbiq_theme";
 
 export type ThemePreference = "light" | "dark";
@@ -21,7 +23,7 @@ export function themeCookieOptions() {
   return {
     httpOnly: false,
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookies(),
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
   };

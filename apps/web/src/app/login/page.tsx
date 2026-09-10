@@ -9,6 +9,10 @@ import {
 } from "@/lib/supabase/server";
 
 import {
+  getReleaseInfo,
+} from "@/lib/release-info";
+
+import {
   login,
 } from "./actions";
 
@@ -115,6 +119,16 @@ export default async function LoginPage({
         )}`
       : "/signup";
 
+  const channel = getReleaseInfo().channel;
+  const environmentLabel =
+    channel === "production"
+      ? "Acesso protegido da oficina"
+      : channel === "preview"
+        ? "Ambiente de pré-visualização"
+        : channel === "ci"
+          ? "Ambiente de verificação automatizada"
+          : "Ambiente local de desenvolvimento";
+
 
   return (
     <main className="auth-shell">
@@ -160,7 +174,7 @@ export default async function LoginPage({
 
 
         <small>
-          Ambiente local de desenvolvimento
+          {environmentLabel}
         </small>
 
       </section>

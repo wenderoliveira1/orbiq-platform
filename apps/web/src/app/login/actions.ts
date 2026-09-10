@@ -65,6 +65,76 @@ function loginUrl(
 }
 
 
+function loginErrorMessage(
+  error: {
+    code?: string;
+    message?: string;
+    status?: number;
+  },
+): string {
+
+  const code =
+    (
+      error.code ??
+      ""
+    ).toLowerCase();
+
+  const message =
+    (
+      error.message ??
+      ""
+    ).toLowerCase();
+
+
+  if (
+    code ===
+      "email_not_confirmed" ||
+    message.includes(
+      "email not confirmed",
+    )
+  ) {
+
+    return "Confirme seu e-mail antes de entrar.";
+  }
+
+
+  if (
+    code ===
+      "over_request_rate_limit" ||
+    code ===
+      "over_email_send_rate_limit" ||
+    message.includes(
+      "rate limit",
+    ) ||
+    message.includes(
+      "too many requests",
+    )
+  ) {
+
+    return "Muitas tentativas. Aguarde um momento e tente de novo.";
+  }
+
+
+  if (
+    message.includes(
+      "failed to fetch",
+    ) ||
+    message.includes(
+      "network",
+    ) ||
+    message.includes(
+      "fetch failed",
+    )
+  ) {
+
+    return "Não foi possível conectar. Verifique sua conexão e tente de novo.";
+  }
+
+
+  return "E-mail ou senha inválidos.";
+}
+
+
 export async function login(
   formData:
     FormData,
@@ -127,7 +197,9 @@ export async function login(
 
     redirect(
       loginUrl(
-        "E-mail ou senha inválidos.",
+        loginErrorMessage(
+          error,
+        ),
         next,
       ),
     );
