@@ -799,7 +799,7 @@ export function CommercialForm({
 
                   <div>
 
-                    <div className="commercial-sale-input">
+                    <div className="commercial-cost-input">
 
                       <span>
                         R$

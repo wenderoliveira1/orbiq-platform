@@ -469,7 +469,9 @@ export default async function CommercialDetailPage({
       {query.ok ? (
 
         <div className="orbiq-alert success">
-          {query.ok}
+          {query.ok === "direct_price"
+            ? "Orçamento criado com preço direto. Revise a venda e salve para enviar ao cliente."
+            : query.ok}
         </div>
 
       ) : null}

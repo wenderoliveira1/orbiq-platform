@@ -150,7 +150,7 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
 
   const hasManualPrice = payload.items.some((item) => item.chosen_amount !== null);
   if (hasManualPrice) {
-    redirect(`/dashboard/comercial/${created.quote_id}?ok=${encodeURIComponent("Orçamento criado com preço direto. Revise a venda e salve para enviar ao cliente.")}`);
+    redirect(`/dashboard/comercial/${created.quote_id}?ok=direct_price`);
   }
 
   redirect(`/dashboard/orcamentos/${created.quote_id}?created=1`);

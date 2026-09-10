@@ -5740,7 +5740,8 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   font-size: 7px;
 }
 
-.commercial-sale-input {
+.commercial-sale-input,
+.commercial-cost-input {
   min-height: 38px;
   display: flex !important;
   grid-template-columns: auto 1fr;
@@ -5751,11 +5752,13 @@ html[data-theme="dark"] .orbiq-nav-item.is-active {
   background: var(--orbiq-surface);
 }
 
-.commercial-sale-input > span {
+.commercial-sale-input,
+.commercial-cost-input > span {
   padding-left: 8px;
 }
 
-.commercial-sale-input input {
+.commercial-sale-input,
+.commercial-cost-input input {
   width: 100%;
   min-width: 0;
   padding: 8px;
