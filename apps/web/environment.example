@@ -3,3 +3,8 @@
 NEXT_PUBLIC_APP_URL=https://app.seudominio.com.br
 NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_substitua_aqui
+
+# Opcional (somente servidor — nunca NEXT_PUBLIC_*).
+# Se ausente, o assistente in-app responde com FAQ curada offline.
+# OPENAI_API_KEY=
+# OPENAI_AI_HELP_MODEL=gpt-4o-mini

@@ -9,6 +9,53 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_help_memories: {
+        Row: {
+          answer_text: string
+          created_at: string
+          created_by: string | null
+          hit_count: number
+          id: string
+          last_hit_at: string
+          organization_id: string
+          question_normalized: string
+          question_text: string
+          source: string
+        }
+        Insert: {
+          answer_text: string
+          created_at?: string
+          created_by?: string | null
+          hit_count?: number
+          id?: string
+          last_hit_at?: string
+          organization_id: string
+          question_normalized: string
+          question_text: string
+          source: string
+        }
+        Update: {
+          answer_text?: string
+          created_at?: string
+          created_by?: string | null
+          hit_count?: number
+          id?: string
+          last_hit_at?: string
+          organization_id?: string
+          question_normalized?: string
+          question_text?: string
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_help_memories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       application_incidents: {
         Row: {
           fingerprint: string
@@ -1727,6 +1774,18 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { target_org_id: string }; Returns: boolean }
+      lookup_ai_help_memory: {
+        Args: {
+          target_org_id: string
+          target_question_normalized: string
+        }
+        Returns: {
+          answer_text: string
+          hit_count: number
+          memory_id: string
+          source: string
+        }[]
+      }
       list_organization_invites: {
         Args: { target_org_id: string }
         Returns: {
@@ -1846,6 +1905,19 @@ export type Database = {
       reopen_quote_commercial: {
         Args: { target_org_id: string; target_quote_id: string }
         Returns: undefined
+      }
+      remember_ai_help_memory: {
+        Args: {
+          target_answer_text: string
+          target_org_id: string
+          target_question_normalized: string
+          target_question_text: string
+          target_source: string
+        }
+        Returns: {
+          hit_count: number
+          memory_id: string
+        }[]
       }
       report_application_incident: {
         Args: {
