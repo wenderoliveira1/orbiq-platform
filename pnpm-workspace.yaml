@@ -4,3 +4,4 @@ packages:
 allowBuilds:
   supabase: true
   unrs-resolver: true
+  sharp: false
