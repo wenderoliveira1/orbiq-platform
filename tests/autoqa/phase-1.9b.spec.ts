@@ -31,6 +31,27 @@ function q(value: string): string {
   return sqlLiteral(value);
 }
 
+function formatCnpj(digits: string): string {
+  const padded = digits.replace(/\D/g, "").slice(-14).padStart(14, "0");
+  return padded.replace(
+    /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
+    "$1.$2.$3/$4-$5",
+  );
+}
+
+function uniqueFixtureCnpjs() {
+  const base = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`;
+  return {
+    a: formatCnpj(`1${base}`),
+    b: formatCnpj(`2${base}`),
+    foreign: formatCnpj(`3${base}`),
+  };
+}
+
+const customerMatrizLabel = "CLIENTE EXCLUSIVO MATRIZ";
+const customerFilialLabel = "CLIENTE EXCLUSIVO FILIAL";
+const customerExternaLabel = "CLIENTE OFICINA EXTERNA";
+
 async function login(page: Page) {
   await page.goto("/login");
   await page.getByLabel("E-mail").fill(email);
@@ -56,6 +77,7 @@ function activeWorkshop(page: Page) {
 }
 
 function createMultiOrganizationFixture() {
+  const cnpjs = uniqueFixtureCnpjs();
   const payload = runPostgres(`
     with account as (
       select id
@@ -73,7 +95,7 @@ function createMultiOrganizationFixture() {
       values (
         ${q(workshopA)},
         ${q(slugA)},
-        '11.111.111/0001-11',
+        ${q(cnpjs.a)},
         now() - interval '2 minutes'
       )
       returning id
@@ -88,7 +110,7 @@ function createMultiOrganizationFixture() {
       values (
         ${q(workshopB)},
         ${q(slugB)},
-        '22.222.222/0001-22',
+        ${q(cnpjs.b)},
         now() - interval '1 minute'
       )
       returning id
@@ -102,7 +124,7 @@ function createMultiOrganizationFixture() {
       values (
         ${q(workshopForeign)},
         ${q(slugForeign)},
-        '33.333.333/0001-33'
+        ${q(cnpjs.foreign)}
       )
       returning id
     ),
@@ -273,10 +295,10 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
 
     await page.goto("/dashboard/clientes");
     await expect(
-      page.getByText("Cliente Exclusivo Matriz", { exact: true }),
+      page.getByText(customerMatrizLabel, { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+      page.getByText(customerFilialLabel, { exact: true }),
     ).toHaveCount(0);
   });
 
@@ -301,16 +323,16 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
 
     await page.goto("/dashboard/clientes");
     await expect(
-      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+      page.getByText(customerFilialLabel, { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByText("Cliente Exclusivo Matriz", { exact: true }),
+      page.getByText(customerMatrizLabel, { exact: true }),
     ).toHaveCount(0);
 
     await page.reload();
     await expect(activeWorkshop(page)).toHaveValue(organizationBId);
     await expect(
-      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+      page.getByText(customerFilialLabel, { exact: true }),
     ).toBeVisible();
   });
 
@@ -344,10 +366,10 @@ test.describe("Fase 1.9B - contexto multiempresa", () => {
 
     await page.goto("/dashboard/clientes");
     await expect(
-      page.getByText("Cliente Exclusivo Filial", { exact: true }),
+      page.getByText(customerFilialLabel, { exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByText("Cliente Oficina Externa", { exact: true }),
+      page.getByText(customerExternaLabel, { exact: true }),
     ).toHaveCount(0);
   });
 
