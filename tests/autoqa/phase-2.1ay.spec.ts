@@ -28,9 +28,15 @@ test.describe("Fase 2.1AY — duplicar orçamento + adicionar linhas no detalhe"
     expect(detail).toContain("duplicateQuoteAction");
     expect(detail).toContain("Duplicar");
     expect(detail).toContain("addQuoteItemAction");
-    expect(detail).toContain('name="service_catalog_id"');
+    expect(detail).toContain("QuoteAppendWithVoice");
     expect(detail).toContain("+ Serviço");
     expect(detail).toContain("+ Peça");
+
+    const append = await readFile(
+      "apps/web/src/app/dashboard/orcamentos/_components/quote-append-with-voice.tsx",
+      "utf8",
+    );
+    expect(append).toContain('name="service_catalog_id"');
     expect(detail).toContain('commercial_status === "approved"');
 
     expect(list).toContain("duplicateQuoteAction");
