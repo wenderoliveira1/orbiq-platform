@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   createCustomerAction,
   deleteCustomerAction,
@@ -5,6 +7,8 @@ import {
 } from "./actions";
 
 import { getCurrentContext } from "../_lib/current-organization";
+import { novoOrcamentoHref } from "../_lib/operational-history";
+
 
 type SearchParams = Promise<{
   q?: string;
@@ -32,7 +36,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
     .eq("organization_id", organization.id)
     .order("name", { ascending: true });
 
-  if (error) throw new Error(`Falha ao carregar clientes: ${error.message}`);
+  if (error) throw new Error("Falha ao carregar clientes.");
 
   const customers = (data ?? []).filter((customer) => {
     if (!q) return true;
@@ -106,6 +110,13 @@ export default async function CustomersPage({ searchParams }: { searchParams: Se
                         <span>{customer.email || "Sem e-mail"}</span>
                       </div>
                     </div>
+
+                    <Link href={`/dashboard/clientes/${customer.id}`} className="orbiq-secondary-button" data-testid="customer-history-link">
+                      Histórico
+                    </Link>
+                    <Link href={novoOrcamentoHref(customer.id)} className="orbiq-secondary-button">
+                      Novo orçamento
+                    </Link>
 
                     <details className="orbiq-details">
                       <summary>Editar</summary>
