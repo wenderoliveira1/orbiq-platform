@@ -4,6 +4,8 @@ import {
 } from "./actions";
 
 import { getCurrentContext } from "../_lib/current-organization";
+import { novoOrcamentoHref } from "../_lib/operational-history";
+import Link from "next/link";
 
 type SearchParams = Promise<{
   q?: string;
@@ -456,6 +458,25 @@ export default async function VehiclesPage({
                           ) : null}
                         </div>
                       </div>
+
+                      <Link
+                        href={`/dashboard/veiculos/${vehicle.id}`}
+                        className="orbiq-secondary-button"
+                        data-testid="vehicle-history-link"
+                      >
+                        Histórico
+                      </Link>
+                      {vehicle.customer_id ? (
+                        <Link
+                          href={novoOrcamentoHref(
+                            vehicle.customer_id,
+                            vehicle.id,
+                          )}
+                          className="orbiq-secondary-button"
+                        >
+                          Novo orçamento
+                        </Link>
+                      ) : null}
 
                       <details className="orbiq-details">
                         <summary>

@@ -1,9 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
+import Link from "next/link";
 import { CategoryGuidedPicker } from "../_components/category-guided-picker";
 import { FunilariaGuidedPicker } from "../_components/funilaria-guided-picker";
 import { QuoteVoiceCapture, type QuoteVoiceConfirmPayload } from "../_components/quote-voice-capture";
+import {
+  compactVisitServices,
+  formatVisitDate,
+  formatVisitKm,
+  type HistoryVisit,
+} from "../../_lib/operational-history";
 import {
   createQuoteV2Action,
   discardQuoteBuilderServerDraftAction,
@@ -35,6 +42,10 @@ type Props = {
   organizationId: string;
   userId: string;
   errorMessage?: string;
+  initialCustomerId?: string;
+  initialVehicleId?: string;
+  lastMileageByVehicleId?: Record<string, number>;
+  recentVisits?: HistoryVisit[];
 };
 type StepId = QuoteBuilderDraftStep;
 
@@ -51,10 +62,16 @@ function parseQuantity(raw: string) { const result = Number(raw.trim().replace("
 function normalizeCategory(value: string) { return value.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleUpperCase("pt-BR").trim(); }
 function key(prefix: string) { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 
-export function QuoteBuilder({ customers, vehicles, serviceCatalog, organizationId, userId, errorMessage }: Props) {
-  const [customerId, setCustomerId] = useState("");
-  const [vehicleId, setVehicleId] = useState("");
-  const [mileage, setMileage] = useState("");
+export function QuoteBuilder({ customers, vehicles, serviceCatalog, organizationId, userId, errorMessage, initialCustomerId = "", initialVehicleId = "", lastMileageByVehicleId = {}, recentVisits = [] }: Props) {
+  const [customerId, setCustomerId] = useState(initialCustomerId);
+  const [vehicleId, setVehicleId] = useState(initialVehicleId);
+  const [mileage, setMileage] = useState(() => {
+    if (initialVehicleId && lastMileageByVehicleId[initialVehicleId] != null) {
+      return String(lastMileageByVehicleId[initialVehicleId]);
+    }
+    const vehicle = vehicles.find((item) => item.id === initialVehicleId);
+    return vehicle?.mileage != null ? String(vehicle.mileage) : "";
+  });
   const [priority, setPriority] = useState<QuoteBuilderDraftPriority>("normal");
   const [notes, setNotes] = useState("");
   const [serviceCategory, setServiceCategory] = useState("");
@@ -122,6 +139,10 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
     });
   }, [vehicles, customerId, vehicleQuery]);
   const selectedVehicle = useMemo(() => vehicles.find((vehicle) => vehicle.id === vehicleId), [vehicles, vehicleId]);
+  const selectedVehicleVisits = useMemo(
+    () => recentVisits.filter((visit) => visit.vehicleId === vehicleId).slice(0, 3),
+    [recentVisits, vehicleId],
+  );
   const visibleVehicles = useMemo(() => {
     const list = filteredVehicles.slice(0, vehicleLimit);
     if (selectedVehicle && selectedVehicle.customer_id === customerId && !list.some((vehicle) => vehicle.id === selectedVehicle.id)) {
@@ -189,27 +210,52 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
     const timer = window.setTimeout(() => {
       if (cancelled) return;
       const draft = readQuoteBuilderDraft(organizationId, userId);
+      const hasUrlIdentity = Boolean(initialCustomerId);
       if (draft && isMeaningfulQuoteBuilderDraft(draft)) {
-        const customerExists = !draft.customerId || customers.some((customer) => customer.id === draft.customerId);
-        const vehicleExists =
-          !draft.vehicleId ||
-          vehicles.some(
-            (vehicle) =>
-              vehicle.id === draft.vehicleId &&
-              (!draft.customerId || vehicle.customer_id === draft.customerId),
-          );
-        setCustomerId(customerExists ? draft.customerId : "");
-        setVehicleId(customerExists && vehicleExists ? draft.vehicleId : "");
-        setMileage(draft.mileage);
-        setPriority(draft.priority);
-        setNotes(draft.notes);
-        setServiceCategory(draft.serviceCategory);
-        setSelectedServices(draft.selectedServices);
-        setExtraItems(draft.extraItems);
-        setOpenStep(draft.openStep);
-        setServerDraftQuoteId(draft.serverDraftQuoteId);
-        setServerDraftProtocol(draft.serverDraftProtocol);
-        setDraftRestored(true);
+        if (hasUrlIdentity) {
+          setCustomerId(initialCustomerId);
+          setVehicleId(initialVehicleId);
+          const lastKm = initialVehicleId ? lastMileageByVehicleId[initialVehicleId] : undefined;
+          const vehicle = vehicles.find((item) => item.id === initialVehicleId);
+          setMileage(lastKm != null ? String(lastKm) : vehicle?.mileage != null ? String(vehicle.mileage) : "");
+          if (draft.customerId === initialCustomerId && (!initialVehicleId || draft.vehicleId === initialVehicleId)) {
+            setPriority(draft.priority);
+            setNotes(draft.notes);
+            setServiceCategory(draft.serviceCategory);
+            setSelectedServices(draft.selectedServices);
+            setExtraItems(draft.extraItems);
+            setOpenStep(draft.openStep);
+            setServerDraftQuoteId(draft.serverDraftQuoteId);
+            setServerDraftProtocol(draft.serverDraftProtocol);
+            setDraftRestored(true);
+          }
+        } else {
+          const customerExists = !draft.customerId || customers.some((customer) => customer.id === draft.customerId);
+          const vehicleExists =
+            !draft.vehicleId ||
+            vehicles.some(
+              (vehicle) =>
+                vehicle.id === draft.vehicleId &&
+                (!draft.customerId || vehicle.customer_id === draft.customerId),
+            );
+          setCustomerId(customerExists ? draft.customerId : "");
+          setVehicleId(customerExists && vehicleExists ? draft.vehicleId : "");
+          setMileage(draft.mileage);
+          setPriority(draft.priority);
+          setNotes(draft.notes);
+          setServiceCategory(draft.serviceCategory);
+          setSelectedServices(draft.selectedServices);
+          setExtraItems(draft.extraItems);
+          setOpenStep(draft.openStep);
+          setServerDraftQuoteId(draft.serverDraftQuoteId);
+          setServerDraftProtocol(draft.serverDraftProtocol);
+          setDraftRestored(true);
+        }
+      } else if (hasUrlIdentity) {
+
+        const lastKm = initialVehicleId ? lastMileageByVehicleId[initialVehicleId] : undefined;
+        const vehicle = vehicles.find((item) => item.id === initialVehicleId);
+        setMileage(lastKm != null ? String(lastKm) : vehicle?.mileage != null ? String(vehicle.mileage) : "");
       }
       setDraftReady(true);
     }, 0);
@@ -364,8 +410,9 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   }
   function chooseVehicle(id: string) {
     setVehicleId(id);
+    const last = lastMileageByVehicleId[id];
     const vehicle = vehicles.find((item) => item.id === id);
-    setMileage(vehicle?.mileage != null ? String(vehicle.mileage) : "");
+    setMileage(last != null ? String(last) : vehicle?.mileage != null ? String(vehicle.mileage) : "");
   }
   function addCatalogService(service: ServiceCatalogItem) {
     const serviceKey = `catalog-${service.id}`;
@@ -631,6 +678,27 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
                 <strong>{[selectedVehicle.brand, selectedVehicle.model, selectedVehicle.version].filter(Boolean).join(" ")}</strong>
                 <span>{selectedVehicle.model_year ? `Ano ${selectedVehicle.model_year}` : "Ano não informado"}</span>
               </div>
+              <Link
+                href={`/dashboard/veiculos/${selectedVehicle.id}`}
+                className="orbiq-secondary-button"
+                data-testid="quote-builder-vehicle-history"
+              >
+                Histórico
+              </Link>
+            </div>
+          ) : null}
+          {selectedVehicle && selectedVehicleVisits.length > 0 ? (
+            <div className="quote-builder-history" data-testid="quote-builder-visit-history">
+              <span className="orbiq-eyebrow">HISTÓRICO DESTE VEÍCULO</span>
+              {selectedVehicleVisits.map((visit) => (
+                <p key={visit.id}>
+                  <strong>{formatVisitDate(visit.createdAt)}</strong>
+                  {" · "}
+                  {formatVisitKm(visit.mileage)}
+                  {" · "}
+                  {compactVisitServices(visit.services, 2)}
+                </p>
+              ))}
             </div>
           ) : null}
           <div className="quote-priority-group">

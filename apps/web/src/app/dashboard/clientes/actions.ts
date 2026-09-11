@@ -79,6 +79,7 @@ export async function updateCustomerAction(formData: FormData) {
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/clientes");
+  revalidatePath(`/dashboard/clientes/${id}`);
   revalidatePath("/dashboard/veiculos");
   redirect(customersUrl("ok", "Cliente atualizado."));
 }

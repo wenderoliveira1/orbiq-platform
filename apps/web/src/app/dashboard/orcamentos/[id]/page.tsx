@@ -3,8 +3,13 @@ import { notFound } from "next/navigation";
 
 import { ConfirmSubmitButton } from "../../_components/confirm-submit-button";
 import { ReopenLockedQuote } from "../../_components/reopen-locked-quote";
+import { OperationalHistoryList } from "../../_components/operational-history-list";
 import { getCurrentContext } from "../../_lib/current-organization";
 import { hasPermissionForRole } from "../../_lib/permissions";
+import {
+  buildVisitHistory,
+  novoOrcamentoHref,
+} from "../../_lib/operational-history";
 import { QUOTE_STATUSES } from "../quote-meta";
 import {
   addQuoteItemAction,
@@ -54,12 +59,13 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
   if (quoteError) throw new Error(`Falha ao carregar orçamento: ${quoteError.message}`);
   if (!quote) notFound();
 
-  const [customerResult, vehicleResult, servicesResult, itemsResult, catalogResult] = await Promise.all([
+  const [customerResult, vehicleResult, servicesResult, itemsResult, catalogResult, historyQuotesResult] = await Promise.all([
     supabase.from("customers").select("id, name, phone, email").eq("organization_id", organization.id).eq("id", quote.customer_id).maybeSingle(),
     supabase.from("vehicles").select("id, plate, brand, model, version, model_year").eq("organization_id", organization.id).eq("id", quote.vehicle_id).maybeSingle(),
     supabase.from("quote_services").select("id, category, description, needs_part, quantity, labor_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
     supabase.from("quote_items").select("id, category, description, quantity, unit, side, specification, purchase_status, chosen_amount, sale_unit_amount, sale_total_amount, created_at").eq("organization_id", organization.id).eq("quote_id", quote.id).order("created_at", { ascending: true }),
     supabase.from("service_catalog").select("id, category, description, default_labor_amount, requires_part").eq("organization_id", organization.id).eq("active", true).order("category", { ascending: true }).order("description", { ascending: true }).limit(400),
+    supabase.from("quotes").select("id, protocol, status, mileage, created_at, customer_id, vehicle_id").eq("organization_id", organization.id).eq("vehicle_id", quote.vehicle_id).neq("id", quote.id).order("created_at", { ascending: false }).limit(8),
   ]);
 
   if (customerResult.error) throw new Error(`Falha ao carregar cliente: ${customerResult.error.message}`);
@@ -67,12 +73,32 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
   if (servicesResult.error) throw new Error(`Falha ao carregar serviços: ${servicesResult.error.message}`);
   if (itemsResult.error) throw new Error(`Falha ao carregar peças: ${itemsResult.error.message}`);
   if (catalogResult.error) throw new Error(`Falha ao carregar catálogo: ${catalogResult.error.message}`);
+  if (historyQuotesResult.error) throw new Error("Falha ao carregar histórico do veículo.");
 
   const customer = customerResult.data;
   const vehicle = vehicleResult.data;
   const services = servicesResult.data ?? [];
   const items = itemsResult.data ?? [];
   const serviceCatalog = catalogResult.data ?? [];
+  const historyQuotes = historyQuotesResult.data ?? [];
+  const historyQuoteIds = historyQuotes.map((row) => row.id);
+  const historyServicesResult = historyQuoteIds.length
+    ? await supabase
+        .from("quote_services")
+        .select("quote_id, description")
+        .eq("organization_id", organization.id)
+        .in("quote_id", historyQuoteIds)
+    : { data: [], error: null };
+
+  if (historyServicesResult.error) throw new Error("Falha ao carregar serviços do histórico.");
+
+  const vehicleVisits = buildVisitHistory({
+    quotes: historyQuotes,
+    services: historyServicesResult.data ?? [],
+    vehicleId: quote.vehicle_id,
+    excludeQuoteId: quote.id,
+    limit: 8,
+  });
   const laborTotal = Math.round(
     services.reduce((sum, service) => sum + (service.labor_amount ?? 0) * (service.quantity ?? 1), 0) * 100,
   ) / 100;
@@ -120,7 +146,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             <input type="hidden" name="quote_id" value={quote.id} />
             <button type="submit" className="orbiq-secondary-button">Duplicar</button>
           </form>
-          <Link href="/dashboard/orcamentos/novo" className="orbiq-primary-button">+ Novo orçamento</Link>
+          <Link href={novoOrcamentoHref(quote.customer_id, quote.vehicle_id)} className="orbiq-primary-button">+ Novo orçamento</Link>
         </div>
       </section>
 
@@ -164,6 +190,11 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             <>
               <h2>{customer?.name ?? "Cliente não localizado"}</h2>
               <div className="quote-detail-info"><span>Telefone</span><strong>{customer?.phone ?? "—"}</strong><span>E-mail</span><strong>{customer?.email ?? "—"}</strong></div>
+              {customer ? (
+                <div className="ops-history-actions no-print" style={{ marginTop: 12 }}>
+                  <Link href={`/dashboard/clientes/${customer.id}`} className="orbiq-secondary-button" data-testid="quote-customer-history-link">Histórico do cliente</Link>
+                </div>
+              ) : null}
             </>
           ) : (
             <>
@@ -189,7 +220,10 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
                     <input name="customer_email" type="email" defaultValue={customer.email ?? ""} maxLength={180} aria-label="E-mail do cliente" style={{ textTransform: "none" }} />
                   </label>
                 </div>
-                <button type="submit" className="orbiq-secondary-button">Salvar cliente</button>
+                <div className="ops-history-actions">
+                  <button type="submit" className="orbiq-secondary-button">Salvar cliente</button>
+                  <Link href={`/dashboard/clientes/${customer.id}`} className="orbiq-secondary-button" data-testid="quote-customer-history-link">Histórico do cliente</Link>
+                </div>
               </form>
             </>
           )}
@@ -200,6 +234,11 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
             <>
               <div className="quote-detail-vehicle-title"><span className="orbiq-plate">{vehicle?.plate ?? "—"}</span><h2>{[vehicle?.brand, vehicle?.model, vehicle?.version].filter(Boolean).join(" ") || "Veículo"}</h2></div>
               <div className="quote-detail-info"><span>Ano</span><strong>{vehicle?.model_year ?? "—"}</strong><span>Quilometragem</span><strong>{quote.mileage !== null ? `${new Intl.NumberFormat("pt-BR").format(quote.mileage)} km` : "—"}</strong></div>
+              {vehicle ? (
+                <div className="ops-history-actions no-print" style={{ marginTop: 12 }}>
+                  <Link href={`/dashboard/veiculos/${vehicle.id}`} className="orbiq-secondary-button" data-testid="quote-vehicle-history-link">Histórico do veículo</Link>
+                </div>
+              ) : null}
             </>
           ) : (
             <>
@@ -239,7 +278,10 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
                     <input name="version" defaultValue={vehicle.version ?? ""} maxLength={120} aria-label="Versão do veículo" />
                   </label>
                 </div>
-                <button type="submit" className="orbiq-secondary-button">Salvar veículo</button>
+                <div className="ops-history-actions">
+                  <button type="submit" className="orbiq-secondary-button">Salvar veículo</button>
+                  <Link href={`/dashboard/veiculos/${vehicle.id}`} className="orbiq-secondary-button" data-testid="quote-vehicle-history-link">Histórico do veículo</Link>
+                </div>
               </form>
             </>
           )}
@@ -614,7 +656,25 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
         </div>
       </section>
 
-      <section className="quote-detail-footer no-print"><Link href="/dashboard/orcamentos" className="orbiq-secondary-button">Voltar ao histórico</Link><Link href="/dashboard/orcamentos/novo" className="orbiq-primary-button">Realizar novo orçamento</Link></section>
+      <section className="orbiq-panel no-print" data-testid="vehicle-visit-history">
+        <div className="orbiq-panel-heading">
+          <div>
+            <span className="orbiq-eyebrow">HISTÓRICO DESTE VEÍCULO</span>
+            <h2>Atendimentos anteriores</h2>
+          </div>
+          {vehicle ? (
+            <Link href={`/dashboard/veiculos/${vehicle.id}`} className="orbiq-secondary-button">Ver placa</Link>
+          ) : null}
+        </div>
+        <OperationalHistoryList
+          visits={vehicleVisits}
+          emptyTitle="Primeiro atendimento desta placa."
+          emptyHint="Quando o carro voltar, os serviços anteriores aparecem aqui."
+          testId="quote-vehicle-visits"
+        />
+      </section>
+
+      <section className="quote-detail-footer no-print"><Link href="/dashboard/orcamentos" className="orbiq-secondary-button">Voltar ao histórico</Link><Link href={novoOrcamentoHref(quote.customer_id, quote.vehicle_id)} className="orbiq-primary-button">Realizar novo orçamento</Link></section>
       <div className="print-footer"><span>{organization.name}</span><strong>Orbiq</strong><span>{quote.protocol}</span></div>
     </div>
   );
