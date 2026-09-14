@@ -9868,8 +9868,8 @@ a.ops-pipeline-step:hover {
   min-height: 52px;
   padding: 0 16px 0 12px;
   border-radius: 999px;
-  border: 1px solid rgba(227, 6, 19, 0.35);
-  background: linear-gradient(180deg, #fff 0%, #fff5f5 100%);
+  border: 1px solid color-mix(in srgb, var(--orbiq-accent) 35%, var(--orbiq-border));
+  background: var(--orbiq-surface);
   color: var(--orbiq-text);
   font: inherit;
   font-weight: 700;
@@ -10004,7 +10004,7 @@ a.ops-pipeline-step:hover {
   text-align: left;
   border-radius: 12px;
   border: 1px solid var(--orbiq-border);
-  background: var(--orbiq-surface);
+  background: var(--orbiq-surface-soft);
   color: var(--orbiq-text);
   font: inherit;
   cursor: pointer;
@@ -10241,8 +10241,8 @@ a.ops-pipeline-step:hover {
   margin-bottom: 14px;
   padding: 8px;
   border-radius: 16px;
-  border: 1px solid rgba(227, 6, 19, 0.22);
-  background: color-mix(in srgb, var(--orbiq-surface) 92%, #fff5f5 8%);
+  border: 1px solid color-mix(in srgb, var(--orbiq-accent) 28%, var(--orbiq-border));
+  background: var(--orbiq-surface-soft);
   box-shadow: none;
   max-height: none;
   overflow: visible;
@@ -10284,16 +10284,16 @@ a.ops-pipeline-step:hover {
 
 .quote-ops-funilaria.is-ops-primary,
 .funilaria-guided-picker.is-ops-primary {
-  border-color: rgba(227, 6, 19, 0.42);
-  background: linear-gradient(180deg, #fff 0%, #fff8f8 100%);
-  box-shadow: 0 0 0 1px rgba(227, 6, 19, 0.06);
+  border-color: color-mix(in srgb, var(--orbiq-accent) 42%, var(--orbiq-border));
+  background: var(--orbiq-surface);
+  box-shadow: none;
 }
 
 .category-guided-picker.is-ops-secondary {
   border-style: dashed;
   border-color: var(--orbiq-border);
-  background: rgba(15, 23, 42, 0.015);
-  opacity: 0.96;
+  background: var(--orbiq-surface-soft);
+  opacity: 1;
 }
 
 .category-guided-picker.is-ops-secondary .category-guided-chip,
@@ -10638,10 +10638,10 @@ a.ops-pipeline-step:hover {
 }
 
 .quote-service-modes button.is-active {
-  border-color: rgba(227, 6, 19, 0.55);
-  background: #fff;
+  border-color: color-mix(in srgb, var(--orbiq-accent) 55%, var(--orbiq-border));
+  background: var(--orbiq-surface);
   color: var(--orbiq-accent);
-  box-shadow: 0 0 0 2px rgba(227, 6, 19, 0.1);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--orbiq-accent) 16%, transparent);
 }
 
 .quote-service-work .quote-ops-shortcuts {
