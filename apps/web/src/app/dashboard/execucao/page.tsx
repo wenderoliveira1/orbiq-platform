@@ -625,6 +625,7 @@ export default async function ExecutionPage({
 
                     {workOrder ? (
 
+                      <div className="execution-row-actions">
                       <Link
                         href={
                           `/dashboard/execucao/${workOrder.id}`
@@ -633,6 +634,14 @@ export default async function ExecutionPage({
                       >
                         Abrir OS
                       </Link>
+
+                      <Link
+                        href={`/dashboard/execucao/${workOrder.id}/parabrisa`}
+                        className="orbiq-secondary-button no-print"
+                      >
+                        Parabrisa
+                      </Link>
+                      </div>
 
                     ) : serviceCount >
                     0 &&

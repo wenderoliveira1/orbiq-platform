@@ -10442,3 +10442,168 @@ a.ops-pipeline-step:hover {
   }
 }
 
+.execution-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.os-windshield {
+  max-width: 780px;
+}
+
+.os-windshield-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.os-windshield-sheet {
+  padding: 22px 24px 18px;
+  display: grid;
+  gap: 16px;
+  border: 2px solid #111;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+}
+
+.os-windshield-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #111;
+}
+
+.os-windshield-head p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.os-windshield-plate {
+  display: block;
+  margin-top: 4px;
+  font-size: 42px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
+.os-windshield-meta {
+  text-align: right;
+  display: grid;
+  gap: 2px;
+}
+
+.os-windshield-meta span,
+.os-windshield-meta small {
+  font-size: 11px;
+}
+
+.os-windshield-meta strong {
+  font-size: 16px;
+}
+
+.os-windshield-id {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+}
+
+.os-windshield-id dt {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #444;
+}
+
+.os-windshield-id dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.os-windshield-sheet h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.os-windshield-tasks,
+.os-windshield-parts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.os-windshield-tasks li,
+.os-windshield-parts li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 8px 0;
+  border-bottom: 1px dashed #bbb;
+}
+
+.os-windshield-tasks strong {
+  display: block;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.os-windshield-tasks small {
+  color: #444;
+  font-size: 11px;
+}
+
+.os-windshield-box {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 2px solid #111;
+  border-radius: 3px;
+}
+
+.os-windshield-empty,
+.os-windshield-notes {
+  margin: 0;
+  font-size: 14px;
+}
+
+.os-windshield-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 2px solid #111;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media print {
+  .os-windshield {
+    max-width: none;
+  }
+
+  .os-windshield-sheet {
+    border-radius: 0;
+    border-width: 0;
+    padding: 0;
+  }
+
+  .os-windshield-plate {
+    font-size: 48px;
+  }
+}
+
+

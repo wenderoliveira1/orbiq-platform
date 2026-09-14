@@ -487,6 +487,14 @@ export default async function WorkOrderPage({
             Ver orçamento
           </Link>
 
+          <Link
+            href={`/dashboard/execucao/${workOrder.id}/parabrisa`}
+            className="orbiq-primary-button no-print"
+            data-testid="os-windshield-open"
+          >
+            Imprimir OS
+          </Link>
+
         </div>
 
       </section>
