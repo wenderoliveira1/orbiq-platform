@@ -10606,4 +10606,67 @@ a.ops-pipeline-step:hover {
   }
 }
 
+.quote-step-summary {
+  margin: 6px 0 0;
+  color: var(--orbiq-muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.quote-service-work {
+  display: grid;
+  gap: 12px;
+}
+
+.quote-service-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.quote-service-modes button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 999px;
+  background: var(--orbiq-surface-soft);
+  color: var(--orbiq-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quote-service-modes button.is-active {
+  border-color: rgba(227, 6, 19, 0.55);
+  background: #fff;
+  color: var(--orbiq-accent);
+  box-shadow: 0 0 0 2px rgba(227, 6, 19, 0.1);
+}
+
+.quote-service-work .quote-ops-shortcuts {
+  margin-bottom: 0;
+  padding: 8px;
+}
+
+.quote-service-work .funilaria-chip span {
+  display: none;
+}
+
+.quote-service-work .funilaria-chip {
+  min-height: 48px;
+  padding: 10px 12px;
+}
+
+.quote-service-work .quote-selected-services {
+  margin-top: 4px;
+}
+
+@media (max-width: 720px) {
+  .quote-service-modes button {
+    flex: 1 1 calc(50% - 6px);
+  }
+}
+
+
 

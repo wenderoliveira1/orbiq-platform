@@ -48,6 +48,7 @@ type Props = {
   recentVisits?: HistoryVisit[];
 };
 type StepId = QuoteBuilderDraftStep;
+type ServiceAddMode = "funilaria" | "catalogo" | "outras" | "manual";
 
 const serviceCategories = ["MECÂNICA", "SUSPENSÃO", "FREIOS", "DIREÇÃO", "MOTOR", "CÂMBIO", "ELÉTRICA", "ARREFECIMENTO", "AR-CONDICIONADO", "FUNILARIA", "PINTURA", "ALINHAMENTO", "OUTROS"];
 const itemCategories = ["MECÂNICA", "CHASSI - PARALELO/ORIGINAL", "CHASSI - FERRO VELHO", "PNEUS", "VIDROS", "ÓLEOS E LUBRIFICANTES", "FUNILARIA", "ELÉTRICA", "OUTROS"];
@@ -88,6 +89,7 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   const [itemSpecification, setItemSpecification] = useState("");
   const [saving, startSaving] = useTransition();
   const [openStep, setOpenStep] = useState<StepId>(1);
+  const [serviceAddMode, setServiceAddMode] = useState<ServiceAddMode>("funilaria");
   const [partDetailsOpen, setPartDetailsOpen] = useState<Record<string, boolean>>({});
   const [extraDetailsOpen, setExtraDetailsOpen] = useState(false);
   const [customerQuery, setCustomerQuery] = useState("");
@@ -575,7 +577,7 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
         <div>
           <span className="orbiq-eyebrow">NOVO ORÇAMENTO</span>
           <h1>Atendimento</h1>
-          <p>Um passo de cada vez: cliente, serviços, peças e observações.</p>
+          <p>Cliente e veículo, depois o serviço. Funilaria, catálogo, voz ou digitado — um caminho por vez.</p>
         </div>
         <div className="quote-builder-total">
           <span>Mão de obra</span>
@@ -594,6 +596,16 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
           <div>
             <span className="orbiq-eyebrow">1 · ATENDIMENTO</span>
             <h2>Cliente e veículo</h2>
+            {step1Complete ? (
+              <p className="quote-step-summary">
+                {selectedCustomer?.name}
+                {" · "}
+                {selectedVehicle?.plate ?? "Veículo"}
+                {mileage.trim() ? ` · ${mileage} km` : ""}
+              </p>
+            ) : (
+              <p className="quote-step-summary">Placa, cliente e km para começar.</p>
+            )}
           </div>
           <span className="quote-step-chevron" aria-hidden="true">{openStep === 1 ? "−" : "+"}</span>
         </button>
@@ -739,144 +751,224 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
           <div>
             <span className="orbiq-eyebrow">2 · SERVIÇOS</span>
             <h2>Serviços realizados</h2>
-            {!step1Ready ? <p className="quote-builder-section-description">Preencha cliente e veículo no passo 1 (ou busque pelo telefone) para começar com tranquilidade.</p> : null}
+            {!step1Ready ? (
+              <p className="quote-step-summary">Preencha o passo 1 para liberar.</p>
+            ) : selectedServices.length > 0 ? (
+              <p className="quote-step-summary">
+                {selectedServices.length} serviço{selectedServices.length === 1 ? "" : "s"} · {money(laborTotal)}
+              </p>
+            ) : (
+              <p className="quote-step-summary">Funilaria, catálogo, outras áreas ou voz.</p>
+            )}
           </div>
           <span className="quote-step-chevron" aria-hidden="true">{openStep === 2 ? "−" : "+"}</span>
         </button>
         <div className="quote-step-body" hidden={openStep !== 2}>
-          <p className="quote-builder-section-description">Selecione a área e depois o serviço. O valor salvo no catálogo é o valor unitário.</p>
-          <div className="quote-labor-browser">
-            <div className="quote-labor-search">
-              <select
-                value={serviceCategory}
-                onChange={(event) => {
-                  setServiceCategory(event.target.value);
-                  setServiceQuery("");
-                  setServiceLimit(CATALOG_PAGE_SIZE);
-                }}
-                aria-label="Área do serviço"
-              >
-                <option value="">Selecione a área do serviço</option>
-                {availableCategories.map((category) => <option key={category} value={category}>{category}</option>)}
-              </select>
-              <input
-                type="search"
-                value={serviceQuery}
-                onChange={(event) => {
-                  setServiceQuery(event.target.value);
-                  setServiceLimit(CATALOG_PAGE_SIZE);
-                }}
-                placeholder="Buscar serviço no catálogo"
-                aria-label="Buscar serviço"
-                disabled={!serviceCategory}
-                autoComplete="off"
+          <div className="quote-service-work" data-testid="quote-service-work">
+            <div className="quote-service-modes" role="tablist" aria-label="Como adicionar o serviço">
+              {(
+                [
+                  ["funilaria", "Funilaria"],
+                  ["catalogo", "Catálogo"],
+                  ["outras", "Outras áreas"],
+                  ["manual", "Digitar"],
+                ] as const
+              ).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  role="tab"
+                  aria-selected={serviceAddMode === mode}
+                  className={serviceAddMode === mode ? "is-active" : ""}
+                  data-testid={`quote-service-mode-${mode}`}
+                  onClick={() => setServiceAddMode(mode)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div
+              className="quote-ops-shortcuts"
+              data-testid="quote-ops-shortcuts"
+              aria-label="Atalhos de operação: voz e Funilaria"
+            >
+              <QuoteVoiceCapture
+                dense
+                className="quote-ops-voice"
+                categories={availableCategories}
+                onConfirm={onVoiceConfirm}
               />
-              <span>{filteredServices.length} serviço(s)</span>
+              {serviceAddMode === "funilaria" ? (
+                <FunilariaGuidedPicker
+                  className="quote-ops-funilaria is-ops-primary"
+                  onConfirm={(payload) =>
+                    addVoiceOrGuidedService({
+                      category: payload.category,
+                      description: payload.description,
+                      laborAmount: payload.laborAmount,
+                      needsPart: payload.needsPartHint,
+                      partDescription: payload.partDescription,
+                    })
+                  }
+                />
+              ) : null}
             </div>
-            {serviceCategory ? (
-              filteredServices.length === 0 ? (
-                <div className="orbiq-empty compact">
-                  <strong>Nenhum serviço encontrado.</strong>
-                  <span>Ajuste a busca ou adicione um serviço manual abaixo.</span>
+
+            {serviceAddMode === "catalogo" ? (
+              <div className="quote-labor-browser">
+                <p className="quote-builder-section-description">Área e depois o serviço. O valor do catálogo é unitário.</p>
+                <div className="quote-labor-search">
+                  <select
+                    value={serviceCategory}
+                    onChange={(event) => {
+                      setServiceCategory(event.target.value);
+                      setServiceQuery("");
+                      setServiceLimit(CATALOG_PAGE_SIZE);
+                    }}
+                    aria-label="Área do serviço"
+                  >
+                    <option value="">Selecione a área do serviço</option>
+                    {availableCategories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="search"
+                    value={serviceQuery}
+                    onChange={(event) => {
+                      setServiceQuery(event.target.value);
+                      setServiceLimit(CATALOG_PAGE_SIZE);
+                    }}
+                    placeholder="Buscar serviço no catálogo"
+                    aria-label="Buscar serviço"
+                    disabled={!serviceCategory}
+                    autoComplete="off"
+                  />
+                  <span>{filteredServices.length} serviço(s)</span>
                 </div>
-              ) : (
-                <>
-                  <div className="quote-labor-catalog">
-                    {visibleServices.map((service) => {
-                      const added = selectedServices.some((item) => item.key === `catalog-${service.id}`);
-                      return (
-                        <button key={service.id} type="button" className={`quote-labor-card${added ? " added" : ""}`} disabled={added} onClick={() => addCatalogService(service)}>
-                          <span>{service.category}</span>
-                          <strong>{service.description}</strong>
-                          <b>{Number(service.default_labor_amount) > 0 ? money(Number(service.default_labor_amount)) : "MÃO DE OBRA A DEFINIR"}</b>
-                          <small>{service.requires_part ? "PEÇA JÁ MARCADA PARA COMPRA" : added ? "ADICIONADO" : "+ ADICIONAR"}</small>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {filteredServices.length > serviceLimit ? (
-                    <div className="quote-catalog-more">
-                      <button type="button" className="orbiq-secondary-button" onClick={() => setServiceLimit((current) => current + CATALOG_PAGE_SIZE)}>
-                        Mostrar mais serviços ({filteredServices.length - serviceLimit} restantes)
-                      </button>
+                {serviceCategory ? (
+                  filteredServices.length === 0 ? (
+                    <div className="orbiq-empty compact">
+                      <strong>Nenhum serviço encontrado.</strong>
+                      <span>Ajuste a busca ou use Digitar.</span>
                     </div>
-                  ) : null}
-                </>
-              )
-            ) : (
-              <div className="orbiq-empty compact">
-                <strong>Escolha uma área.</strong>
-                <span>Os serviços dessa área aparecerão aqui.</span>
+                  ) : (
+                    <>
+                      <div className="quote-labor-catalog">
+                        {visibleServices.map((service) => {
+                          const added = selectedServices.some((item) => item.key === `catalog-${service.id}`);
+                          return (
+                            <button
+                              key={service.id}
+                              type="button"
+                              className={`quote-labor-card${added ? " added" : ""}`}
+                              disabled={added}
+                              onClick={() => addCatalogService(service)}
+                            >
+                              <span>{service.category}</span>
+                              <strong>{service.description}</strong>
+                              <b>
+                                {Number(service.default_labor_amount) > 0
+                                  ? money(Number(service.default_labor_amount))
+                                  : "MÃO DE OBRA A DEFINIR"}
+                              </b>
+                              <small>
+                                {service.requires_part
+                                  ? "PEÇA JÁ MARCADA PARA COMPRA"
+                                  : added
+                                    ? "ADICIONADO"
+                                    : "+ ADICIONAR"}
+                              </small>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {filteredServices.length > serviceLimit ? (
+                        <div className="quote-catalog-more">
+                          <button
+                            type="button"
+                            className="orbiq-secondary-button"
+                            onClick={() => setServiceLimit((current) => current + CATALOG_PAGE_SIZE)}
+                          >
+                            Mostrar mais serviços ({filteredServices.length - serviceLimit} restantes)
+                          </button>
+                        </div>
+                      ) : null}
+                    </>
+                  )
+                ) : (
+                  <div className="orbiq-empty compact">
+                    <strong>Escolha uma área.</strong>
+                    <span>Os serviços dessa área aparecem aqui.</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            ) : null}
 
-          <div
-            className="quote-ops-shortcuts"
-            data-testid="quote-ops-shortcuts"
-            aria-label="Atalhos de operação: voz e Funilaria"
-          >
-            <QuoteVoiceCapture
-              dense
-              className="quote-ops-voice"
-              categories={availableCategories}
-              onConfirm={onVoiceConfirm}
-            />
-            <FunilariaGuidedPicker
-              className="quote-ops-funilaria is-ops-primary"
-              onConfirm={(payload) =>
-                addVoiceOrGuidedService({
-                  category: payload.category,
-                  description: payload.description,
-                  laborAmount: payload.laborAmount,
-                  needsPart: payload.needsPartHint,
-                  partDescription: payload.partDescription,
-                })
-              }
-            />
-          </div>
-          <CategoryGuidedPicker
-            className="is-ops-secondary"
-            categories={availableCategories}
-            onConfirm={(payload) =>
-              addVoiceOrGuidedService({
-                category: payload.category,
-                description: payload.description,
-                laborAmount: payload.laborAmount,
-                needsPart: payload.needsPart,
-                partDescription: payload.partDescription,
-              })
-            }
-          />
+            {serviceAddMode === "outras" ? (
+              <CategoryGuidedPicker
+                className="is-ops-secondary"
+                categories={availableCategories}
+                onConfirm={(payload) =>
+                  addVoiceOrGuidedService({
+                    category: payload.category,
+                    description: payload.description,
+                    laborAmount: payload.laborAmount,
+                    needsPart: payload.needsPart,
+                    partDescription: payload.partDescription,
+                  })
+                }
+              />
+            ) : null}
 
-          <div className="quote-manual-service">
-            <div>
-              <span className="orbiq-eyebrow">ADICIONAR SERVIÇO</span>
-              <strong>Não encontrou na lista?</strong>
-            </div>
-            <label>
-              <span>Área</span>
-              <select value={manualCategory} onChange={(event) => setManualCategory(event.target.value)}>
-                {availableCategories.map((category) => <option key={category} value={category}>{category}</option>)}
-              </select>
-            </label>
-            <label>
-              <span>Descrição do serviço</span>
-              <input value={manualDescription} onChange={(event) => setManualDescription(event.target.value)} placeholder="DESCRIÇÃO DO SERVIÇO" />
-            </label>
-            <label>
-              <span>Mão de obra R$ unitária</span>
-              <input value={manualAmount} onChange={(event) => setManualAmount(event.target.value)} inputMode="decimal" placeholder="0,00" />
-            </label>
-            <button type="button" className="orbiq-secondary-button" onClick={addManualService} disabled={saving}>{saving ? "SALVANDO..." : "+ ADICIONAR SERVIÇO"}</button>
-          </div>
-
-          {selectedServices.length > 0 ? (
-            <div className="quote-selected-services">
-              <div className="quote-selected-title">
-                <strong>Serviços selecionados</strong>
-                <span>{selectedServices.length}</span>
+            {serviceAddMode === "manual" ? (
+              <div className="quote-manual-service">
+                <div>
+                  <span className="orbiq-eyebrow">ADICIONAR SERVIÇO</span>
+                  <strong>Não encontrou na lista?</strong>
+                </div>
+                <label>
+                  <span>Área</span>
+                  <select value={manualCategory} onChange={(event) => setManualCategory(event.target.value)}>
+                    {availableCategories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Descrição do serviço</span>
+                  <input
+                    value={manualDescription}
+                    onChange={(event) => setManualDescription(event.target.value)}
+                    placeholder="DESCRIÇÃO DO SERVIÇO"
+                  />
+                </label>
+                <label>
+                  <span>Mão de obra R$ unitária</span>
+                  <input
+                    value={manualAmount}
+                    onChange={(event) => setManualAmount(event.target.value)}
+                    inputMode="decimal"
+                    placeholder="0,00"
+                  />
+                </label>
+                <button type="button" className="orbiq-secondary-button" onClick={addManualService} disabled={saving}>
+                  {saving ? "SALVANDO..." : "+ ADICIONAR SERVIÇO"}
+                </button>
               </div>
+            ) : null}
+
+            {selectedServices.length > 0 ? (
+              <div className="quote-selected-services">
+                <div className="quote-selected-title">
+                  <strong>Serviços deste orçamento</strong>
+                  <span>{selectedServices.length}</span>
+                </div>
               {selectedServices.map((service) => {
                 const quantity = parseQuantity(service.quantity);
                 const lineTotal = service.laborAmount * quantity;
@@ -1025,10 +1117,11 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
           ) : (
             <div className="quote-builder-empty">
               <span>+</span>
-              <strong>Nenhum serviço selecionado</strong>
-              <small>Escolha uma área acima para começar.</small>
+              <strong>Nenhum serviço neste orçamento</strong>
+              <small>Use Funilaria, catálogo, outras áreas ou voz.</small>
             </div>
           )}
+          </div>
           <div className="quote-step-actions">
             <button type="button" className="orbiq-primary-button quote-step-continue" disabled={selectedServices.length === 0} onClick={() => continueTo(3)}>
               Continuar
@@ -1042,6 +1135,11 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
           <div>
             <span className="orbiq-eyebrow">3 · PEÇAS ADICIONAIS</span>
             <h2>Itens para cotação</h2>
+            <p className="quote-step-summary">
+              {itemsPayload.length > 0
+                ? `${itemsPayload.length} item(ns) · opcional`
+                : "Opcional. Peça extra que não veio do serviço."}
+            </p>
           </div>
           <span className="quote-step-chevron" aria-hidden="true">{openStep === 3 ? "−" : "+"}</span>
         </button>
@@ -1155,6 +1253,9 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
           <div>
             <span className="orbiq-eyebrow">4 · OBSERVAÇÕES</span>
             <h2>Informações do atendimento</h2>
+            <p className="quote-step-summary">
+              {notes.trim() ? "Observação preenchida." : "Opcional."}
+            </p>
           </div>
           <span className="quote-step-chevron" aria-hidden="true">{openStep === 4 ? "−" : "+"}</span>
         </button>
