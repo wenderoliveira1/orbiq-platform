@@ -426,12 +426,34 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
     if (description.length < 2) return window.alert("INFORME A DESCRIÇÃO DO SERVIÇO.");
     const amount = parseMoney(manualAmount);
     if (amount === null || amount < 0) return window.alert("INFORME UM VALOR DE MÃO DE OBRA VÁLIDO.");
+    const localKey = key("manual");
+    setSelectedServices((current) => [
+      ...current,
+      {
+        key: localKey,
+        serviceCatalogId: null,
+        category: manualCategory,
+        description,
+        laborAmount: amount,
+        quantity: "1",
+        needsPart: false,
+        partDescription: "",
+        partCategory: "MECÂNICA",
+        partQuantity: "1",
+        partUnit: "UN",
+        partSide: "",
+        partSpecification: "",
+        hasManualPrice: false,
+        partCost: "",
+        partSale: "",
+      },
+    ]);
+    setServiceCategory(manualCategory);
+    setManualDescription("");
+    setManualAmount("");
     startSaving(async () => {
-      try {
-        const id = await saveServiceCatalogAction(manualCategory, description, amount);
-        setSelectedServices((current) => [...current, { key: key("manual"), serviceCatalogId: id, category: manualCategory, description, laborAmount: amount, quantity: "1", needsPart: false, partDescription: "", partCategory: "MECÂNICA", partQuantity: "1", partUnit: "UN", partSide: "", partSpecification: "", hasManualPrice: false, partCost: "", partSale: "" }]);
-        setServiceCategory(manualCategory); setManualDescription(""); setManualAmount("");
-      } catch { window.alert("NÃO FOI POSSÍVEL SALVAR O SERVIÇO NO CATÁLOGO."); }
+      const id = await saveServiceCatalogAction(manualCategory, description, amount);
+      if (id) patchService(localKey, { serviceCatalogId: id });
     });
   }
   function addVoiceOrGuidedService(input: {
@@ -451,37 +473,35 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
     const partDescription = needsPart
       ? (input.partDescription.trim().toLocaleUpperCase("pt-BR") || description)
       : "";
+    const localKey = key("voice");
+    setSelectedServices((current) => [
+      ...current,
+      {
+        key: localKey,
+        serviceCatalogId: null,
+        category,
+        description,
+        laborAmount: amount,
+        quantity: "1",
+        needsPart,
+        partDescription,
+        partCategory: category === "FUNILARIA" ? "FUNILARIA" : "MECÂNICA",
+        partQuantity: "1",
+        partUnit: "UN",
+        partSide: "",
+        partSpecification: "",
+        hasManualPrice: false,
+        partCost: "",
+        partSale: "",
+      },
+    ]);
+    setServiceCategory(category);
+    setManualCategory(category);
+    setManualDescription("");
+    setManualAmount("");
     startSaving(async () => {
-      try {
-        const id = await saveServiceCatalogAction(category, description, amount);
-        setSelectedServices((current) => [
-          ...current,
-          {
-            key: key("voice"),
-            serviceCatalogId: id,
-            category,
-            description,
-            laborAmount: amount,
-            quantity: "1",
-            needsPart,
-            partDescription,
-            partCategory: category === "FUNILARIA" ? "FUNILARIA" : "MECÂNICA",
-            partQuantity: "1",
-            partUnit: "UN",
-            partSide: "",
-            partSpecification: "",
-            hasManualPrice: false,
-            partCost: "",
-            partSale: "",
-          },
-        ]);
-        setServiceCategory(category);
-        setManualCategory(category);
-        setManualDescription("");
-        setManualAmount("");
-      } catch {
-        window.alert("NÃO FOI POSSÍVEL SALVAR O SERVIÇO NO CATÁLOGO.");
-      }
+      const id = await saveServiceCatalogAction(category, description, amount);
+      if (id) patchService(localKey, { serviceCatalogId: id });
     });
   }
   function onVoiceConfirm(payload: QuoteVoiceConfirmPayload) {

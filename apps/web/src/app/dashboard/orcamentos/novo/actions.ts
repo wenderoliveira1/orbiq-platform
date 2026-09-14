@@ -41,7 +41,7 @@ export async function saveServiceCatalogAction(
   category: string,
   description: string,
   laborAmount: number,
-): Promise<string> {
+): Promise<string | null> {
   const { supabase, organization } = await getCurrentContext();
   const normalizedCategory = upper(category);
   const normalizedDescription = upper(description);
@@ -51,17 +51,66 @@ export async function saveServiceCatalogAction(
     !Number.isFinite(laborAmount) ||
     laborAmount < 0
   ) {
-    throw new Error("Dados do serviço inválidos.");
+    return null;
   }
+
+  const amount = Math.round(laborAmount * 100) / 100;
   const { data, error } = await supabase.rpc("save_service_catalog", {
     target_org_id: organization.id,
     target_category: normalizedCategory,
     target_description: normalizedDescription,
-    target_labor_amount: Math.round(laborAmount * 100) / 100,
+    target_labor_amount: amount,
   });
-  if (error || !data) throw new Error("Não foi possível salvar o serviço no catálogo.");
-  revalidatePath("/dashboard/orcamentos/novo");
-  return String(data);
+
+  if (!error && data) {
+    revalidatePath("/dashboard/orcamentos/novo");
+    return String(data);
+  }
+
+  const { data: existing } = await supabase
+    .from("service_catalog")
+    .select("id")
+    .eq("organization_id", organization.id)
+    .eq("category", normalizedCategory)
+    .eq("description", normalizedDescription)
+    .maybeSingle();
+
+  if (existing?.id) {
+    await supabase
+      .from("service_catalog")
+      .update({ default_labor_amount: amount, active: true })
+      .eq("id", existing.id)
+      .eq("organization_id", organization.id);
+    return String(existing.id);
+  }
+
+  const { data: created } = await supabase
+    .from("service_catalog")
+    .insert({
+      organization_id: organization.id,
+      category: normalizedCategory,
+      description: normalizedDescription,
+      default_labor_amount: amount,
+      requires_part: false,
+      active: true,
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (created?.id) {
+    revalidatePath("/dashboard/orcamentos/novo");
+    return String(created.id);
+  }
+
+  const { data: raced } = await supabase
+    .from("service_catalog")
+    .select("id")
+    .eq("organization_id", organization.id)
+    .eq("category", normalizedCategory)
+    .eq("description", normalizedDescription)
+    .maybeSingle();
+
+  return raced?.id ? String(raced.id) : null;
 }
 
 export async function saveServiceLaborAction(serviceId: string, amount: number): Promise<void> {
@@ -237,13 +286,12 @@ export async function upsertQuoteBuilderDraftAction(input: {
 
   for (const service of payload.services) {
     if (service.service_catalog_id === null) {
-      const { error: catalogError } = await supabase.rpc("save_service_catalog", {
+      await supabase.rpc("save_service_catalog", {
         target_org_id: organization.id,
         target_category: upper(service.category),
         target_description: upper(service.description),
         target_labor_amount: service.labor_amount,
       });
-      if (catalogError) return { ok: false, error: "save_failed" };
     }
   }
 
@@ -374,13 +422,12 @@ export async function createQuoteV2Action(formData: FormData): Promise<never> {
 
   for (const service of payload.services) {
     if (service.service_catalog_id === null) {
-      const { error: catalogError } = await supabase.rpc("save_service_catalog", {
+      await supabase.rpc("save_service_catalog", {
         target_org_id: organization.id,
         target_category: upper(service.category),
         target_description: upper(service.description),
         target_labor_amount: service.labor_amount,
       });
-      if (catalogError) return failure("save_failed");
     }
   }
 
