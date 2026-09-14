@@ -2,9 +2,10 @@
 
 type PrintButtonProps = {
   documentTitle?: string;
+  label?: string;
 };
 
-export function PrintButton({ documentTitle }: PrintButtonProps) {
+export function PrintButton({ documentTitle, label = "Imprimir / PDF" }: PrintButtonProps) {
   return (
     <button
       type="button"
@@ -21,11 +22,10 @@ export function PrintButton({ documentTitle }: PrintButtonProps) {
         };
         window.addEventListener("afterprint", restore);
         window.print();
-        // Fallback when afterprint is delayed/missing
         window.setTimeout(restore, 1000);
       }}
     >
-      Imprimir / PDF
+      {label}
     </button>
   );
 }
