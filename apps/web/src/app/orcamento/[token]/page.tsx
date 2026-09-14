@@ -6,6 +6,7 @@ import {
 } from "../../../lib/workshop-branding";
 
 import { createPublicSupabaseClient } from "../../../lib/supabase/public";
+import { compactQuoteProtocol } from "../../dashboard/_lib/compact-quote-protocol";
 import {
   approvePublicQuoteAction,
   rejectPublicQuoteAction,
@@ -141,6 +142,7 @@ export default async function PublicQuotePage({
     workshop.branding_manifest_path,
   );
   const logoUrl = workshopLogoUrl(branding.logoPath);
+  const protocol = compactQuoteProtocol(quote.protocol);
 
   const workshopContacts = [
     workshop.phone ? `Telefone ${workshop.phone}` : null,
@@ -202,7 +204,7 @@ export default async function PublicQuotePage({
               ) : null}
               {workshopContacts ? <small>{workshopContacts}</small> : null}
               {workshopAddress ? <small>{workshopAddress}</small> : null}
-              <small>Orçamento {quote.protocol}</small>
+              <small>Orçamento {protocol}</small>
               <small>
                 Validade comercial: {workshop.quote_validity_days} dias
               </small>
@@ -214,7 +216,7 @@ export default async function PublicQuotePage({
             <span className={`public-status status-${quote.commercial_status}`}>
               {statusLabel(quote.commercial_status)}
             </span>
-            <strong>{quote.protocol}</strong>
+            <strong>{protocol}</strong>
             <small>{date(quote.created_at)}</small>
           </div>
         </header>
