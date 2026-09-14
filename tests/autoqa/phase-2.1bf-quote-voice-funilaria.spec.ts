@@ -294,7 +294,8 @@ test.describe("Fase 2.1BF — ops shortcuts sticky + Funilaria primary", () => {
     expect(category).toContain("atalho principal acima");
 
     expect(css).toContain(".quote-ops-shortcuts");
-    expect(css).toContain("position: sticky");
+    expect(css).toContain("position: static");
+    expect(css).not.toMatch(/\.quote-ops-shortcuts\s*\{[^}]*position:\s*sticky/s);
     expect(css).toContain(".funilaria-guided-picker.is-ops-primary");
     expect(css).toContain(".category-guided-picker.is-ops-secondary");
     expect(css).toContain("min-height: 72px");
