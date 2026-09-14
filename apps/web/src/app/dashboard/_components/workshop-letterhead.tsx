@@ -1,3 +1,5 @@
+import { compactQuoteProtocol } from "../_lib/compact-quote-protocol";
+
 type WorkshopLetterheadProps = {
   organizationName: string;
   legalName?: string | null;
@@ -30,7 +32,7 @@ export function WorkshopLetterhead({
       {cnpj ? <span>CNPJ {cnpj}</span> : null}
       {contacts ? <span>{contacts}</span> : null}
       {address ? <span>{address}</span> : null}
-      {protocol ? <span>Orçamento {protocol}</span> : null}
+      {protocol ? <span>Orçamento {compactQuoteProtocol(protocol)}</span> : null}
       {typeof validityDays === "number" ? (
         <span>Validade comercial: {validityDays} dias</span>
       ) : null}

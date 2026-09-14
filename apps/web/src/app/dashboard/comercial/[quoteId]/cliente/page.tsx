@@ -6,6 +6,7 @@ import {
 } from "../../../../../lib/workshop-branding";
 
 import { getCurrentContext } from "../../../_lib/current-organization";
+import { compactQuoteProtocol } from "../../../_lib/compact-quote-protocol";
 import { CustomerQuoteToolbar } from "./customer-quote-toolbar";
 
 type WorkshopProfile = {
@@ -147,6 +148,7 @@ export default async function CustomerQuotePage({ params }: PageProps) {
   const workshop = workshopProfileData as unknown as WorkshopProfile;
   const branding = await loadWorkshopBranding(organization.id);
   const logoUrl = workshopLogoUrl(branding.logoPath);
+  const protocol = compactQuoteProtocol(quote.protocol);
 
   const customer = customerResult.data;
   const vehicle = vehicleResult.data;
@@ -192,7 +194,7 @@ export default async function CustomerQuotePage({ params }: PageProps) {
       <div className="customer-quote-page">
         <CustomerQuoteToolbar
           quoteId={quote.id}
-          protocol={quote.protocol}
+          protocol={protocol}
           workshopName={organization.name}
           customerName={customer?.name ?? "Cliente"}
           customerPhone={customer?.phone ?? null}
@@ -254,7 +256,7 @@ export default async function CustomerQuotePage({ params }: PageProps) {
               ) : null}
               {workshopContacts ? <small>{workshopContacts}</small> : null}
               {workshopAddress ? <small>{workshopAddress}</small> : null}
-              <small>Orçamento {quote.protocol}</small>
+              <small>Orçamento {protocol}</small>
               <small>
                 Validade comercial: {workshop.quote_validity_days} dias
               </small>
@@ -268,7 +270,7 @@ export default async function CustomerQuotePage({ params }: PageProps) {
             >
               {statusLabel(quote.commercial_status)}
             </span>
-            <strong>{quote.protocol}</strong>
+            <strong>{protocol}</strong>
             <small>Emitido em {date(quote.created_at)}</small>
           </div>
         </header>
