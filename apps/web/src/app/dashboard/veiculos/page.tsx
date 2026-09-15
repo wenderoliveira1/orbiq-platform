@@ -5,6 +5,7 @@ import {
 
 import { getCurrentContext } from "../_lib/current-organization";
 import { novoOrcamentoHref } from "../_lib/operational-history";
+import { OwnerCustomerPicker } from "../_components/owner-customer-picker";
 import Link from "next/link";
 
 type SearchParams = Promise<{
@@ -61,7 +62,7 @@ export default async function VehiclesPage({
       supabase
         .from("customers")
         .select(
-          "id, name",
+          "id, name, phone, email",
         )
         .eq(
           "organization_id",
@@ -115,9 +116,24 @@ export default async function VehiclesPage({
       customers.map(
         (customer) => [
           customer.id,
-          customer.name,
+          customer,
         ],
       ),
+    );
+
+  const vehicleHints =
+    (vehiclesResult.data ?? []).flatMap(
+      (vehicle) =>
+        vehicle.customer_id
+          ? [
+              {
+                customer_id:
+                  vehicle.customer_id,
+                plate:
+                  vehicle.plate,
+              },
+            ]
+          : [],
     );
 
   const vehicles =
@@ -131,15 +147,37 @@ export default async function VehiclesPage({
           vehicle.customer_id
             ? customerMap.get(
                 vehicle.customer_id,
-              ) ?? ""
-            : "";
+              )
+            : null;
+
+        const phoneQuery =
+          q.replace(
+            /\D/g,
+            "",
+          );
+
+        if (
+          phoneQuery.length >= 3 &&
+          String(owner?.phone ?? "")
+            .replace(
+              /\D/g,
+              "",
+            )
+            .includes(
+              phoneQuery,
+            )
+        ) {
+          return true;
+        }
 
         return [
           vehicle.plate,
           vehicle.brand,
           vehicle.model,
           vehicle.version,
-          owner,
+          owner?.name,
+          owner?.phone,
+          owner?.email,
         ]
           .filter(Boolean)
           .some(
@@ -227,39 +265,16 @@ export default async function VehiclesPage({
               action={createVehicleAction}
               className="orbiq-form"
             >
-              <label>
+              <div className="owner-customer-field">
                 <span>
                   Cliente proprietário *
                 </span>
 
-                <select
-                  name="customer_id"
-                  required
-                  defaultValue=""
-                >
-                  <option
-                    value=""
-                    disabled
-                  >
-                    Selecione o cliente
-                  </option>
-
-                  {customers.map(
-                    (customer) => (
-                      <option
-                        key={
-                          customer.id
-                        }
-                        value={
-                          customer.id
-                        }
-                      >
-                        {customer.name}
-                      </option>
-                    ),
-                  )}
-                </select>
-              </label>
+                <OwnerCustomerPicker
+                  customers={customers}
+                  vehicles={vehicleHints}
+                />
+              </div>
 
               <div className="orbiq-form-row">
                 <label>
@@ -384,7 +399,7 @@ export default async function VehiclesPage({
                 defaultValue={
                   params.q ?? ""
                 }
-                placeholder="Buscar placa, modelo ou cliente"
+                placeholder="Buscar placa, modelo, cliente ou telefone"
               />
 
               <button
@@ -436,10 +451,17 @@ export default async function VehiclesPage({
                         <div className="orbiq-meta">
                           <span>
                             {vehicle.customer_id
-                              ? customerMap.get(
-                                  vehicle.customer_id,
-                                ) ??
-                                "Cliente não localizado"
+                              ? [
+                                  customerMap.get(
+                                    vehicle.customer_id,
+                                  )?.name ??
+                                    "Cliente não localizado",
+                                  customerMap.get(
+                                    vehicle.customer_id,
+                                  )?.phone,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")
                               : "Sem cliente"}
                           </span>
 
@@ -495,44 +517,20 @@ export default async function VehiclesPage({
                             }
                           />
 
-                          <label>
+                          <div className="owner-customer-field">
                             <span>
                               Cliente proprietário *
                             </span>
 
-                            <select
-                              name="customer_id"
-                              required
-                              defaultValue={
+                            <OwnerCustomerPicker
+                              customers={customers}
+                              vehicles={vehicleHints}
+                              defaultCustomerId={
                                 vehicle.customer_id ??
                                 ""
                               }
-                            >
-                              <option
-                                value=""
-                                disabled
-                              >
-                                Selecione o cliente
-                              </option>
-
-                              {customers.map(
-                                (customer) => (
-                                  <option
-                                    key={
-                                      customer.id
-                                    }
-                                    value={
-                                      customer.id
-                                    }
-                                  >
-                                    {
-                                      customer.name
-                                    }
-                                  </option>
-                                ),
-                              )}
-                            </select>
-                          </label>
+                            />
+                          </div>
 
                           <div className="orbiq-form-row">
                             <label>
