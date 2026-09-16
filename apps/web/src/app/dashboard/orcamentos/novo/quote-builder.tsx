@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
-import { CategoryGuidedPicker } from "../_components/category-guided-picker";
 import { FunilariaGuidedPicker } from "../_components/funilaria-guided-picker";
 import { QuoteVoiceCapture, type QuoteVoiceConfirmPayload } from "../_components/quote-voice-capture";
 import {
@@ -49,7 +48,7 @@ type Props = {
   recentVisits?: HistoryVisit[];
 };
 type StepId = QuoteBuilderDraftStep;
-type ServiceAddMode = "funilaria" | "catalogo" | "outras" | "manual";
+type ServiceAddMode = "funilaria" | "catalogo" | "manual";
 
 const serviceCategories = ["MECÂNICA", "SUSPENSÃO", "FREIOS", "DIREÇÃO", "MOTOR", "CÂMBIO", "ELÉTRICA", "ARREFECIMENTO", "AR-CONDICIONADO", "FUNILARIA", "PINTURA", "ALINHAMENTO", "OUTROS"];
 const itemCategories = ["MECÂNICA", "CHASSI - PARALELO/ORIGINAL", "CHASSI - FERRO VELHO", "PNEUS", "VIDROS", "ÓLEOS E LUBRIFICANTES", "FUNILARIA", "ELÉTRICA", "OUTROS"];
@@ -779,7 +778,7 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
                 {selectedServices.length} serviço{selectedServices.length === 1 ? "" : "s"} · {money(laborTotal)}
               </p>
             ) : (
-              <p className="quote-step-summary">Funilaria, catálogo, outras áreas ou voz.</p>
+              <p className="quote-step-summary">Funilaria, catálogo ou voz.</p>
             )}
           </div>
           <span className="quote-step-chevron" aria-hidden="true">{openStep === 2 ? "−" : "+"}</span>
@@ -791,7 +790,6 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
                 [
                   ["funilaria", "Funilaria"],
                   ["catalogo", "Catálogo"],
-                  ["outras", "Outras áreas"],
                   ["manual", "Digitar"],
                 ] as const
               ).map(([mode, label]) => (
@@ -927,22 +925,6 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
                   </div>
                 )}
               </div>
-            ) : null}
-
-            {serviceAddMode === "outras" ? (
-              <CategoryGuidedPicker
-                className="is-ops-secondary"
-                categories={availableCategories}
-                onConfirm={(payload) =>
-                  addVoiceOrGuidedService({
-                    category: payload.category,
-                    description: payload.description,
-                    laborAmount: payload.laborAmount,
-                    needsPart: payload.needsPart,
-                    partDescription: payload.partDescription,
-                  })
-                }
-              />
             ) : null}
 
             {serviceAddMode === "manual" ? (
@@ -1139,7 +1121,7 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
             <div className="quote-builder-empty">
               <span>+</span>
               <strong>Nenhum serviço neste orçamento</strong>
-              <small>Use Funilaria, catálogo, outras áreas ou voz.</small>
+              <small>Use Funilaria, catálogo ou voz. Não achou? Digitar.</small>
             </div>
           )}
           </div>
