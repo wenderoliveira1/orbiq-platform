@@ -171,7 +171,7 @@ test.describe("Fase 2.1BF — voz no orçamento + Funilaria guiada", () => {
     const css = await readFile("apps/web/src/app/dashboard/dashboard.css", "utf8");
 
     expect(builder).toContain("QuoteVoiceCapture");
-    expect(builder).toContain("CategoryGuidedPicker");
+    expect(builder).not.toContain("CategoryGuidedPicker");
     expect(builder).toContain("FunilariaGuidedPicker");
     expect(builder).toContain("addVoiceOrGuidedService");
     expect(builder).toContain("onVoiceConfirm");
@@ -274,14 +274,11 @@ test.describe("Fase 2.1BF — ops shortcuts sticky + Funilaria primary", () => {
     expect(builder).toContain('data-testid="quote-ops-shortcuts"');
     expect(builder).toContain("quote-ops-shortcuts");
     expect(builder).toContain("is-ops-primary");
-    expect(builder).toContain("is-ops-secondary");
     expect(builder).toContain("dense");
 
-    // Funilaria before CategoryGuided on primary path
     const funilariaIdx = builder.indexOf("<FunilariaGuidedPicker");
-    const categoryIdx = builder.indexOf("<CategoryGuidedPicker");
     expect(funilariaIdx).toBeGreaterThan(-1);
-    expect(categoryIdx).toBeGreaterThan(funilariaIdx);
+    expect(builder).not.toContain("<CategoryGuidedPicker");
 
     expect(append).toContain('data-testid="quote-ops-shortcuts"');
     const appendFunilariaIdx = append.indexOf("<FunilariaGuidedPicker");

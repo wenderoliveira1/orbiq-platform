@@ -13,15 +13,14 @@ test.describe("Fase 2.1BM — abas práticas no passo Serviços", () => {
     expect(builder).toContain('data-testid="quote-service-work"');
     expect(builder).toContain('data-testid="quote-service-mode-funilaria"');
     expect(builder).toContain('data-testid="quote-service-mode-catalogo"');
-    expect(builder).toContain('data-testid="quote-service-mode-outras"');
+    expect(builder).not.toContain('data-testid="quote-service-mode-outras"');
     expect(builder).toContain('data-testid="quote-service-mode-manual"');
     expect(builder).toContain('useState<ServiceAddMode>("funilaria")');
     expect(builder).toContain("quote-step-summary");
+    expect(builder).not.toContain("<CategoryGuidedPicker");
 
     const funilariaIdx = builder.indexOf("<FunilariaGuidedPicker");
-    const categoryIdx = builder.indexOf("<CategoryGuidedPicker");
     expect(funilariaIdx).toBeGreaterThan(-1);
-    expect(categoryIdx).toBeGreaterThan(funilariaIdx);
 
     expect(css).toContain(".quote-service-modes");
     expect(css).toContain(".quote-step-summary");
