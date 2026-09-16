@@ -9,6 +9,7 @@ import {
   compactVisitServices,
   formatVisitDate,
   formatVisitKm,
+  workshopVisitsForVehicle,
   type HistoryVisit,
 } from "../../_lib/operational-history";
 import {
@@ -142,7 +143,7 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   }, [vehicles, customerId, vehicleQuery]);
   const selectedVehicle = useMemo(() => vehicles.find((vehicle) => vehicle.id === vehicleId), [vehicles, vehicleId]);
   const selectedVehicleVisits = useMemo(
-    () => recentVisits.filter((visit) => visit.vehicleId === vehicleId).slice(0, 3),
+    () => workshopVisitsForVehicle(recentVisits, vehicleId, 6),
     [recentVisits, vehicleId],
   );
   const visibleVehicles = useMemo(() => {

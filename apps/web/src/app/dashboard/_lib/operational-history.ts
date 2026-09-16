@@ -40,6 +40,7 @@ export function buildVisitHistory({
   excludeQuoteId?: string;
   vehicleId?: string;
   customerId?: string;
+  excludeDrafts?: boolean;
   limit?: number;
 }): HistoryVisit[] {
   const servicesByQuote = new Map<string, string[]>();
@@ -55,7 +56,10 @@ export function buildVisitHistory({
   return quotes
     .filter((quote) => {
       if (excludeQuoteId && quote.id === excludeQuoteId) return false;
-      if (vehicleId && quote.vehicle_id !== vehicleId) return false;
+      if (excludeDrafts && quote.status === "estimating") return false;
+      if (vehicleId) {
+        if (!quote.vehicle_id || quote.vehicle_id !== vehicleId) return false;
+      }
       if (customerId && quote.customer_id !== customerId) return false;
       return true;
     })
@@ -92,6 +96,17 @@ export function lastMileageByVehicleId(visits: HistoryVisit[]): Record<string, n
     result[visit.vehicleId] = visit.mileage;
   }
   return result;
+}
+
+export function workshopVisitsForVehicle(
+  visits: HistoryVisit[],
+  vehicleId: string,
+  limit = 6,
+): HistoryVisit[] {
+  if (!vehicleId) return [];
+  return visits
+    .filter((visit) => visit.vehicleId === vehicleId && visit.status !== "estimating")
+    .slice(0, limit);
 }
 
 export function formatVisitDate(value: string): string {

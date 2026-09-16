@@ -8,6 +8,7 @@ import {
   lastMileageByVehicleId,
   lastMileageFromVisits,
   novoOrcamentoHref,
+  workshopVisitsForVehicle,
 } from "../../apps/web/src/app/dashboard/_lib/operational-history";
 
 const STAFF_HISTORY_PATHS = [
@@ -68,6 +69,50 @@ test.describe("Fase 2.1BI — histórico operacional de cliente e veículo", () 
     );
   });
 
+  test("histórico da oficina é só da placa escolhida e ignora rascunho", () => {
+    const quotes = [
+      {
+        id: "q-other-car",
+        protocol: "ORB-100",
+        status: "completed",
+        mileage: 10000,
+        created_at: "2026-09-09T12:00:00.000Z",
+        customer_id: "c1",
+        vehicle_id: "v2",
+      },
+      {
+        id: "q-draft",
+        protocol: "ORB-101",
+        status: "estimating",
+        mileage: 80000,
+        created_at: "2026-09-09T13:00:00.000Z",
+        customer_id: "c1",
+        vehicle_id: "v1",
+      },
+      {
+        id: "q-this-car",
+        protocol: "ORB-102",
+        status: "completed",
+        mileage: 80000,
+        created_at: "2026-09-09T11:00:00.000Z",
+        customer_id: "c1",
+        vehicle_id: "v1",
+      },
+    ];
+    const visits = buildVisitHistory({
+      quotes,
+      services: [{ quote_id: "q-this-car", description: "BALANCEAMENTO ARO 15" }],
+      vehicleId: "v1",
+      excludeDrafts: true,
+    });
+
+    expect(visits.map((visit) => visit.id)).toEqual(["q-this-car"]);
+    expect(workshopVisitsForVehicle(
+      buildVisitHistory({ quotes, services: [] }),
+      "v1",
+    ).map((visit) => visit.id)).toEqual(["q-this-car"]);
+  });
+
   test("detalhe do orçamento mostra histórico do veículo só para a equipe e sem print", async () => {
     const detail = await readFile(
       "apps/web/src/app/dashboard/orcamentos/[id]/page.tsx",
@@ -103,6 +148,7 @@ test.describe("Fase 2.1BI — histórico operacional de cliente e veículo", () 
     expect(page).not.toContain("customersResult.error.message");
 
     expect(builder).toContain("lastMileageByVehicleId[id]");
+    expect(builder).toContain("workshopVisitsForVehicle");
     expect(builder).toContain('data-testid="quote-builder-vehicle-history"');
     expect(builder).toContain('data-testid="quote-builder-visit-history"');
     expect(builder).toContain("HISTÓRICO DESTE VEÍCULO");
