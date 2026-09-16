@@ -33,6 +33,7 @@ export function buildVisitHistory({
   excludeQuoteId,
   vehicleId,
   customerId,
+  excludeDrafts = false,
   limit = 12,
 }: {
   quotes: HistoryQuoteRow[];
