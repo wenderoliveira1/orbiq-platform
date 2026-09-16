@@ -97,6 +97,7 @@ export default async function QuoteDetailPage({ params, searchParams }: PageProp
     services: historyServicesResult.data ?? [],
     vehicleId: quote.vehicle_id,
     excludeQuoteId: quote.id,
+    excludeDrafts: true,
     limit: 8,
   });
   const laborTotal = Math.round(

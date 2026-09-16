@@ -68,6 +68,7 @@ export default async function VehicleHistoryPage({ params }: PageProps) {
     quotes,
     services: servicesResult.data ?? [],
     vehicleId: vehicle.id,
+    excludeDrafts: true,
     limit: 20,
   });
   const lastVisit = visits[0] ?? null;
