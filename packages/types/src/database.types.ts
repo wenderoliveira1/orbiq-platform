@@ -1773,6 +1773,7 @@ export type Database = {
         Args: { target_org_id: string }
         Returns: string[]
       }
+      orbiq_next_quote_protocol: { Args: never; Returns: string }
       orbiq_permissions_for_role: {
         Args: { target_role: string }
         Returns: string[]
@@ -2135,4 +2136,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
