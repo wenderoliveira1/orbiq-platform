@@ -143,6 +143,10 @@ run("Security - request origin and route methods", "node", [
   "--test", "tests/security/request-origin.test.mjs",
 ]);
 
+run("Unit - quote search", "node", [
+  "--test", "tests/unit/quote-list-filter.test.mjs",
+]);
+
 run("TypeScript", "pnpm", [
   "--filter",
   "web",

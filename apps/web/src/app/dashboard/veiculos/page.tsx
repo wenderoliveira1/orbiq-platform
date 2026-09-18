@@ -253,12 +253,12 @@ export default async function VehiclesPage({
                 o veículo.
               </span>
 
-              <a
+              <Link
                 href="/dashboard/clientes"
                 className="orbiq-primary-button"
               >
                 Ir para clientes
-              </a>
+              </Link>
             </div>
           ) : (
             <form
