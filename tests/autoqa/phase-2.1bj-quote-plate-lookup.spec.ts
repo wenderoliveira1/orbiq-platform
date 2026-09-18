@@ -1,6 +1,5 @@
-import { readFile } from "node:fs/promises";
-
 import { expect, test } from "@playwright/test";
+import { loadState } from "./support/orbiq-api";
 
 import { normalizePlateQuery } from "../../apps/web/src/app/dashboard/orcamentos/novo/customer-phone-lookup";
 
@@ -11,22 +10,29 @@ test.describe("Fase 2.1BJ — placa preenche cliente no novo orçamento", () => 
     expect(normalizePlateQuery("rio-2a34")).toBe("RIO2A34");
   });
 
-  test("Novo Orçamento tem busca por placa e preenche selects existentes", async () => {
-    const lookup = await readFile(
-      "apps/web/src/app/dashboard/orcamentos/novo/customer-phone-lookup.tsx",
-      "utf8",
-    );
-    const page = await readFile("apps/web/src/app/dashboard/orcamentos/novo/page.tsx", "utf8");
+  test("busca por placa preenche cliente e veículo e mantém os modos de serviço", async ({ page }) => {
+    const state = await loadState();
+    await page.goto("/login");
+    await page.getByLabel("E-mail").fill(state.email);
+    await page.getByLabel("Senha").fill(state.password);
+    await page.getByRole("button", { name: "Entrar no Orbiq" }).click();
+    await expect(page).toHaveURL(/\/dashboard/);
+    await page.goto("/dashboard/orcamentos/novo");
 
-    expect(page).toContain("CustomerPhoneLookup");
-    expect(lookup).toContain('data-testid="quote-identity-lookup"');
-    expect(lookup).toContain('data-testid="quote-plate-lookup"');
-    expect(lookup).toContain('data-testid="quote-plate-lookup-hit"');
-    expect(lookup).toContain("normalizePlateQuery");
-    expect(lookup).toContain('setSelectValue("customer_id"');
-    expect(lookup).toContain('setSelectValue("vehicle_id"');
-    expect(lookup).toContain("DIGITE A PLACA");
-    expect(lookup).not.toContain("service_role");
-    expect(lookup).not.toContain("NEXT_PUBLIC_SUPABASE_SERVICE");
+    await page.getByRole("searchbox", { name: "Buscar por placa, telefone ou nome" }).fill("QAA1A23");
+    await page.getByRole("listbox", { name: "Resultados da busca rápida" })
+      .getByRole("option", { name: /QAA1A23/ }).click();
+    await expect(page.locator('select[name="customer_id"]')).toHaveValue(state.customerId);
+    await expect(page.locator('select[name="vehicle_id"]')).toHaveValue(state.vehicleId);
+
+    const modes = page.getByRole("tablist", { name: "Como adicionar o serviço" });
+    await expect(modes.getByRole("tab")).toHaveCount(3);
+    await expect(modes.getByRole("tab", { name: "Funilaria", exact: true })).toHaveAttribute("aria-selected", "true");
+    await modes.getByRole("tab", { name: "Catálogo", exact: true }).click();
+    await expect(page.getByRole("searchbox", { name: "Buscar serviço", exact: true })).toBeVisible();
+    await expect(modes.getByRole("tab", { name: "Funilaria", exact: true })).toHaveAttribute("aria-selected", "false");
+    await modes.getByRole("tab", { name: "Digitar", exact: true }).click();
+    await expect(page.getByPlaceholder("DESCRIÇÃO DO SERVIÇO", { exact: true })).toBeVisible();
+    await expect(page.getByRole("searchbox", { name: "Buscar serviço", exact: true })).toHaveCount(0);
   });
 });

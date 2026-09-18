@@ -126,8 +126,10 @@ test.describe("Fase 2.1BI — histórico operacional de cliente e veículo", () 
     expect(detail).toContain('data-testid="quote-customer-history-link"');
     expect(detail).toContain("no-print");
     expect(detail).toContain("novoOrcamentoHref");
-    expect(detail).not.toMatch(/\blucro\b/i);
-    expect(detail).not.toMatch(/\bmargem\b/i);
+    const historySection = detail.slice(detail.indexOf('<section className="orbiq-panel no-print" data-testid="vehicle-visit-history"'));
+    expect(historySection).toContain("OperationalHistoryList");
+    const historyComponent = await readFile("apps/web/src/app/dashboard/_components/operational-history-list.tsx", "utf8");
+    expect(historySection + historyComponent).not.toMatch(/\b(?:lucro|margem)\b/i);
   });
 
   test("Novo Orçamento preenche cliente/veículo e km da última visita", async () => {

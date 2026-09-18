@@ -63,7 +63,7 @@ test.describe("Regressão operacional - smoke test", () => {
     await expect(page.getByText("Cliente AutoQA")).toBeVisible();
 
     await page.goto("/dashboard/veiculos");
-    await expect(page.getByText("QAA1A23")).toBeVisible();
+    await expect(page.getByText("QAA1A23", { exact: true })).toBeVisible();
 
     await page.goto("/dashboard/fornecedores");
     await expect(page.getByText("Fornecedor AutoQA")).toBeVisible();
