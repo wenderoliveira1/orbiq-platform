@@ -742,16 +742,18 @@ export default async function PurchaseOrderPage({
 
             {validWhatsapp ? (
 
-              <a
-                href={
+              <form
+                method="post"
+                action={
                   `/dashboard/compras/abrir/${order.id}`
                 }
                 target="_blank"
-                rel="noreferrer"
-                className="orbiq-primary-button"
+                rel="noopener"
               >
-                Confirmar no WhatsApp
-              </a>
+                <button type="submit" className="orbiq-primary-button">
+                  Confirmar no WhatsApp
+                </button>
+              </form>
 
             ) : null}
 

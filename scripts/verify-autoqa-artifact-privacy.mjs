@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 const path = ".github/workflows/autoqa.yml";
-const source = await readFile(path, "utf8");
+const source = (await readFile(path, "utf8")).replace(/\r\n/g, "\n");
 
 const requiredSnippets = [
   "uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7",

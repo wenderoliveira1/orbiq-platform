@@ -1,4 +1,5 @@
 import { requireCurrentPermission } from "../../_lib/permissions";
+import { forbiddenMutation, isSameOriginMutation } from "@/lib/request-origin";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -17,6 +18,8 @@ function dataPage(error: string) {
 }
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) return forbiddenMutation();
+
   const formData = await request.formData();
   const organizationId = String(
     formData.get("organization_id") ?? "",

@@ -20,6 +20,8 @@
     "lint:web": "pnpm --filter web lint",
     "quality": "node scripts/quality-gate.mjs",
     "test:autoqa": "pnpm exec playwright test",
+    "test:security": "node --test tests/security/request-origin.test.mjs",
+    "test:security:db": "node scripts/verify-security-database.mjs",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status"

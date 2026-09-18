@@ -1,6 +1,7 @@
 import {
   NextResponse,
 } from "next/server";
+import { forbiddenMutation, isSameOriginMutation } from "@/lib/request-origin";
 
 import {
   getCurrentContext,
@@ -54,13 +55,15 @@ function currency(
 }
 
 
-export async function GET(
+export async function POST(
   request:
     Request,
 
   context:
     RouteContext,
 ) {
+  if (!isSameOriginMutation(request)) return forbiddenMutation();
+
 
   const {
     orderId,
@@ -100,7 +103,7 @@ export async function GET(
     !order
   ) {
 
-    return NextResponse.redirect(
+    return seeOther(
       new URL(
         "/dashboard/compras",
         request.url,
@@ -190,7 +193,7 @@ export async function GET(
     itemsResult.error
   ) {
 
-    return NextResponse.redirect(
+    return seeOther(
       new URL(
         `/dashboard/compras/${order.id}?error=${encodeURIComponent(
           "Não foi possível preparar o pedido.",
@@ -219,7 +222,7 @@ export async function GET(
       15
   ) {
 
-    return NextResponse.redirect(
+    return seeOther(
       new URL(
         `/dashboard/compras/${order.id}?error=${encodeURIComponent(
           "Fornecedor está sem WhatsApp válido.",
@@ -351,7 +354,7 @@ export async function GET(
     markError
   ) {
 
-    return NextResponse.redirect(
+    return seeOther(
       new URL(
         `/dashboard/compras/${order.id}?error=${encodeURIComponent(
           `Não foi possível confirmar o pedido: ${markError.message}`,
@@ -368,7 +371,11 @@ export async function GET(
     )}`;
 
 
-  return NextResponse.redirect(
+  return seeOther(
     whatsappUrl,
   );
+}
+
+function seeOther(location: string | URL) {
+  return NextResponse.redirect(location, 303);
 }

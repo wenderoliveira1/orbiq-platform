@@ -1,6 +1,7 @@
 import {
   NextResponse,
 } from "next/server";
+import { forbiddenMutation, isSameOriginMutation } from "@/lib/request-origin";
 
 import {
   getCurrentContext,
@@ -15,10 +16,12 @@ type RouteContext = {
 };
 
 
-export async function GET(
+export async function POST(
   request: Request,
   context: RouteContext,
 ) {
+  if (!isSameOriginMutation(request)) return forbiddenMutation();
+
   const {
     requestId,
   } =
@@ -56,7 +59,7 @@ export async function GET(
     requestError ||
     !quoteRequest
   ) {
-    return NextResponse.redirect(
+    return seeOther(
       new URL(
         "/dashboard/cotacoes",
         request.url,
@@ -90,7 +93,7 @@ export async function GET(
     !supplier ||
     !supplier.active
   ) {
-    return NextResponse.redirect(
+    return seeOther(
       new URL(
         `/dashboard/cotacoes/${quoteRequest.quote_id}?error=${encodeURIComponent(
           "Fornecedor inválido ou inativo.",
@@ -117,7 +120,7 @@ export async function GET(
     whatsapp.length >
       15
   ) {
-    return NextResponse.redirect(
+    return seeOther(
       new URL(
         `/dashboard/cotacoes/${quoteRequest.quote_id}?error=${encodeURIComponent(
           "Fornecedor está sem WhatsApp válido.",
@@ -159,7 +162,11 @@ export async function GET(
     )}`;
 
 
-  return NextResponse.redirect(
+  return seeOther(
     whatsappUrl,
   );
+}
+
+function seeOther(location: string | URL) {
+  return NextResponse.redirect(location, 303);
 }

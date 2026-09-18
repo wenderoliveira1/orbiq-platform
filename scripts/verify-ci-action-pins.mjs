@@ -8,7 +8,7 @@ const workflowPaths = [
 const immutableActionPattern = /^[0-9a-f]{40}$/i;
 
 for (const workflowPath of workflowPaths) {
-  const source = await readFile(workflowPath, "utf8");
+  const source = (await readFile(workflowPath, "utf8")).replace(/\r\n/g, "\n");
   const actionReferences = [...source.matchAll(/^\s*uses:\s*([^\s#]+)(?:\s*#.*)?$/gm)];
 
   if (actionReferences.length === 0) {

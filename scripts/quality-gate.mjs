@@ -139,6 +139,10 @@ run("ESLint - zero warnings", "pnpm", [
   "--max-warnings=0",
 ]);
 
+run("Security - request origin and route methods", "node", [
+  "--test", "tests/security/request-origin.test.mjs",
+]);
+
 run("TypeScript", "pnpm", [
   "--filter",
   "web",
@@ -163,6 +167,10 @@ if (supabaseStatus.error || supabaseStatus.status !== 0) {
   process.exit(1);
 }
 console.log("[OK] Supabase local");
+
+run("Security - database permissions and tenant isolation (rollback)", "node", [
+  "scripts/verify-security-database.mjs",
+]);
 
 // O Supabase CLI usa --fail-on=none por padrão. Em CI precisamos que
 // qualquer erro detectado pelo plpgsql_check encerre o gate com status != 0.

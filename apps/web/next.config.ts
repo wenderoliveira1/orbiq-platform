@@ -67,6 +67,15 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // These two sections submit authenticated POST forms before opening
+      // WhatsApp. Browsers also apply form-action to the redirect chain.
+      ...["compras", "cotacoes"].map((section) => ({
+        source: `/dashboard/${section}/:path*`,
+        headers: [{
+          key: "Content-Security-Policy",
+          value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://wa.me https://*.whatsapp.com whatsapp:",
+        }],
+      })),
       {
         source: "/sw.js",
         headers: [

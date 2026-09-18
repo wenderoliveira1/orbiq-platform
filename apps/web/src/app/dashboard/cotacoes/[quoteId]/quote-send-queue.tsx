@@ -95,13 +95,6 @@ export function QuoteSendQueue({
     }
 
 
-    window.open(
-      `/dashboard/cotacoes/abrir/${current.id}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
-
-
     setIndex(
       (
         previous,
@@ -174,15 +167,20 @@ export function QuoteSendQueue({
       </div>
 
 
-      <button
-        type="button"
-        className="orbiq-primary-button"
-        onClick={
-          openCurrent
-        }
+      <form
+        method="post"
+        action={`/dashboard/cotacoes/abrir/${current.id}`}
+        target="_blank"
+        rel="noopener"
+        onSubmit={() => {
+          // Let the browser submit this supplier before advancing the queue.
+          window.setTimeout(openCurrent, 0);
+        }}
       >
-        Abrir WhatsApp e próximo →
-      </button>
+        <button type="submit" className="orbiq-primary-button">
+          Abrir WhatsApp e próximo →
+        </button>
+      </form>
     </div>
   );
 }

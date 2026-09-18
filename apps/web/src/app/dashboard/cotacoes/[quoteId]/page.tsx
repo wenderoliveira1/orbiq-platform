@@ -932,16 +932,18 @@ export default async function QuoteSupplierPage({
                       )}
                     </span>
 
-                    <a
-                      href={
+                    <form
+                      method="post"
+                      action={
                         `/dashboard/cotacoes/abrir/${request.id}`
                       }
                       target="_blank"
-                      rel="noreferrer"
-                      className="orbiq-secondary-button"
+                      rel="noopener"
                     >
-                      Abrir
-                    </a>
+                      <button type="submit" className="orbiq-secondary-button">
+                        Abrir
+                      </button>
+                    </form>
                   </div>
                 );
               },

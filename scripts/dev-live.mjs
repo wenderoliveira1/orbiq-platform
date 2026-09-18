@@ -28,6 +28,16 @@ const migrations = [
     file: "20260909180000_orbiq_quote_quantity_runtime_bootstrap.sql",
     probe: "select exists (select 1 from information_schema.columns where table_schema='public' and table_name='quote_services' and column_name='quantity') and to_regprocedure('public.recalculate_quote_final_amount(uuid)') is not null and to_regprocedure('public.create_quote_with_quantities(uuid,uuid,uuid,text,integer,text,jsonb,jsonb)') is not null and position('quantity' in pg_get_functiondef(to_regprocedure('public.recalculate_quote_final_amount(uuid)'))) > 0 as ready;",
   },
+  {
+    id: "SECURITY-PERMISSIONS",
+    file: "20260917151758_security_membership_and_catalog_permissions.sql",
+    probe: "select not has_table_privilege('authenticated', 'public.organization_members', 'INSERT,UPDATE,DELETE') and not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'service_catalog' and policyname = 'orbiq_service_catalog_member_all') and (select count(*) from pg_policies where schemaname = 'public' and tablename = 'service_catalog' and policyname in ('orbiq_service_catalog_select','orbiq_service_catalog_insert','orbiq_service_catalog_update','orbiq_service_catalog_delete')) = 4 as ready;",
+  },
+  {
+    id: "SECURITY-TENANT-REFERENCES",
+    file: "20260917152845_security_tenant_reference_guards.sql",
+    probe: "select to_regprocedure('orbiq_private.enforce_tenant_references()') is not null and not exists (select 1 from pg_class r join pg_namespace n on n.oid = r.relnamespace where n.nspname = 'public' and r.relkind = 'r' and exists (select 1 from pg_attribute a where a.attrelid = r.oid and a.attname = 'organization_id' and not a.attisdropped) and not exists (select 1 from pg_trigger t where t.tgrelid = r.oid and t.tgname = 'orbiq_tenant_references' and t.tgenabled = 'O')) as ready;",
+  },
 ];
 
 function shellArgs(commandArgs) {
