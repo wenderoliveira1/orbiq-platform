@@ -4,7 +4,6 @@ import {
   lastMileageByVehicleId,
 } from "../../_lib/operational-history";
 
-import { CustomerPhoneLookup } from "./customer-phone-lookup";
 import { QuoteBuilder } from "./quote-builder";
 import { quoteErrorMessage } from "./quote-errors";
 import { SubmitReliabilityGuard } from "./submit-reliability-guard";
@@ -70,7 +69,6 @@ export default async function NewQuotePage({ searchParams }: { searchParams: Sea
     <>
       <UnsavedQuoteGuard />
       <SubmitReliabilityGuard />
-      <CustomerPhoneLookup customers={customers} vehicles={vehicles} />
       <QuoteBuilder
         customers={customers}
         vehicles={vehicles}

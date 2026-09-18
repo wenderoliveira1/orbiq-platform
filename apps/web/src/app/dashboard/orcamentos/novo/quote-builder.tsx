@@ -12,6 +12,7 @@ import {
   type HistoryVisit,
 } from "../../_lib/operational-history";
 import {
+  createQuickCustomerVehicleAction,
   createQuoteV2Action,
   discardQuoteBuilderServerDraftAction,
   saveServiceCatalogAction,
@@ -64,6 +65,8 @@ function normalizeCategory(value: string) { return value.normalize("NFD").replac
 function key(prefix: string) { return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 
 export function QuoteBuilder({ customers, vehicles, serviceCatalog, organizationId, userId, errorMessage, initialCustomerId = "", initialVehicleId = "", lastMileageByVehicleId = {}, recentVisits = [] }: Props) {
+  const [availableCustomers, setAvailableCustomers] = useState(customers);
+  const [availableVehicles, setAvailableVehicles] = useState(vehicles);
   const [customerId, setCustomerId] = useState(initialCustomerId);
   const [vehicleId, setVehicleId] = useState(initialVehicleId);
   const [mileage, setMileage] = useState(() => {
@@ -88,12 +91,23 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   const [itemSide, setItemSide] = useState("");
   const [itemSpecification, setItemSpecification] = useState("");
   const [saving, startSaving] = useTransition();
+  const [quickRegistering, startQuickRegistering] = useTransition();
   const [openStep, setOpenStep] = useState<StepId>(1);
   const [serviceAddMode, setServiceAddMode] = useState<ServiceAddMode>("funilaria");
   const [partDetailsOpen, setPartDetailsOpen] = useState<Record<string, boolean>>({});
   const [extraDetailsOpen, setExtraDetailsOpen] = useState(false);
   const [customerQuery, setCustomerQuery] = useState("");
   const [vehicleQuery, setVehicleQuery] = useState("");
+  const [identityQuery, setIdentityQuery] = useState("");
+  const [quickRegisterOpen, setQuickRegisterOpen] = useState(false);
+  const [quickCustomerName, setQuickCustomerName] = useState("");
+  const [quickCustomerPhone, setQuickCustomerPhone] = useState("");
+  const [quickPlate, setQuickPlate] = useState("");
+  const [quickBrand, setQuickBrand] = useState("");
+  const [quickModel, setQuickModel] = useState("");
+  const [quickMileage, setQuickMileage] = useState("");
+  const [quickRegistrationError, setQuickRegistrationError] = useState<string | null>(null);
+  const [builderMessage, setBuilderMessage] = useState<string | null>(null);
   const [serviceQuery, setServiceQuery] = useState("");
   const [customerLimit, setCustomerLimit] = useState(PICKER_PAGE_SIZE);
   const [vehicleLimit, setVehicleLimit] = useState(PICKER_PAGE_SIZE);
@@ -108,18 +122,18 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   const skipNextServerSyncRef = useRef(true);
   const serverSyncInFlightRef = useRef(false);
 
-  const selectedCustomer = useMemo(() => customers.find((customer) => customer.id === customerId), [customers, customerId]);
+  const selectedCustomer = useMemo(() => availableCustomers.find((customer) => customer.id === customerId), [availableCustomers, customerId]);
   const filteredCustomers = useMemo(() => {
     const query = customerQuery.trim().toLocaleLowerCase("pt-BR");
     const digitsQuery = customerQuery.replace(/\D/g, "");
-    if (!query) return customers;
-    return customers.filter((customer) => {
+    if (!query) return availableCustomers;
+    return availableCustomers.filter((customer) => {
       const name = customer.name.toLocaleLowerCase("pt-BR");
       const phone = String(customer.phone ?? "");
       const phoneDigits = phone.replace(/\D/g, "");
       return name.includes(query) || phone.toLocaleLowerCase("pt-BR").includes(query) || (digitsQuery.length >= 2 && phoneDigits.includes(digitsQuery));
     });
-  }, [customers, customerQuery]);
+  }, [availableCustomers, customerQuery]);
   const visibleCustomers = useMemo(() => {
     const list = filteredCustomers.slice(0, customerLimit);
     if (selectedCustomer && !list.some((customer) => customer.id === selectedCustomer.id)) {
@@ -129,7 +143,7 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   }, [filteredCustomers, customerLimit, selectedCustomer]);
 
   const filteredVehicles = useMemo(() => {
-    const owned = vehicles.filter((vehicle) => vehicle.customer_id === customerId);
+    const owned = availableVehicles.filter((vehicle) => vehicle.customer_id === customerId);
     const query = vehicleQuery.trim().toLocaleLowerCase("pt-BR");
     if (!query) return owned;
     return owned.filter((vehicle) => {
@@ -139,8 +153,8 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
         .toLocaleLowerCase("pt-BR");
       return haystack.includes(query);
     });
-  }, [vehicles, customerId, vehicleQuery]);
-  const selectedVehicle = useMemo(() => vehicles.find((vehicle) => vehicle.id === vehicleId), [vehicles, vehicleId]);
+  }, [availableVehicles, customerId, vehicleQuery]);
+  const selectedVehicle = useMemo(() => availableVehicles.find((vehicle) => vehicle.id === vehicleId), [availableVehicles, vehicleId]);
   const selectedVehicleVisits = useMemo(
     () => workshopVisitsForVehicle(recentVisits, vehicleId, 6),
     [recentVisits, vehicleId],
@@ -152,6 +166,31 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
     }
     return list;
   }, [filteredVehicles, vehicleLimit, selectedVehicle, customerId]);
+
+  const identityResults = useMemo(() => {
+    const raw = identityQuery.trim();
+    if (raw.length < 2) return [];
+    const query = normalizeCategory(raw);
+    const digits = raw.replace(/\D/g, "");
+    const vehicleMatches = availableVehicles
+      .filter((vehicle) => normalizeCategory([vehicle.plate, vehicle.brand, vehicle.model, vehicle.version].filter(Boolean).join(" ")).includes(query))
+      .slice(0, 6)
+      .map((vehicle) => ({
+        kind: "vehicle" as const,
+        customer: availableCustomers.find((customer) => customer.id === vehicle.customer_id) ?? null,
+        vehicle,
+      }));
+    const customerMatches = availableCustomers
+      .filter((customer) => {
+        const phone = String(customer.phone ?? "");
+        return normalizeCategory(customer.name).includes(query) ||
+          normalizeCategory(phone).includes(query) ||
+          (digits.length >= 2 && phone.replace(/\D/g, "").includes(digits));
+      })
+      .slice(0, 6)
+      .map((customer) => ({ kind: "customer" as const, customer, vehicle: null }));
+    return [...vehicleMatches, ...customerMatches].slice(0, 8);
+  }, [availableCustomers, availableVehicles, identityQuery]);
 
   const availableCategories = useMemo(() => Array.from(new Set([...serviceCategories, ...serviceCatalog.map((service) => service.category.toLocaleUpperCase("pt-BR"))])), [serviceCatalog]);
   const filteredServices = useMemo(() => {
@@ -400,7 +439,6 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
     }
   }
 
-  const step1Ready = Boolean(customerId && vehicleId);
   const step1Complete = Boolean(customerId && vehicleId && mileage.trim());
 
   function chooseCustomer(id: string) {
@@ -413,8 +451,53 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   function chooseVehicle(id: string) {
     setVehicleId(id);
     const last = lastMileageByVehicleId[id];
-    const vehicle = vehicles.find((item) => item.id === id);
+    const vehicle = availableVehicles.find((item) => item.id === id);
     setMileage(last != null ? String(last) : vehicle?.mileage != null ? String(vehicle.mileage) : "");
+  }
+  function selectIdentity(customer: Customer, vehicle?: Vehicle | null) {
+    setCustomerId(customer.id);
+    setCustomerQuery("");
+    setVehicleQuery("");
+    if (vehicle) {
+      setVehicleId(vehicle.id);
+      const last = lastMileageByVehicleId[vehicle.id];
+      setMileage(last != null ? String(last) : vehicle.mileage != null ? String(vehicle.mileage) : "");
+    } else {
+      setVehicleId("");
+      setMileage("");
+    }
+    setIdentityQuery("");
+    setQuickRegisterOpen(false);
+  }
+  function registerCustomerVehicle() {
+    setQuickRegistrationError(null);
+    startQuickRegistering(async () => {
+      const result = await createQuickCustomerVehicleAction({
+        customerId: customerId || undefined,
+        customerName: quickCustomerName,
+        customerPhone: quickCustomerPhone,
+        plate: quickPlate,
+        brand: quickBrand,
+        model: quickModel,
+        mileage: quickMileage,
+      });
+      if (!result.ok) {
+        setQuickRegistrationError(result.error);
+        return;
+      }
+      setAvailableCustomers((current) => current.some((item) => item.id === result.customer.id)
+        ? current
+        : [...current, result.customer].sort((left, right) => left.name.localeCompare(right.name, "pt-BR")));
+      setAvailableVehicles((current) => [...current, result.vehicle].sort((left, right) => left.plate.localeCompare(right.plate, "pt-BR")));
+      selectIdentity(result.customer, result.vehicle);
+      setQuickCustomerName("");
+      setQuickCustomerPhone("");
+      setQuickPlate("");
+      setQuickBrand("");
+      setQuickModel("");
+      setQuickMileage("");
+      setBuilderMessage("Cliente e veículo cadastrados e selecionados.");
+    });
   }
   function addCatalogService(service: ServiceCatalogItem) {
     const serviceKey = `catalog-${service.id}`;
@@ -423,9 +506,10 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   }
   function addManualService() {
     const description = manualDescription.trim().toLocaleUpperCase("pt-BR");
-    if (description.length < 2) return window.alert("INFORME A DESCRIÇÃO DO SERVIÇO.");
+    if (description.length < 2) return setBuilderMessage("Informe a descrição do serviço.");
     const amount = parseMoney(manualAmount);
-    if (amount === null || amount < 0) return window.alert("INFORME UM VALOR DE MÃO DE OBRA VÁLIDO.");
+    if (amount === null || amount < 0) return setBuilderMessage("Informe um valor de mão de obra válido.");
+    setBuilderMessage(null);
     const localKey = key("manual");
     setSelectedServices((current) => [
       ...current,
@@ -464,10 +548,11 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
     partDescription: string;
   }) {
     const description = input.description.trim().toLocaleUpperCase("pt-BR");
-    if (description.length < 2) return window.alert("INFORME A DESCRIÇÃO DO SERVIÇO.");
+    if (description.length < 2) return setBuilderMessage("Informe a descrição do serviço.");
     const amountRaw = input.laborAmount.trim();
     const amount = amountRaw ? parseMoney(amountRaw) : 0;
-    if (amount === null || amount < 0) return window.alert("INFORME UM VALOR DE MÃO DE OBRA VÁLIDO.");
+    if (amount === null || amount < 0) return setBuilderMessage("Informe um valor de mão de obra válido.");
+    setBuilderMessage(null);
     const category = input.category.toLocaleUpperCase("pt-BR") || "OUTROS";
     const needsPart = Boolean(input.needsPart);
     const partDescription = needsPart
@@ -515,25 +600,54 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
   }
   function saveLabor(service: SelectedService) {
     if (!service.serviceCatalogId) return;
-    startSaving(async () => { try { await saveServiceLaborAction(service.serviceCatalogId!, service.laborAmount); } catch { window.alert("NÃO FOI POSSÍVEL SALVAR A MÃO DE OBRA."); } });
+    startSaving(async () => {
+      try {
+        await saveServiceLaborAction(service.serviceCatalogId!, service.laborAmount);
+        setBuilderMessage("Valor de mão de obra atualizado no catálogo.");
+      } catch {
+        setBuilderMessage("Não foi possível salvar a mão de obra.");
+      }
+    });
   }
   function patchService(serviceKey: string, patch: Partial<SelectedService>) { setSelectedServices((current) => current.map((service) => service.key === serviceKey ? { ...service, ...patch } : service)); }
   function removeService(serviceKey: string) { setSelectedServices((current) => current.filter((service) => service.key !== serviceKey)); }
   function addExtraItem() {
     const description = itemDescription.trim().toLocaleUpperCase("pt-BR");
-    if (description.length < 2) return window.alert("INFORME O NOME DA PEÇA.");
+    if (description.length < 2) return setBuilderMessage("Informe o nome da peça.");
+    setBuilderMessage(null);
     setExtraItems((current) => [...current, { key: key("item"), category: itemCategory, description, quantity: itemQuantity || "1", unit: itemUnit || "UN", side: itemSide, specification: itemSpecification.trim().toLocaleUpperCase("pt-BR"), hasManualPrice: false, partCost: "", partSale: "" }]);
     setItemDescription(""); setItemQuantity("1"); setItemSide(""); setItemSpecification("");
   }
   function removeExtraItem(itemKey: string) { setExtraItems((current) => current.filter((item) => item.key !== itemKey)); }
   function patchExtraItem(itemKey: string, patch: Partial<ExtraItem>) { setExtraItems((current) => current.map((item) => item.key === itemKey ? { ...item, ...patch } : item)); }
 
-  function toggleStep(step: StepId) {
-    setOpenStep((current) => (current === step ? current : step));
-  }
-
-  function continueTo(step: StepId) {
-    setOpenStep(step);
+  function repeatVisitServices(visit: HistoryVisit) {
+    const additions = visit.services.map((description, index) => {
+      const catalog = serviceCatalog.find((service) => normalizeCategory(service.description) === normalizeCategory(description));
+      return {
+        key: catalog ? `catalog-${catalog.id}` : key(`history-${index}`),
+        serviceCatalogId: catalog?.id ?? null,
+        category: (catalog?.category ?? "OUTROS").toLocaleUpperCase("pt-BR"),
+        description: description.toLocaleUpperCase("pt-BR"),
+        laborAmount: Number(catalog?.default_labor_amount ?? 0),
+        quantity: "1",
+        needsPart: Boolean(catalog?.requires_part),
+        partDescription: catalog?.requires_part ? description.toLocaleUpperCase("pt-BR") : "",
+        partCategory: normalizeCategory(catalog?.category ?? "") === "FUNILARIA" ? "FUNILARIA" : "MECÂNICA",
+        partQuantity: "1",
+        partUnit: "UN",
+        partSide: "",
+        partSpecification: "",
+        hasManualPrice: false,
+        partCost: "",
+        partSale: "",
+      } satisfies SelectedService;
+    });
+    setSelectedServices((current) => {
+      const descriptions = new Set(current.map((service) => normalizeCategory(service.description)));
+      return [...current, ...additions.filter((service) => !descriptions.has(normalizeCategory(service.description)))];
+    });
+    setBuilderMessage(`${additions.length} serviço(s) do histórico foram reaproveitados.`);
   }
 
   function togglePartDetails(serviceKey: string) {
@@ -580,6 +694,12 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
       <input type="hidden" name="items_json" value={JSON.stringify(itemsPayload)} />
       <input type="hidden" name="draft_quote_id" value={serverDraftQuoteId ?? ""} />
       {errorMessage ? <div className="orbiq-alert error">{errorMessage}</div> : null}
+      {builderMessage ? (
+        <div className="orbiq-alert success quote-builder-message" role="status">
+          <span>{builderMessage}</span>
+          <button type="button" aria-label="Fechar mensagem" onClick={() => setBuilderMessage(null)}>×</button>
+        </div>
+      ) : null}
       {draftRestored ? (
         <div className="orbiq-alert success quote-draft-banner" role="status" data-testid="quote-draft-restored">
           <div>
@@ -596,8 +716,8 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
       <section className="quote-builder-header">
         <div>
           <span className="orbiq-eyebrow">NOVO ORÇAMENTO</span>
-          <h1>Atendimento</h1>
-          <p>Cliente e veículo, depois o serviço. Funilaria, catálogo, voz ou digitado — um caminho por vez.</p>
+          <h1>Orçamento expresso</h1>
+          <p>Localize pela placa, telefone ou nome e monte o orçamento sem sair desta tela.</p>
         </div>
         <div className="quote-builder-total">
           <span>Mão de obra</span>
@@ -611,8 +731,8 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
         </div>
       </section>
 
-      <section className={`orbiq-panel quote-step${openStep === 1 ? " is-open" : ""}`}>
-        <button type="button" className="quote-step-toggle" aria-expanded={openStep === 1} onClick={() => toggleStep(1)}>
+      <section className="orbiq-panel quote-step is-open">
+        <div className="quote-step-toggle quote-step-heading">
           <div>
             <span className="orbiq-eyebrow">1 · ATENDIMENTO</span>
             <h2>Cliente e veículo</h2>
@@ -627,23 +747,84 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
               <p className="quote-step-summary">Placa, cliente e km para começar.</p>
             )}
           </div>
-          <span className="quote-step-chevron" aria-hidden="true">{openStep === 1 ? "−" : "+"}</span>
-        </button>
-        <div className="quote-step-body" hidden={openStep !== 1}>
+        </div>
+        <div className="quote-step-body">
+          <div className="quote-identity-search">
+            <label>
+              <span>Busca rápida</span>
+              <input
+                type="search"
+                value={identityQuery}
+                onChange={(event) => setIdentityQuery(event.target.value)}
+                placeholder="Digite placa, telefone ou nome"
+                autoComplete="off"
+                aria-label="Buscar por placa, telefone ou nome"
+              />
+            </label>
+            <button type="button" className="orbiq-secondary-button" onClick={() => setQuickRegisterOpen((current) => !current)}>
+              {quickRegisterOpen ? "Fechar cadastro" : "+ Cadastro rápido"}
+            </button>
+            {identityQuery.trim().length >= 2 ? (
+              <div className="quote-identity-results" role="listbox" aria-label="Resultados da busca rápida">
+                {identityResults.length > 0 ? identityResults.map((result) => (
+                  <button
+                    key={`${result.kind}-${result.vehicle?.id ?? result.customer?.id}`}
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    onClick={() => result.customer && selectIdentity(result.customer, result.vehicle)}
+                  >
+                    <span>{result.kind === "vehicle" ? result.vehicle?.plate : "CLIENTE"}</span>
+                    <strong>{result.customer?.name ?? "Cliente não encontrado"}</strong>
+                    <small>
+                      {result.vehicle
+                        ? [result.vehicle.brand, result.vehicle.model].filter(Boolean).join(" ")
+                        : result.customer?.phone || "Sem telefone"}
+                    </small>
+                  </button>
+                )) : (
+                  <div className="quote-identity-empty">
+                    <strong>Nenhum cadastro encontrado.</strong>
+                    <button type="button" onClick={() => setQuickRegisterOpen(true)}>Cadastrar agora</button>
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          {quickRegisterOpen ? (
+            <div className="quote-quick-register" aria-label="Cadastro rápido de cliente e veículo">
+              <div className="quote-quick-register-heading">
+                <div>
+                  <span className="orbiq-eyebrow">CADASTRO RÁPIDO</span>
+                  <strong>{selectedCustomer ? `Novo veículo para ${selectedCustomer.name}` : "Novo cliente e veículo"}</strong>
+                </div>
+                {selectedCustomer ? (
+                  <button type="button" onClick={() => chooseCustomer("")}>Cadastrar outro cliente</button>
+                ) : null}
+              </div>
+              <div className="quote-quick-register-grid">
+                {!selectedCustomer ? (
+                  <>
+                    <label><span>Nome do cliente *</span><input value={quickCustomerName} onChange={(event) => setQuickCustomerName(event.target.value)} autoComplete="name" /></label>
+                    <label><span>Telefone</span><input value={quickCustomerPhone} onChange={(event) => setQuickCustomerPhone(event.target.value)} inputMode="tel" autoComplete="tel" /></label>
+                  </>
+                ) : null}
+                <label><span>Placa *</span><input value={quickPlate} onChange={(event) => setQuickPlate(event.target.value.toLocaleUpperCase("pt-BR"))} maxLength={8} autoCapitalize="characters" /></label>
+                <label><span>Marca</span><input value={quickBrand} onChange={(event) => setQuickBrand(event.target.value)} /></label>
+                <label><span>Modelo *</span><input value={quickModel} onChange={(event) => setQuickModel(event.target.value)} /></label>
+                <label><span>Quilometragem</span><input value={quickMileage} onChange={(event) => setQuickMileage(event.target.value.replace(/\D/g, ""))} inputMode="numeric" /></label>
+              </div>
+              {quickRegistrationError ? <div className="orbiq-alert error" role="alert">{quickRegistrationError}</div> : null}
+              <button type="button" className="orbiq-primary-button" disabled={quickRegistering} onClick={registerCustomerVehicle}>
+                {quickRegistering ? "CADASTRANDO..." : "CADASTRAR E USAR NO ORÇAMENTO"}
+              </button>
+            </div>
+          ) : null}
+
           <div className="quote-builder-grid">
             <label className="quote-picker-field">
               <span>Cliente *</span>
-              <input
-                type="search"
-                value={customerQuery}
-                onChange={(event) => {
-                  setCustomerQuery(event.target.value);
-                  setCustomerLimit(PICKER_PAGE_SIZE);
-                }}
-                placeholder="Buscar nome ou telefone"
-                aria-label="Buscar cliente"
-                autoComplete="off"
-              />
               <select name="customer_id" value={customerId} onChange={(event) => chooseCustomer(event.target.value)} required>
                 <option value="">Selecione o cliente</option>
                 {visibleCustomers.map((customer) => (
@@ -665,18 +846,6 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
             </label>
             <label className="quote-picker-field">
               <span>Veículo *</span>
-              <input
-                type="search"
-                value={vehicleQuery}
-                onChange={(event) => {
-                  setVehicleQuery(event.target.value);
-                  setVehicleLimit(PICKER_PAGE_SIZE);
-                }}
-                placeholder={customerId ? "Buscar placa ou modelo" : "Selecione o cliente primeiro"}
-                aria-label="Buscar veículo"
-                disabled={!customerId}
-                autoComplete="off"
-              />
               <select name="vehicle_id" value={vehicleId} onChange={(event) => chooseVehicle(event.target.value)} disabled={!customerId} required>
                 <option value="">{customerId ? "Selecione o veículo" : "Selecione primeiro o cliente"}</option>
                 {visibleVehicles.map((vehicle) => (
@@ -723,13 +892,18 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
             <div className="quote-builder-history" data-testid="quote-builder-visit-history">
               <span className="orbiq-eyebrow">HISTÓRICO DESTE VEÍCULO</span>
               {selectedVehicleVisits.map((visit) => (
-                <p key={visit.id}>
-                  <strong>{formatVisitDate(visit.createdAt)}</strong>
-                  {" · "}
-                  {formatVisitKm(visit.mileage)}
-                  {" · "}
-                  {compactVisitServices(visit.services, 2)}
-                </p>
+                <article key={visit.id}>
+                  <p>
+                    <strong>{formatVisitDate(visit.createdAt)}</strong>
+                    {" · "}
+                    {formatVisitKm(visit.mileage)}
+                    {" · "}
+                    {compactVisitServices(visit.services, 2)}
+                  </p>
+                  <button type="button" onClick={() => repeatVisitServices(visit)} disabled={visit.services.length === 0}>
+                    Repetir serviços
+                  </button>
+                </article>
               ))}
             </div>
           ) : null}
@@ -753,27 +927,15 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
               </label>
             </div>
           </div>
-          <div className="quote-step-actions">
-            <button
-              type="button"
-              className="orbiq-primary-button quote-step-continue"
-              disabled={!step1Complete}
-              onClick={() => continueTo(2)}
-            >
-              Continuar
-            </button>
-          </div>
         </div>
       </section>
 
-      <section className={`orbiq-panel quote-step${openStep === 2 ? " is-open" : ""}${!step1Ready ? " is-soft-locked" : ""}`}>
-        <button type="button" className="quote-step-toggle" aria-expanded={openStep === 2} onClick={() => toggleStep(2)}>
+      <section className="orbiq-panel quote-step is-open">
+        <div className="quote-step-toggle quote-step-heading">
           <div>
             <span className="orbiq-eyebrow">2 · SERVIÇOS</span>
             <h2>Serviços realizados</h2>
-            {!step1Ready ? (
-              <p className="quote-step-summary">Preencha o passo 1 para liberar.</p>
-            ) : selectedServices.length > 0 ? (
+            {selectedServices.length > 0 ? (
               <p className="quote-step-summary">
                 {selectedServices.length} serviço{selectedServices.length === 1 ? "" : "s"} · {money(laborTotal)}
               </p>
@@ -781,9 +943,8 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
               <p className="quote-step-summary">Funilaria, catálogo ou voz.</p>
             )}
           </div>
-          <span className="quote-step-chevron" aria-hidden="true">{openStep === 2 ? "−" : "+"}</span>
-        </button>
-        <div className="quote-step-body" hidden={openStep !== 2}>
+        </div>
+        <div className="quote-step-body">
           <div className="quote-service-work" data-testid="quote-service-work">
             <div className="quote-service-modes" role="tablist" aria-label="Como adicionar o serviço">
               {(
@@ -1125,16 +1286,11 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
             </div>
           )}
           </div>
-          <div className="quote-step-actions">
-            <button type="button" className="orbiq-primary-button quote-step-continue" disabled={selectedServices.length === 0} onClick={() => continueTo(3)}>
-              Continuar
-            </button>
-          </div>
         </div>
       </section>
 
-      <section className={`orbiq-panel quote-step${openStep === 3 ? " is-open" : ""}${!step1Ready ? " is-soft-locked" : ""}`}>
-        <button type="button" className="quote-step-toggle" aria-expanded={openStep === 3} onClick={() => toggleStep(3)}>
+      <section className="orbiq-panel quote-step is-open">
+        <div className="quote-step-toggle quote-step-heading">
           <div>
             <span className="orbiq-eyebrow">3 · PEÇAS ADICIONAIS</span>
             <h2>Itens para cotação</h2>
@@ -1144,9 +1300,8 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
                 : "Opcional. Peça extra que não veio do serviço."}
             </p>
           </div>
-          <span className="quote-step-chevron" aria-hidden="true">{openStep === 3 ? "−" : "+"}</span>
-        </button>
-        <div className="quote-step-body" hidden={openStep !== 3}>
+        </div>
+        <div className="quote-step-body">
           <p className="quote-builder-section-description">Para itens que não vieram diretamente de um serviço.</p>
           <div className="quote-extra-item-form">
             <label>
@@ -1243,16 +1398,11 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
               <small>Um orçamento pode conter somente serviços.</small>
             </div>
           )}
-          <div className="quote-step-actions">
-            <button type="button" className="orbiq-primary-button quote-step-continue" onClick={() => continueTo(4)}>
-              Continuar
-            </button>
-          </div>
         </div>
       </section>
 
-      <section className={`orbiq-panel quote-step${openStep === 4 ? " is-open" : ""}${!step1Ready ? " is-soft-locked" : ""}`}>
-        <button type="button" className="quote-step-toggle" aria-expanded={openStep === 4} onClick={() => toggleStep(4)}>
+      <section className="orbiq-panel quote-step is-open">
+        <div className="quote-step-toggle quote-step-heading">
           <div>
             <span className="orbiq-eyebrow">4 · OBSERVAÇÕES</span>
             <h2>Informações do atendimento</h2>
@@ -1260,9 +1410,8 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
               {notes.trim() ? "Observação preenchida." : "Opcional."}
             </p>
           </div>
-          <span className="quote-step-chevron" aria-hidden="true">{openStep === 4 ? "−" : "+"}</span>
-        </button>
-        <div className="quote-step-body" hidden={openStep !== 4}>
+        </div>
+        <div className="quote-step-body">
           <label>
             <span>Observações gerais</span>
             <textarea
@@ -1277,20 +1426,7 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
         </div>
       </section>
 
-      <section className="quote-builder-finish">
-        <div>
-          <span>Serviços</span>
-          <strong>{selectedServices.length}</strong>
-        </div>
-        <div>
-          <span>Itens para compra</span>
-          <strong>{itemsPayload.length}</strong>
-        </div>
-        <div>
-          <span>Mão de obra</span>
-          <strong>{money(laborTotal)}</strong>
-        </div>
-        {(showMissingPriceGuard || partsWithoutPrice.length > 0) && partsWithoutPrice.length > 0 ? (
+      {(showMissingPriceGuard || partsWithoutPrice.length > 0) && partsWithoutPrice.length > 0 ? (
           <div
             className={`quote-missing-price-guard${showMissingPriceGuard ? " is-visible" : ""}`}
             role="status"
@@ -1322,12 +1458,26 @@ export function QuoteBuilder({ customers, vehicles, serviceCatalog, organization
               <span>Entendi — posso salvar sem preço nestas peças</span>
             </label>
           </div>
-        ) : null}
-        {invalidManualCost ? (
-          <div className="orbiq-alert error" role="alert">
-            Informe um custo válido nas peças marcadas com &quot;Já tenho o preço&quot;, ou desmarque essa opção.
-          </div>
-        ) : null}
+      ) : null}
+      {invalidManualCost ? (
+        <div className="orbiq-alert error" role="alert">
+          Informe um custo válido nas peças marcadas com &quot;Já tenho o preço&quot;, ou desmarque essa opção.
+        </div>
+      ) : null}
+
+      <section className="quote-builder-finish">
+        <div>
+          <span>Serviços</span>
+          <strong>{selectedServices.length}</strong>
+        </div>
+        <div>
+          <span>Itens para compra</span>
+          <strong>{itemsPayload.length}</strong>
+        </div>
+        <div>
+          <span>Mão de obra</span>
+          <strong>{money(laborTotal)}</strong>
+        </div>
         <button
           type="submit"
           className="orbiq-primary-button quote-save-button"

@@ -5659,6 +5659,189 @@ a.quote-history-metric:hover {
   margin: 5px 0 0;
 }
 
+.quote-step-heading {
+  cursor: default;
+}
+
+.quote-builder-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quote-builder-message button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.quote-identity-search {
+  position: relative;
+  margin-bottom: 14px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  border: 1px solid var(--orbiq-border-strong);
+  border-radius: 13px;
+  background: var(--orbiq-surface-soft);
+}
+
+.quote-identity-results {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.quote-identity-results > button {
+  min-height: 58px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  align-items: center;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 10px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.quote-identity-results > button:hover,
+.quote-identity-results > button:focus-visible {
+  border-color: var(--orbiq-border-strong);
+  box-shadow: 0 0 0 3px rgba(227, 6, 19, .06);
+}
+
+.quote-identity-results > button span {
+  grid-row: 1 / 3;
+  min-width: 76px;
+  color: var(--orbiq-accent);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.quote-identity-results > button strong {
+  font-size: 14px;
+}
+
+.quote-identity-results > button small {
+  color: var(--orbiq-muted);
+  font-size: 12px;
+}
+
+.quote-identity-empty {
+  grid-column: 1 / -1;
+  min-height: 58px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px dashed var(--orbiq-border-strong);
+  border-radius: 10px;
+}
+
+.quote-identity-empty button,
+.quote-quick-register-heading button,
+.quote-builder-history article button {
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid var(--orbiq-border);
+  border-radius: 9px;
+  background: var(--orbiq-surface);
+  color: var(--orbiq-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.quote-quick-register {
+  margin-bottom: 14px;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(227, 6, 19, .22);
+  border-radius: 13px;
+  background: var(--orbiq-surface-soft);
+}
+
+.quote-quick-register-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quote-quick-register-heading > div {
+  display: grid;
+  gap: 4px;
+}
+
+.quote-quick-register-heading strong {
+  font-size: 15px;
+}
+
+.quote-quick-register-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quote-builder-history article {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--orbiq-border);
+}
+
+.quote-builder-history article:first-of-type {
+  border-top: 0;
+}
+
+.quote-builder-history article button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.quote-picker-field > span:first-child,
+.quote-picker-meta,
+.quote-labor-search span,
+.quote-labor-card span,
+.quote-labor-card small,
+.quote-selected-title span,
+.quote-selected-service-price span,
+.quote-parts-summary small,
+.quote-parts-summary article > span,
+.quote-builder-empty small {
+  font-size: 12px;
+}
+
+.quote-labor-card strong,
+.quote-selected-title strong,
+.quote-selected-service-heading h3,
+.quote-builder-empty strong,
+.quote-parts-summary strong,
+.quote-builder-vehicle-preview strong {
+  font-size: 14px;
+}
+
+.quote-builder-vehicle-preview span:last-child {
+  font-size: 12px;
+}
+
 .quote-step-chevron {
   flex: 0 0 auto;
   width: 36px;
@@ -5768,6 +5951,61 @@ a.quote-history-metric:hover {
   .quote-step-continue,
   .quote-save-button {
     width: 100%;
+  }
+
+  .quote-builder {
+    padding-bottom: 155px;
+  }
+
+  .quote-identity-search,
+  .quote-identity-results,
+  .quote-quick-register-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-identity-search > .orbiq-secondary-button,
+  .quote-identity-results,
+  .quote-identity-empty {
+    grid-column: 1;
+  }
+
+  .quote-builder-finish {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    z-index: 40;
+    grid-template-columns: 1fr 1fr minmax(150px, auto);
+    padding: 9px 10px;
+    border-radius: 13px;
+  }
+
+  .quote-builder-finish > div:nth-of-type(2) {
+    display: none;
+  }
+
+  .quote-save-button {
+    grid-column: auto;
+    min-width: 150px;
+    min-height: 46px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 520px) {
+  .quote-builder-finish {
+    grid-template-columns: 1fr minmax(145px, auto);
+  }
+
+  .quote-builder-finish > div:first-of-type {
+    display: none;
+  }
+
+  .quote-quick-register-heading,
+  .quote-builder-history article,
+  .quote-identity-empty {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

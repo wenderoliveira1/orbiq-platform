@@ -37,6 +37,120 @@ function upper(value: string) {
   return value.trim().toLocaleUpperCase("pt-BR");
 }
 
+function normalizePlate(value: string) {
+  return value.replace(/[^a-zA-Z0-9]/g, "").toLocaleUpperCase("pt-BR");
+}
+
+export type QuickCustomerVehicleResult =
+  | {
+      ok: true;
+      customer: { id: string; name: string; phone: string | null };
+      vehicle: {
+        id: string;
+        customer_id: string;
+        plate: string;
+        brand: string | null;
+        model: string | null;
+        version: string | null;
+        model_year: number | null;
+        mileage: number | null;
+      };
+    }
+  | { ok: false; error: string };
+
+export async function createQuickCustomerVehicleAction(input: {
+  customerId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  plate: string;
+  brand?: string;
+  model: string;
+  mileage?: string;
+}): Promise<QuickCustomerVehicleResult> {
+  const { supabase, organization, user } = await getCurrentContext();
+  const customerId = String(input.customerId ?? "").trim();
+  const customerName = upper(String(input.customerName ?? ""));
+  const customerPhone = upper(String(input.customerPhone ?? "")) || null;
+  const plate = normalizePlate(String(input.plate ?? ""));
+  const brand = upper(String(input.brand ?? "")) || null;
+  const model = upper(String(input.model ?? ""));
+  const rawMileage = String(input.mileage ?? "").replace(/\D/g, "");
+  const mileage = rawMileage ? Number(rawMileage) : null;
+
+  if (plate.length !== 7) return { ok: false, error: "Informe uma placa válida com 7 caracteres." };
+  if (model.length < 2) return { ok: false, error: "Informe o modelo do veículo." };
+  if (mileage !== null && (!Number.isSafeInteger(mileage) || mileage < 0 || mileage > 9_999_999)) {
+    return { ok: false, error: "Informe uma quilometragem válida." };
+  }
+
+  let customer: { id: string; name: string; phone: string | null } | null = null;
+  let createdCustomerId: string | null = null;
+
+  if (customerId) {
+    if (!isUuid(customerId)) return { ok: false, error: "O cliente selecionado é inválido." };
+    const result = await supabase
+      .from("customers")
+      .select("id, name, phone")
+      .eq("organization_id", organization.id)
+      .eq("id", customerId)
+      .maybeSingle();
+    if (result.error || !result.data) {
+      return { ok: false, error: "O cliente selecionado não pertence a esta oficina." };
+    }
+    customer = result.data;
+  } else {
+    if (customerName.length < 2) return { ok: false, error: "Informe o nome do cliente." };
+    const result = await supabase
+      .from("customers")
+      .insert({
+        organization_id: organization.id,
+        name: customerName,
+        phone: customerPhone,
+        created_by: user.id,
+      })
+      .select("id, name, phone")
+      .single();
+    if (result.error || !result.data) {
+      return { ok: false, error: "Não foi possível cadastrar o cliente." };
+    }
+    customer = result.data;
+    createdCustomerId = result.data.id;
+  }
+
+  const vehicleResult = await supabase
+    .from("vehicles")
+    .insert({
+      organization_id: organization.id,
+      customer_id: customer.id,
+      plate,
+      brand,
+      model,
+      mileage,
+    })
+    .select("id, customer_id, plate, brand, model, version, model_year, mileage")
+    .single();
+
+  if (vehicleResult.error || !vehicleResult.data) {
+    if (createdCustomerId) {
+      await supabase
+        .from("customers")
+        .delete()
+        .eq("organization_id", organization.id)
+        .eq("id", createdCustomerId);
+    }
+    const message = vehicleResult.error?.code === "23505"
+      ? "Esta placa já está cadastrada na oficina. Use a busca para selecioná-la."
+      : "Não foi possível cadastrar o veículo.";
+    return { ok: false, error: message };
+  }
+
+  revalidatePath("/dashboard/orcamentos/novo");
+  revalidatePath("/dashboard/clientes");
+  revalidatePath("/dashboard/veiculos");
+
+  return { ok: true, customer, vehicle: vehicleResult.data };
+}
+
 export async function saveServiceCatalogAction(
   category: string,
   description: string,
