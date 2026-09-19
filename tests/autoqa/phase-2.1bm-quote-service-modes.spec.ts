@@ -11,10 +11,11 @@ test.describe("Fase 2.1BM — abas práticas no passo Serviços", () => {
     const css = await readFile("apps/web/src/app/dashboard/dashboard.css", "utf8");
 
     expect(builder).toContain('data-testid="quote-service-work"');
-    expect(builder).toContain('data-testid="quote-service-mode-funilaria"');
-    expect(builder).toContain('data-testid="quote-service-mode-catalogo"');
+    expect(builder).toContain('data-testid={`quote-service-mode-${mode}`}');
+    expect(builder).toContain('["funilaria", "Funilaria"]');
+    expect(builder).toContain('["catalogo", "Catálogo"]');
     expect(builder).not.toContain('data-testid="quote-service-mode-outras"');
-    expect(builder).toContain('data-testid="quote-service-mode-manual"');
+    expect(builder).toContain('["manual", "Digitar"]');
     expect(builder).toContain('useState<ServiceAddMode>("funilaria")');
     expect(builder).toContain("quote-step-summary");
     expect(builder).not.toContain("<CategoryGuidedPicker");

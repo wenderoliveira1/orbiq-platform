@@ -32,6 +32,9 @@ test.describe("Fase 2.1BN — Funilaria entra no orçamento mesmo se o catálogo
 
     expect(migration).toContain("unique_violation");
     expect(migration).toContain("save_service_catalog");
-    expect(migration).not.toContain("service_role");
+    // Comments describe the restriction; inspect executable SQL instead.
+    const sql = migration.replace(/--[^\n]*/g, "");
+    expect(sql).not.toContain("service_role");
+    expect(sql).toMatch(/security\s+invoker/i);
   });
 });

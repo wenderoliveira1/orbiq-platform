@@ -9,7 +9,12 @@ export function compactSearchToken(value: string): string {
 }
 
 export function normalizeListQuery(raw: string): string {
-  return raw.trim().toLocaleLowerCase("pt-BR");
+  return raw
+    .trim()
+    .toLocaleLowerCase("pt-BR")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/\s+/gu, " ");
 }
 
 export type QuoteListSearchFields = {
@@ -23,7 +28,8 @@ export type QuoteListSearchFields = {
 
 /**
  * Match by customer name, phone, plate (hyphen-tolerant), protocol (ORB-…),
- * and brand/model. Empty query matches everything.
+ * and brand/model. Names ignore accents and repeated whitespace; phone numbers
+ * ignore formatting. Empty query matches everything.
  */
 export function matchesQuoteListSearch(
   query: string,
@@ -45,7 +51,7 @@ export function matchesQuoteListSearch(
     fields.model,
   ]
     .filter(Boolean)
-    .map((value) => String(value).toLocaleLowerCase("pt-BR"));
+    .map((value) => normalizeListQuery(String(value)));
 
   if (haystacks.some((value) => value.includes(q))) {
     return true;
@@ -57,10 +63,15 @@ export function matchesQuoteListSearch(
 
   const plateCompact = compactSearchToken(fields.plate ?? "");
   const protocolCompact = compactSearchToken(fields.protocol ?? "");
+  const phoneDigits = (fields.customerPhone ?? "").replace(/\D/g, "");
+  // Only phone-like queries may use digit matching: "João 11" must not
+  // accidentally match every customer with area code 11.
+  const phoneQuery = /^[+\d\s().-]+$/.test(q) ? q.replace(/\D/g, "") : "";
 
   return (
     (plateCompact.length > 0 && plateCompact.includes(qCompact)) ||
-    (protocolCompact.length > 0 && protocolCompact.includes(qCompact))
+    (protocolCompact.length > 0 && protocolCompact.includes(qCompact)) ||
+    (phoneQuery.length > 0 && phoneDigits.includes(phoneQuery))
   );
 }
 

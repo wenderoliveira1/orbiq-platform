@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 test.describe("Fase 2.1AW — busca/paginação no novo orçamento + descrição editável", () => {
-  test("Novo Orçamento filtra clientes, veículos e catálogo com paginação", async () => {
+  test("Novo Orçamento mantém busca rápida e paginação dos seletores e catálogo", async () => {
     const builder = await readFile(
       "apps/web/src/app/dashboard/orcamentos/novo/quote-builder.tsx",
       "utf8",
@@ -12,8 +12,8 @@ test.describe("Fase 2.1AW — busca/paginação no novo orçamento + descrição
 
     expect(builder).toContain("PICKER_PAGE_SIZE");
     expect(builder).toContain("CATALOG_PAGE_SIZE");
-    expect(builder).toContain('placeholder="Buscar nome ou telefone"');
-    expect(builder).toContain("Buscar placa ou modelo");
+    expect(builder).toContain('placeholder="Digite placa, telefone ou nome"');
+    expect(builder).toContain('aria-label="Resultados da busca rápida"');
     expect(builder).toContain('placeholder="Buscar serviço no catálogo"');
     expect(builder).toContain("Mostrar mais");
     expect(builder).toContain("Mostrar mais serviços");
