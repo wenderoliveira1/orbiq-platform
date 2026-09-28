@@ -59,7 +59,7 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
-  const theme = parseThemePreference(cookieStore.get(THEME_COOKIE)?.value);
+  const theme = parseThemePreference(cookieStore.get(THEME_COOKIE)?.value) ?? "dark";
 
   return (
     <html

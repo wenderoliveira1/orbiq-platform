@@ -616,46 +616,32 @@ export default async function DashboardPage() {
   return (
     <div className="orbiq-page ops-dashboard">
 
-      <section className="ops-hero">
-
-        <div>
-
-          <span className="orbiq-eyebrow">
-            CENTRAL OPERACIONAL
-          </span>
-
-          <h1>
-            {organization.name}
-          </h1>
-
-          <p>
-            Acompanhe o fluxo da oficina do orçamento à entrega.
-          </p>
-
+      <header className="studio-welcome">
+        <div><span className="orbiq-eyebrow">VISÃO GERAL DA OFICINA</span>
+          <h1>Vamos fazer acontecer.</h1>
+          <p>Sua operação, do primeiro contato à entrega das chaves.</p>
         </div>
+        <span className="studio-workshop-name">{organization.name}</span>
+      </header>
 
-
-        <div className="ops-hero-actions">
-
-          <Link
-            href="/dashboard/orcamentos/novo"
-            className="orbiq-primary-button"
-          >
-            + Novo orçamento
-          </Link>
-
-
-          <Link
-            href="/dashboard/orcamentos"
-            className="orbiq-secondary-button"
-          >
-            Ver orçamentos
-          </Link>
-
+      <section className="studio-hero" aria-label="Central de operações Orbiq">
+        <div className="studio-hero-copy">
+          <span className="studio-kicker">GESTÃO AUTOMOTIVA</span>
+          <h2>ORBIQ<span>.</span></h2>
+          <p>Excelência nos detalhes.<br />Controle em cada etapa.</p>
+          <Link href="/dashboard/orcamentos/novo" className="orbiq-primary-button">Novo orçamento <span aria-hidden="true">↗</span></Link>
         </div>
-
+        <span className="studio-hero-caption">PRECISÃO EM CADA OPERAÇÃO</span>
       </section>
 
+      <nav className="studio-shortcuts" aria-label="Atalhos da oficina">
+        {[
+          { href: "/dashboard/orcamentos/novo", icon: "▤", title: "Novo orçamento", description: "Uma proposta bem feita." },
+          { href: "/dashboard/clientes", icon: "◎", title: "Clientes", description: "O começo de uma boa relação." },
+          { href: "/dashboard/veiculos", icon: "◇", title: "Veículos", description: "Histórico em cada detalhe." },
+          { href: "/dashboard/execucao", icon: "↗", title: "Acompanhar serviços", description: "Cada etapa sob controle." },
+        ].map((item) => <Link href={item.href} key={item.href}><span className="studio-shortcut-icon" aria-hidden="true">{item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span className="studio-shortcut-arrow" aria-hidden="true">↗</span></Link>)}
+      </nav>
 
       <section className="ops-primary-grid">
 

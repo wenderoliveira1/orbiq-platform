@@ -22,6 +22,7 @@ import { parseThemePreference, THEME_COOKIE } from "@/lib/theme";
 
 import "./dashboard.css";
 import "./mobile-navigation-shell.css";
+import "./studio.css";
 
 export default async function DashboardLayout({
   children,
@@ -38,7 +39,7 @@ export default async function DashboardLayout({
   const cookieStore = await cookies();
   const themePreference = parseThemePreference(
     cookieStore.get(THEME_COOKIE)?.value,
-  );
+  ) ?? "dark";
 
   const permissions = permissionsForRole(membership.role);
   const organizationOptions = availableOrganizations.map((item) => ({
@@ -115,6 +116,10 @@ export default async function DashboardLayout({
           initialTheme={themePreference}
         />
 
+        <header className="studio-topbar">
+          <Link href="/dashboard">Workspace <span>/</span> <strong>Orbiq</strong></Link>
+          <div><span className="studio-topbar-org">{organization.name}</span><Link className="orbiq-primary-button" href="/dashboard/orcamentos/novo">+ Criar novo</Link></div>
+        </header>
         <div className="orbiq-content">{children}</div>
       </main>
     </div>
